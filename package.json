@@ -1,0 +1,11 @@
+{
+  "name": "drup",
+  "version": "1.0.0",
+  "description": "Utility to install and configure drupal for an issue.",
+  "main": "drup.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "_Archy_",
+  "license": "ISC"
+}
