@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "colors": "^1.1.2",
-    "inquirer": "^1.2.2"
+    "inquirer": "^1.2.2",
+    "node-storage": "0.0.7",
+    "process": "^0.11.9"
   }
 }
