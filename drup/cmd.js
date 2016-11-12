@@ -1,14 +1,7 @@
-var prompt = require("prompt");
+var prompt = require("inquirer");
 var colors = require("colors");
 
-prompt.message = "> ".green;
-prompt.delimiter = "";
-prompt.start();
-
-
 module.exports = {
-    prompt : prompt,
-
     error : function(msg) {
         console.log("!! Error: ".red + msg);
     },
