@@ -1,23 +1,26 @@
-var prompt = require("inquirer");
-var colors = require("colors");
+"use strict";
+
+require("colors");
 
 module.exports = {
-    error : function(msg) {
+
+    error(msg) {
         console.log("!! Error: ".red + msg);
     },
 
-    warning : function(msg) {
+    warning(msg) {
         console.log("! Warning: ".yellow + msg);
     },
 
-    info : function(msg) {
+    info(msg) {
         console.log("├╼ ".blue + msg);
     },
 
-    heading : function(msg) {
-        console.log('\n┌ '.blue + msg.toUpperCase().green + ' ┐'.blue)
+    heading(msg) {
+        console.log("\n┌ ".blue + msg.toUpperCase().green + " ┐".blue);
 
-        var line = "├─────────────────────────────────────────────────";
-        console.log((line.substr(0, msg.length+3)+'┘').blue)
+        let line = "├─────────────────────────────────────────────────";
+        console.log((line.substr(0, msg.length + 3) + "┘").blue);
     }
+
 };
