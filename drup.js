@@ -6,6 +6,13 @@ require("./drup/cmd-utils/smart_term")();
 
 var runOperation = require("./drup/operations");
 var process = require("process");
+var requireCommand = require("./drup/cmd-utils/system_dependecy");
+
+requireCommand([['php', '8.0'], ['mysql', '1'], ['vim', '12']]).then(got => {
+    console.log(got);
+}, reason => {
+    console.log(reason);
+});
 
 const Loader = require("./drup/cmd-utils/async_loader");
 
@@ -19,42 +26,17 @@ let args = process.argv.slice(2);
 runOperation(args.shift(), args);
 
 /*
-commands:
-    setup [<issue-number>]
-    remove [<issue-number/directory>] 
-    work [<issue-number/directory>] //create workspace for issue
+TODO: Create
+    - dependency checker module that can accept them as params.
+    - command runner that uses async loader and handles errors.
+    - history tracker module to undo actions on failures.
+    - json configuration loader/saver that handlers errors.
 
-issueParser(issueNumber)
-function getProject();
-function getBranch();
+    - drupal class that handles everything for drupal website
+        - get from the 3 types
+        - read and write to settings.php
+        - install
 
-drupal
-function download();
-function update();
-function setBranch(branch);
-function install();
-function remove();
-function clone();
-
-mysql
-function setConfig(config);
-function loadConfig(config);
-function createDatabase(name);
-function databaseExists(name);
-function databaseDrop(name);
-
-issueStore
-function get();
-function create();
-function update();
-function remove();
-
-apacheSite
-function setup();
-function remove();
-
-issue
-function setup();
-function remove();
-function work();
+    - container base class that will be extended by the different containers
+    - docker composer which assembles containers
 */
