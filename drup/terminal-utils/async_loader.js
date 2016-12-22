@@ -4,7 +4,7 @@ const Terminal = require("./smart_term")();
 const BottomLine = require("./bottom_line");
 
 const MAX_MESSAGE_LENGTH = 20;
-const states = {0: '▬  ', 1: ' ▬ ', 2: '  ▬'};
+const states = {0: '>  ', 1: ' > ', 2: '  >'};
 const FINISHED_MESSAGE = "[FINISHED]";
 
 function trim(string, max) {

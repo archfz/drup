@@ -30,13 +30,13 @@ const BottomLines = {
 
     remove(bottomLine) {
         let i = this.getLineIndex(bottomLine);
-        if (i == -1) {return;}
+        if (i === -1) {return;}
 
         this.cleanUp();
         this.bottomLines.splice(i, 1);
 
         if (this.count()) {
-            //this.renderAll();
+            this.renderAll();
         } else {
             Terminal.stopOn("before_write", this.cleanCall);
             Terminal.stopOn("after_write", this.renderCall);
@@ -50,7 +50,7 @@ const BottomLines = {
         let visibilityStateChanged = Terminal.hideCursor();
         Terminal.ensureEmptyLines(lines);
 
-        Terminal.charm("push");
+        Terminal.charm("push", 1);
         Terminal.setCursorToLine(lines - 1);
 
         let render = "";
@@ -59,7 +59,7 @@ const BottomLines = {
         }
         Terminal.nativeWrite(render.slice(0, -1));
 
-        Terminal.charm("pop");
+        Terminal.charm("pop", 1);
         visibilityStateChanged && Terminal.showCursor();
     },
 
@@ -78,10 +78,10 @@ const BottomLines = {
     cleanUp(lines) {
         lines = lines || this.count();
 
-        Terminal.charm("push");
+        Terminal.charm("push", 1);
         Terminal.setCursorToLine(lines - 1);
         Terminal.charm("erase", "down");
-        Terminal.charm("pop");
+        Terminal.charm("pop", 1);
     }
 };
 
@@ -120,13 +120,13 @@ class BottomLine {
 
     render() {
         let visibilityStateChanged = Terminal.hideCursor();
-        Terminal.charm("push");
+        Terminal.charm("push", 1);
 
         let line = BottomLines.getLineIndex(this);
         Terminal.setCursorToLine(line);
         Terminal.nativeWrite(this.getOutput());
 
-        Terminal.charm("pop");
+        Terminal.charm("pop", 1);
         visibilityStateChanged && Terminal.showCursor();
     }
 
