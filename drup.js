@@ -2,11 +2,11 @@
 "use strict";
 
 // Make sure to initialize the smart terminal before any output.
-require("./drup/cmd-utils/smart_term")();
+require("./drup/terminal-utils/smart_term")();
 
 var runOperation = require("./drup/operations");
 var process = require("process");
-var requireCommand = require("./drup/cmd-utils/system_dependecy");
+var requireCommand = require("./drup/terminal-utils/system_dependecy");
 
 requireCommand([['php', '8.0'], ['mysql', '1'], ['vim', '12']]).then(got => {
     console.log(got);
@@ -14,7 +14,7 @@ requireCommand([['php', '8.0'], ['mysql', '1'], ['vim', '12']]).then(got => {
     console.log(reason);
 });
 
-const Loader = require("./drup/cmd-utils/async_loader");
+const Loader = require("./drup/terminal-utils/async_loader");
 
 new Loader("Installing Drupal");
 let l1 = new Loader("Installing Docker");
