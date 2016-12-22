@@ -4,12 +4,14 @@
 // Make sure to initialize the smart terminal before any output.
 require("./drup/terminal-utils/smart_term")();
 
-var runOperation = require("./drup/operations");
-var process = require("process");
-var requireCommand = require("./drup/terminal-utils/system_dependecy");
+const runOperation = require("./drup/operations");
+const process = require("process");
+const system = require("./drup/system/system");
 
-requireCommand([['php', '8.0'], ['mysql', '1'], ['vim', '12']]).then(got => {
-    console.log(got);
+system.require([['php', '8.0'], ['mysql', '1'], ['vim', '12']]).then(got => {
+    system.execute("date").then(date => {
+        console.log("The date is \n"+date);
+    }, error => console.log(error));
 }, reason => {
     console.log(reason);
 });
