@@ -10,6 +10,7 @@ const system = require("./drup/system/system");
 const Task = require("./drup/task/task");
 const Action = require("./drup/task/action");
 const Loader = require("./drup/terminal-utils/async_loader");
+const data = require("./drup/drup_storage");
 
 class RequireDependencies extends Action {
 
@@ -32,6 +33,9 @@ class RequireDependencies extends Action {
     }
 
 }
+
+console.log("name = " + data.config.get('name'));
+data.config.set('name', Math.random() + " name");
 
 let checkRequirementsTask = new Task();
 checkRequirementsTask.complete(new RequireDependencies()).on('complete', () => console.log('_completed'));
