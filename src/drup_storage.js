@@ -3,7 +3,7 @@
 const Storage = require("node-storage");
 const os = require('os');
 
-const GLOBAL_STORE_ROOT = os.homedir() + "/.drup/";
+const GLOBAL_STORE_ROOT = os.homedir() + "/.src/";
 const GLOBAL_STORE = {
   config : { path: "config.json" },
   projects : { path: "projects.json" },

@@ -2,15 +2,15 @@
 "use strict";
 
 // Make sure to initialize the smart terminal before any output.
-require("./drup/terminal-utils/smart_term")();
+require("./src/terminal-utils/smart_term")();
 
-const runOperation = require("./drup/operations");
+const runOperation = require("./src/operations");
 const process = require("process");
-const system = require("./drup/system/system");
-const Task = require("./drup/task/task");
-const Action = require("./drup/task/action");
-const Loader = require("./drup/terminal-utils/async_loader");
-const data = require("./drup/drup_storage");
+const system = require("./src/system/system");
+const Task = require("./src/task/task");
+const Action = require("./src/task/action");
+const Loader = require("./src/terminal-utils/async_loader");
+const data = require("./src/drup_storage");
 
 class RequireDependencies extends Action {
 
