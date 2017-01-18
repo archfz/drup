@@ -4,19 +4,6 @@ const charm = require("charm")();
 const encode = require("charm/lib/encode");
 const stripAnsi = require("strip-ansi");
 
-// function toUnicode(theString) {
-//     var unicodeString = '';
-//     for (var i=0; i < theString.length; i++) {
-//         var theUnicode = theString.charCodeAt(i).toString(16).toUpperCase();
-//         while (theUnicode.length < 4) {
-//             theUnicode = '0' + theUnicode;
-//         }
-//         theUnicode = '\\u' + theUnicode;
-//         unicodeString += theUnicode;
-//     }
-//     return unicodeString;
-// }
-
 // Visible characters that move the cursor.
 const VISIBLE_REGEX_G = /[\u0020-\u007e\u00a0-\u00ff]/gi;
 // ANSI escape sequences that move the cursor.
@@ -33,7 +20,6 @@ let isCursorVisible = true;
 
 let totalChars = 0;
 let inputIndex = 0;
-let input = "";
 
 let events = {};
 
@@ -67,12 +53,12 @@ const SmartTerminal = {
      * @param n(optional)
      */
     updateCursorPosition(n) {
-        n = (typeof n != "undefined" ? n : (totalChars + inputIndex));
+        n = (typeof n !== "undefined" ? n : (totalChars + inputIndex));
 
         let y = Math.floor(n / this.width());
         let x = n % this.width();
 
-        if (cursor.y != y){
+        if (cursor.y !== y){
             if (cursor.y > y) {
                 this.charm("up", cursor.y - y);
             } else if (cursor.y < y) {
@@ -92,7 +78,7 @@ const SmartTerminal = {
      * @param direction
      */
     setCursorToLine(line, direction = "bottom") {
-        if (direction == "bottom") {
+        if (direction === "bottom") {
             line = this.height() - line;
         } else {
             ++line;
@@ -143,26 +129,6 @@ const SmartTerminal = {
         return true;
     },
 
-    /*cursorLeft(n) {
-     n = n || 1;
-
-     inputIndex = Math.max(0, inputIndex - n);
-     this.updateCursorPosition();
-     }
-     cursorUp(n) {
-     n = n || 1;
-     this.cursorLeft(SmartTerminal.width * n);
-     }
-     cursorRight(n) {
-     n = n || 1;
-
-     inputIndex = Math.min(input.length, inputIndex + n);
-     this.updateCursorPosition();
-     }
-     cursorDown(n) {
-     this.cursorRight(SmartTerminal.width * (n || 1));
-     }*/
-
     /**
      * Calls controlled charm command.
      *
@@ -192,31 +158,6 @@ const SmartTerminal = {
         this.charm("column", cursor.x + 1);
     },
 
-    /*renderText(text, noCursor) {
-     this.nativeWrite(text + " ");
-     cursor.y = Math.floor((totalChars + text.length) / SmartTerminal.width);
-
-     this.ensureEmptyLines();
-     noCursor || this.renderCursor();
-     }
-
-     renderInput() {
-     this.updateCursorPosition(totalChars);
-     this.renderText(input);
-     }
-
-     insert(char) {
-     if (inputIndex == input.length) {
-     input += char;
-     } else {
-     input = input.slice(0, inputIndex) + char +
-     input.slice(inputIndex);
-     }
-
-     ++inputIndex;
-     this.renderInput();
-     }*/
-
     /**
      * Writes un-controlled output.
      *
@@ -242,18 +183,22 @@ const SmartTerminal = {
     parsedWrite(buff, encoding, callback) {
         // When calling charm we can skip costly parsing. This is known
         // internally and prevents counting of ANSI sequences.
-        if (this.charming)
+        if (this.charming) {
             return this.nativeWrite(buff, encoding, callback);
+        }
 
         // To easily manipulate the data we convert it to string.
-        if (Array.isArray(buff))
-            buff = String.fromCharCode.apply(buff);
-        else if (Buffer.isBuffer(buff))
-            buff = buff.toString();
+        if (Array.isArray(buff)) {
+          buff = String.fromCharCode.apply(buff);
+        }
+        else if (Buffer.isBuffer(buff)) {
+          buff = buff.toString();
+        }
 
         // Make sure we have a string from now on.
-        if (typeof buff !== "string")
-            return;
+        if (typeof buff !== "string") {
+          return;
+        }
 
         // Stores the difference in position that the output will generate.
         let positionDiff = 0;
@@ -295,7 +240,7 @@ const SmartTerminal = {
                 positionDiff += visibleMatch[j].length;
             }
 
-            if (i != rows.length - 1) {
+            if (i !== rows.length - 1) {
                 // For each non-last row we have a new line character and
                 // have to calculate how many spaces are until the end.
                 let w = this.width();
@@ -320,105 +265,6 @@ const SmartTerminal = {
         }
     },
 
-    /*removeChar(n) {
-     n = n || 1;
-
-     if (inputIndex < n)
-     return false;
-
-     if(input.length == inputIndex)
-     input = input.slice(0, -1);
-     else if(inputIndex == 1)
-     input = input.slice(1);
-     else input = input.slice(0, inputIndex - 1) +
-     input.slice(inputIndex);
-
-     this.updateCursorPosition(cursor.n - n + 1);
-     nativeWrite(" ".repeat(n));
-
-     --inputIndex;
-     this.renderCursor();
-     }
-
-     enter() {
-     let inputBuff = input;
-     this.unRenderCursor();
-
-     totalChars += input.length;
-     input = "";
-     inputIndex = 0;
-
-     this.newLine();
-
-     process.stdin.push(inputBuff);
-     }
-
-     newLine() {
-     this.parsedWrite('\n');
-     }*/
-
-    parseInput (ch, key) {
-        if (ch == "\u0003") {
-            this.notify("exit");
-
-            process.exit(0);
-        }
-
-        /*if (!ch)
-         return;
-
-         if (ch == '\u001B') {
-         this.escaped = true;
-         return;
-         }
-
-         if (this.escaped) {
-         if (ch == '\u005B')
-         return;
-
-         if (ch == '\u0041') { // UP
-         this.cursorUp();
-         }else if (ch == '\u0044') { // LEFT
-         this.cursorLeft();
-         }else if (ch == '\u0042') { // DOWN
-         this.cursorDown();
-         }else if (ch == '\u0043') { // RIGHT
-         this.cursorRight();
-         }
-
-         this.renderInput();
-
-         this.escaped = false;
-         return;
-         }
-
-         if (ch == '\r') {
-         this.enter();
-         } else if (ch.charCodeAt(0) === 127) {
-         this.removeChar(1);
-         } else if (ch.match(VISIBLE_REGEX)) {
-         this.insert(ch);
-         }*/
-    },
-
-    /*renderCursor() {
-     this.updateCursorPosition();
-     if (inputIndex < input.length)
-     nativeWrite(input[inputIndex].bgYellow);
-     else
-     nativeWrite(" ".bgYellow);
-     this.updateCursorPosition();
-     }
-
-     unRenderCursor() {
-     this.updateCursorPosition();
-     if (inputIndex < input.length)
-     nativeWrite(input[inputIndex]);
-     else
-     nativeWrite(" ");
-
-     setTimeout(this.renderCursor.bind(this), CURSOR_BLINK_RATE / 2);
-     }*/
 
     /**
      * Register event listener.
@@ -445,7 +291,7 @@ const SmartTerminal = {
     stopOn(event, callback) {
         if (events[event]) {
             let i = events[event].indexOf(callback);
-            if (i != -1) {
+            if (i !== -1) {
                 events[event].splice(i, 1);
                 return true;
             }
@@ -477,9 +323,6 @@ module.exports = function() {
 
         // Replace original write method so we can have more control.
         process.stdout.write = SmartTerminal.parsedWrite.bind(SmartTerminal);
-        // Listen to key-presses.
-        process.stdin.on("data", SmartTerminal.parseInput.bind(SmartTerminal));
-        //setInterval(this.unRenderCursor.bind(this), CURSOR_BLINK_RATE);
 
         // Pipe exit event.
         process.on("exit", function() {
