@@ -1,6 +1,6 @@
 module.exports = {
-    description : "Stop an environment.",
-    run : () => {
+  description : "Stop an environment.",
+  run : () => {
 
-    }
+  }
 };

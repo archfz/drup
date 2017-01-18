@@ -1,6 +1,6 @@
 module.exports = {
-    description : "Remove an existing environment.",
-    run : () => {
+  description : "Remove an existing environment.",
+  run : () => {
 
-    }
+  }
 };

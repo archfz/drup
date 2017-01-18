@@ -1,24 +1,24 @@
-//var exec = require("child_process").exec;
-//var colors = require("colors");
+"use strict";
 
-var operations = {};
+let operations = {};
 require("fs").readdirSync(__dirname+"/operations").forEach(function(file) {
-    operations[file.split('.')[0]] = require("./operations/" + file);
+  operations[file.split('.')[0]] = require("./operations/" + file);
 });
 
-var guide = require("./guide")(operations);
+let guide = require("./guide")(operations);
 
-module.exports = (operation, arguments) => {
+module.exports = (operation, args) => {
 
-    if(!operation || operation == "help") {
-        guide.showHelp();
-        return 1;
-    }
+  if(!operation || operation === "help") {
+    guide.showHelp();
+    return 1;
+  }
 
-    if (!operations[operation]) {
-        guide.alertUnrecognizedOperation(operation);
-        return 0;
-    }
+  if (!operations[operation]) {
+    guide.alertUnrecognizedOperation(operation);
+    return 0;
+  }
 
-    operations[operation].run.apply(arguments);
+  operations[operation].run.apply(args);
+
 };

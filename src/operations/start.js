@@ -1,6 +1,6 @@
 module.exports = {
-    description : "Start an environment.",
-    run : () => {
+  description : "Start an environment.",
+  run : () => {
 
-    }
+  }
 };

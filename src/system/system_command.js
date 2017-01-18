@@ -4,48 +4,48 @@ const exec = require('child_process').exec;
 
 class SystemCommand {
 
-    constructor(command, args = []) {
-        if (typeof command !== "string") {
-            throw "Command must be a string.";
-        }
-
-        if (!Array.isArray(args)) {
-            throw "Parameters should be provided in array format.";
-        }
-
-        this.command = command;
-        this.arguments = args;
+  constructor(command, args = []) {
+    if (typeof command !== "string") {
+      throw "Command must be a string.";
     }
 
-    resolve(output) {
-        this.resolvePromise(output);
+    if (!Array.isArray(args)) {
+      throw "Parameters should be provided in array format.";
     }
 
-    reject(error) {
-        this.rejectPromise(error);
-    }
+    this.command = command;
+    this.arguments = args;
+  }
 
-    execute() {
-        this.fullCommand = this.command + " ";
-        this.arguments.forEach((argument) => {
-           this.fullCommand += argument.join(" ");
-        });
+  resolve(output) {
+    this.resolvePromise(output);
+  }
 
-        let promise = new Promise((res, rej) => {
-            this.resolvePromise = res;
-            this.rejectPromise = rej;
-        });
+  reject(error) {
+    this.rejectPromise(error);
+  }
 
-        exec(this.fullCommand, (error, stdout) => {
-            if (error) {
-                this.reject(error);
-            } else {
-                this.resolve(stdout);
-            }
-        });
+  execute() {
+    this.fullCommand = this.command + " ";
+    this.arguments.forEach((argument) => {
+      this.fullCommand += argument.join(" ");
+    });
 
-        return promise;
-    }
+    let promise = new Promise((res, rej) => {
+      this.resolvePromise = res;
+      this.rejectPromise = rej;
+    });
+
+    exec(this.fullCommand, (error, stdout) => {
+      if (error) {
+        this.reject(error);
+      } else {
+        this.resolve(stdout);
+      }
+    });
+
+    return promise;
+  }
 
 }
 

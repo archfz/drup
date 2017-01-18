@@ -4,136 +4,135 @@ const Terminal = require("./smart_term")();
 const stripAnsi = require("strip-ansi");
 
 const BottomLines = {
-    bottomLines : [],
+  bottomLines : [],
 
-    getLineIndex(bottomLine) {
-        return this.bottomLines.indexOf(bottomLine);
-    },
+  getLineIndex(bottomLine) {
+    return this.bottomLines.indexOf(bottomLine);
+  },
 
-    count() {
-        return this.bottomLines.length;
-    },
+  count() {
+    return this.bottomLines.length;
+  },
 
-    register(bottomLine) {
-        this.bottomLines.push(bottomLine);
+  register(bottomLine) {
+    this.bottomLines.push(bottomLine);
 
-        if (this.count() == 1) {
-            this.renderCall = this.renderAll.bind(this);
-            this.removeCall = this.removeAll.bind(this);
-            this.cleanCall = this.cleanUp.bind(this);
+    if (this.count() == 1) {
+      this.renderCall = this.renderAll.bind(this);
+      this.removeCall = this.removeAll.bind(this);
+      this.cleanCall = this.cleanUp.bind(this);
 
-            Terminal.on("before_write", this.cleanCall);
-            Terminal.on("after_write", this.renderCall);
-            Terminal.on("exit", this.removeCall);
-        }
-    },
-
-    remove(bottomLine) {
-        let i = this.getLineIndex(bottomLine);
-        if (i === -1) {return;}
-
-        this.cleanUp();
-        this.bottomLines.splice(i, 1);
-
-        if (this.count()) {
-            this.renderAll();
-        } else {
-            Terminal.stopOn("before_write", this.cleanCall);
-            Terminal.stopOn("after_write", this.renderCall);
-            Terminal.stopOn("exit", this.removeCall);
-        }
-    },
-
-    renderAll() {
-        let lines = this.count();
-
-        let visibilityStateChanged = Terminal.hideCursor();
-        Terminal.ensureEmptyLines(lines);
-
-        Terminal.charm("push", 1);
-        Terminal.setCursorToLine(lines - 1);
-
-        let render = "";
-        for (let i = this.count() - 1; i >= 0; --i) {
-            render += this.bottomLines[i].getOutput() + "\n";
-        }
-        Terminal.nativeWrite(render.slice(0, -1));
-
-        Terminal.charm("pop", 1);
-        visibilityStateChanged && Terminal.showCursor();
-    },
-
-    removeAll() {
-        let lines = this.count();
-
-        let line;
-        while(line = this.bottomLines.pop()) {
-            line.destroy();
-        }
-
-        this.cleanUp(lines);
-        this.bottomLines = [];
-    },
-
-    cleanUp(lines) {
-        lines = lines || this.count();
-
-        Terminal.charm("push", 1);
-        Terminal.setCursorToLine(lines - 1);
-        Terminal.charm("erase", "down");
-        Terminal.charm("pop", 1);
+      Terminal.on("before_write", this.cleanCall);
+      Terminal.on("after_write", this.renderCall);
+      Terminal.on("exit", this.removeCall);
     }
+  },
+
+  remove(bottomLine) {
+    let i = this.getLineIndex(bottomLine);
+    if (i === -1) {return;}
+
+    this.cleanUp();
+    this.bottomLines.splice(i, 1);
+
+    if (this.count()) {
+      this.renderAll();
+    } else {
+      Terminal.stopOn("before_write", this.cleanCall);
+      Terminal.stopOn("after_write", this.renderCall);
+      Terminal.stopOn("exit", this.removeCall);
+    }
+  },
+
+  renderAll() {
+    let lines = this.count();
+
+    let visibilityStateChanged = Terminal.hideCursor();
+    Terminal.ensureEmptyLines(lines);
+
+    Terminal.charm("push", 1);
+    Terminal.setCursorToLine(lines - 1);
+
+    let render = "";
+    for (let i = this.count() - 1; i >= 0; --i) {
+      render += this.bottomLines[i].getOutput() + "\n";
+    }
+    Terminal.nativeWrite(render.slice(0, -1));
+
+    Terminal.charm("pop", 1);
+    visibilityStateChanged && Terminal.showCursor();
+  },
+
+  removeAll() {
+    let lines = this.count();
+
+    let line;
+    while(line = this.bottomLines.pop()) {
+      line.destroy();
+    }
+
+    this.cleanUp(lines);
+    this.bottomLines = [];
+  },
+
+  cleanUp(lines) {
+    lines = lines || this.count();
+
+    Terminal.charm("push", 1);
+    Terminal.setCursorToLine(lines - 1);
+    Terminal.charm("erase", "down");
+    Terminal.charm("pop", 1);
+  }
 };
 
 class BottomLine {
-    constructor(outputCallback) {
-        this.setOutputCallback(outputCallback);
-        BottomLines.register(this);
+  constructor(outputCallback) {
+    this.setOutputCallback(outputCallback);
+    BottomLines.register(this);
 
-        Terminal.ensureEmptyLines(BottomLines.count());
+    Terminal.ensureEmptyLines(BottomLines.count());
+  }
+
+  setOutputCallback(callback) {
+    if (typeof callback !== "function") {
+      throw "You must provide a callback function that returns output.";
+    }
+    this.requestOutput = callback;
+    return this;
+  }
+
+  getOutput() {
+    // In case of windows the cursor will jump to next line if full width
+    // written, so subtract some.
+    let width = Terminal.width() - 1;
+    let output = this.requestOutput(width) || "";
+
+    let length = stripAnsi(output);
+
+    if (length > width) {
+      throw "The output length should be less than the terminal width.";
+    } else if (length < width) {
+      output += " ".repeat(width - length);
     }
 
-    setOutputCallback(callback) {
-        if (typeof callback !== "function") {
-            throw "You must provide a callback function that returns output.";
-        }
-        this.requestOutput = callback;
-        return this;
-    }
+    return output;
+  }
 
-    getOutput() {
-        // In case of windows the cursor will jump to next line if full width
-        // written, so subtract some.
-        let width = Terminal.width() - 1;
-        let output = this.requestOutput(width) || "";
+  render() {
+    let visibilityStateChanged = Terminal.hideCursor();
+    Terminal.charm("push", 1);
 
-        let length = stripAnsi(output);
+    let line = BottomLines.getLineIndex(this);
+    Terminal.setCursorToLine(line);
+    Terminal.nativeWrite(this.getOutput());
 
-        if (length > width) {
-            throw "The output length should be less than the terminal width.";
-        } else if (length < width) {
-            output += " ".repeat(width - length);
-        }
+    Terminal.charm("pop", 1);
+    visibilityStateChanged && Terminal.showCursor();
+  }
 
-        return output;
-    }
-
-    render() {
-        let visibilityStateChanged = Terminal.hideCursor();
-        Terminal.charm("push", 1);
-
-        let line = BottomLines.getLineIndex(this);
-        Terminal.setCursorToLine(line);
-        Terminal.nativeWrite(this.getOutput());
-
-        Terminal.charm("pop", 1);
-        visibilityStateChanged && Terminal.showCursor();
-    }
-
-    destroy() {
-        BottomLines.remove(this);
-        delete this;
-    }
+  destroy() {
+    BottomLines.remove(this);
+  }
 }
 
 module.exports = BottomLine;
