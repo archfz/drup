@@ -14,7 +14,7 @@ class DockerService {
 
   }
 
-  compose(services) {
+  compose(container) {
 
   }
 
