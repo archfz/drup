@@ -12,9 +12,9 @@ module.exports = function(operations){
     showAvailableOperations() {
       cmd.heading("Available operations");
 
-      operations.forEach((operation, opName) => {
+      for (let [opName, operation] of Object.entries(operations)) {
         cmd.info(`${opName} : ${operation.description}`);
-      });
+      }
     },
 
     showHelp() {
