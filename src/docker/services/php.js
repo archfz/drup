@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../service");
+const Service = require("../service_base");
 const inquirer = require("inquirer");
 
 class PhpService extends Service {

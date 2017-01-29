@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../service");
+const Service = require("../service_base");
 
 class MariadbService extends Service {
 
