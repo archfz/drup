@@ -53,4 +53,4 @@ class PhpService extends Service {
 
 }
 
-exports = PhpService;
+module.exports = PhpService;

@@ -32,4 +32,4 @@ class DockerService {
 
 }
 
-exports = DockerService;
+module.exports = DockerService;

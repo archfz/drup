@@ -29,3 +29,5 @@ class MariadbService extends Service {
   }
 
 }
+
+module.exports = MariadbService;

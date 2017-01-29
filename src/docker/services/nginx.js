@@ -31,4 +31,4 @@ class NginxService extends Service {
 
 }
 
-exports = NginxService;
+module.exports = NginxService;

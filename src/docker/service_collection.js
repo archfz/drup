@@ -45,4 +45,4 @@ class ServiceCollection {
 
 }
 
-exports = ServiceCollection;
+module.exports = ServiceCollection;
