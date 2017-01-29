@@ -22,6 +22,14 @@ class DockerService {
     return this.defaults();
   }
 
+  getKey() {
+    return this.constructor.getKey();
+  }
+
+  getType() {
+    return this.constructor.getType();
+  }
+
   static getKey() {
     mustImplement("getKey");
   }
