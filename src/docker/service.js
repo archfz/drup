@@ -1,5 +1,9 @@
 "use strict";
 
+function mustImplement(method) {
+  throw `Docker service '${this.constructor.name}' must implement ${method}()`;
+}
+
 class DockerService {
 
   constructor(config = {}) {
@@ -7,23 +11,23 @@ class DockerService {
   }
 
   configure() {
-    return false;
+    return this;
   }
 
   defaults() {
-
+    mustImplement("defaults");
   }
 
   compose(container) {
-
+    return this.defaults();
   }
 
   static getKey() {
-
+    mustImplement("getKey");
   }
 
   static getType() {
-    return 'misc';
+    return "misc";
   }
 
 }

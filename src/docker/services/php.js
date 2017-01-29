@@ -21,6 +21,8 @@ class PhpService extends Service {
     }).then((values) => {
       this.config.image = values.image;
     });
+
+    return this;
   }
 
   defaults() {
