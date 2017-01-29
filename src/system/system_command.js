@@ -26,9 +26,14 @@ class SystemCommand {
   }
 
   execute() {
-    this.fullCommand = this.command + " ";
+    this.fullCommand = this.command;
     this.arguments.forEach((argument) => {
-      this.fullCommand += argument.join(" ");
+      if (Array.isArray(argument)) {
+        this.fullCommand += " " + argument.join(" ");
+      }
+      else {
+        this.fullCommand += " " + argument;
+      }
     });
 
     let promise = new Promise((res, rej) => {
