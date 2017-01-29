@@ -17,6 +17,22 @@ class SystemCommand {
     this.arguments = args;
   }
 
+  toString() {
+    if (!this.fullCommand) {
+      this.fullCommand = this.command;
+      this.arguments.forEach((argument) => {
+        if (Array.isArray(argument)) {
+          this.fullCommand += " " + argument.join(" ");
+        }
+        else {
+          this.fullCommand += " " + argument;
+        }
+      });
+    }
+
+    return this.fullCommand;
+  }
+
   resolve(output) {
     this.resolvePromise(output);
   }
@@ -26,22 +42,12 @@ class SystemCommand {
   }
 
   execute() {
-    this.fullCommand = this.command;
-    this.arguments.forEach((argument) => {
-      if (Array.isArray(argument)) {
-        this.fullCommand += " " + argument.join(" ");
-      }
-      else {
-        this.fullCommand += " " + argument;
-      }
-    });
-
     let promise = new Promise((res, rej) => {
       this.resolvePromise = res;
       this.rejectPromise = rej;
     });
 
-    exec(this.fullCommand, (error, stdout) => {
+    exec(this.toString(), (error, stdout) => {
       if (error) {
         this.reject(error);
       } else {
