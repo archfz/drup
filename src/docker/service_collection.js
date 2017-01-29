@@ -1,5 +1,7 @@
 "use strict";
 
+let serviceDiscovery;
+
 class ServiceCollection {
 
   constructor() {
@@ -8,17 +10,23 @@ class ServiceCollection {
   }
 
   static collect() {
-    let collection = new ServiceCollection();
+    if (!serviceDiscovery) {
+      serviceDiscovery = new ServiceCollection();
 
-    require("fs").readdirSync(__dirname + "/services").forEach(function(file) {
-      collection.addService(require(file));
-    });
+      require("fs").readdirSync(__dirname + "/services").forEach(function (file) {
+        serviceDiscovery.addService(require('./services/' + file));
+      });
+    }
 
-    return collection;
+    return serviceDiscovery;
   }
 
   addService(Service) {
     let [serviceType, serviceKey] = [Service.getType(), Service.getKey()];
+
+    if (this.servicesByKey[serviceKey]) {
+      throw `Service keys must be unique: duplicate for '${serviceKey}'.`;
+    }
 
     this.servicesByKey[serviceKey] = Service;
 
@@ -30,7 +38,7 @@ class ServiceCollection {
   }
 
   each(fn) {
-    for (let [key, service] of Object.entries(this.servicesByType)) {
+    for (let [key, service] of Object.entries(this.servicesByKey)) {
       fn(key, service);
     }
   }
@@ -40,7 +48,39 @@ class ServiceCollection {
   }
 
   ofType(type) {
-    return this.servicesByType[type];
+    return this.servicesByType[type] || {};
+  }
+
+  notOfTypes(types) {
+    if (!Array.isArray(types)) {
+      types = [types];
+    }
+
+    let services = {};
+    Object.assign(services, this.servicesByType);
+
+    types.forEach((type) => {
+      if (services[type]) {
+        delete services[type];
+      }
+    });
+
+    if (!Object.keys(services).length) {
+      return false;
+    }
+
+    return services;
+  }
+
+  typeToChoices(type) {
+    let services = this.ofType(type);
+
+    let choices = [];
+    for (let [key, Service] of Object.entries(services)) {
+      choices.push({name: Service.getLabel(), value: key});
+    }
+
+    return choices;
   }
 
 }
