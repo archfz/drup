@@ -28,6 +28,10 @@ class MariadbService extends Service {
     return "database";
   }
 
+  static getLabel() {
+    return "MariaDB";
+  }
+
 }
 
 module.exports = MariadbService;

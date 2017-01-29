@@ -6,14 +6,14 @@ const inquirer = require("inquirer");
 class PhpService extends Service {
 
   configure() {
-    inquirer.prompt({
+    return inquirer.prompt({
       type: 'list',
       name: 'image',
-      default: "7.0",
       message: 'PHP version:',
       choices: [{
         name: "7.0",
         value: "wodby/drupal-php:7.0-1.0.0",
+        checked: true,
       }, {
         name: "5.6",
         value: "wodby/drupal-php:5.6-1.0.0",
@@ -21,8 +21,6 @@ class PhpService extends Service {
     }).then((values) => {
       this.config.image = values.image;
     });
-
-    return this;
   }
 
   defaults() {
@@ -38,7 +36,7 @@ class PhpService extends Service {
   compose() {
     let compose = {};
     Object.assign(compose, this.config);
-    compose.volumes = "./drupal/:/var/www/html";
+    compose.volumes = ["./drupal/:/var/www/html"];
 
     return compose;
   }
@@ -49,6 +47,10 @@ class PhpService extends Service {
 
   static getType() {
     return "php";
+  }
+
+  static getLabel() {
+    return "PHP service";
   }
 
 }

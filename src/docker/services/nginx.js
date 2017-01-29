@@ -16,7 +16,7 @@ class NginxService extends Service {
     return {
       image: "wodby/drupal-nginx:1.10-1.1.0",
       environment: this.config,
-      volumes_from: [container.service("php").getKey()],
+      volumes_from: ["php"],
       ports: ["8000:80"],
     }
   }
@@ -26,7 +26,11 @@ class NginxService extends Service {
   }
 
   static getType() {
-    return "web-server";
+    return "web";
+  }
+
+  static getLabel() {
+    return "NGINX";
   }
 
 }

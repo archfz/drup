@@ -6,12 +6,12 @@ function mustImplement(method) {
 
 class DockerService {
 
-  constructor(config = {}) {
+  constructor(config) {
     this.config = config || this.defaults();
   }
 
   configure() {
-    return this;
+    return Promise.resolve();
   }
 
   defaults() {
@@ -30,12 +30,20 @@ class DockerService {
     return this.constructor.getType();
   }
 
+  getLabel() {
+    return this.constructor.getLabel();
+  }
+
   static getKey() {
     mustImplement("getKey");
   }
 
   static getType() {
     return "misc";
+  }
+
+  static getLabel() {
+    mustImplement("getName");
   }
 
 }
