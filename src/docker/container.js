@@ -2,6 +2,7 @@
 
 const inquirer  = require("inquirer");
 const prompt = inquirer.prompt;
+const fs = require("../fs_utils");
 
 const Command = require("../system/system_command");
 const ServiceCollection = require("./service_collection");
@@ -64,7 +65,7 @@ class DockerContainer {
         name: 'additional',
         message: 'Select additional services',
         choices: choices
-      })
+      });
     }
 
     prompt(questions).then((values) => {
@@ -85,7 +86,9 @@ class DockerContainer {
         }
       });
 
-      lastPromise.then(() => resolve());
+      lastPromise.then(() => resolve()).catch((reason) => {
+        console.log(reason);
+      });
     });
 
     return promise;
@@ -95,18 +98,19 @@ class DockerContainer {
     let composition;
 
     try {
+      fs.ensureDirectory(path);
       composition = this.compose();
     }
     catch (err) {
-      throw `Could save docker container. ${err}.`;
+      throw `Could not compose docker container. ${err}.`;
     }
 
     let promise = require("node-yaml").write(path + "/docker-compose.yml", composition);
 
     promise.then(() => {
       this.path = path;
-    }, (error) => {
-      throw "Failed to save docker-compose file: " + error;
+    }).catch((error) => {
+      console.log("Failed to save docker-compose file:\n" + error);
     });
 
     return promise;
@@ -132,10 +136,8 @@ class DockerContainer {
   start() {
     this.directoryToPath();
 
-    console.log(process.cwd());
     let promise = new Command("sudo docker-compose", ["up", "-d"]).execute();
-
-    promise.then(() => {}, (error) => {
+    promise.catch((error) => {
       throw "Failed to start docker container:\n" + error;
     });
 
@@ -147,17 +149,17 @@ class DockerContainer {
 
     let promise = new Command("docker-compose", ["stop"]).execute();
 
-    promise.then(() => {}, (error) => {
+    promise.catch((error) => {
       throw "Failed to stop docker container:\n" + error;
     });
 
     return promise;
   }
 
-  command(command, execOptions = [], execInService = "web service") {
+  command(command, execOptions = [], execInService = "web") {
     this.directoryToPath();
 
-    if (execInService == "web service") {
+    if (execInService == "web") {
       execInService = this.services.ofType("web")[0];
     }
 
@@ -166,7 +168,7 @@ class DockerContainer {
     ]).execute();
 
     let promise = cmd.execute();
-    promise.then(() => {}, (error) => {
+    promise.catch((error) => {
       throw `Failed to run docker exec:\n${cmd.toString()}:\n${error}`;
     });
 
@@ -178,7 +180,7 @@ class DockerContainer {
       throw `Container without path.`;
     }
 
-    process.chdir(this.path);
+    fs.setDirectory(this.path, true);
   }
 
   service(key) {
