@@ -10,17 +10,34 @@ let args = process.argv.slice(2);
 runOperation(args.shift(), args);
 
 /*
-TODO: Create
-    - dependency checker module that can accept them as params.
-    - command runner that uses async loader and handles errors.
-    - history tracker module to undo actions on failures.
-    - json configuration loader/saver that handlers errors.
+TODO:
+    - create container base class
+        - add container handlers for docker and ansible
+        - services should support both
 
-    - drupal class that handles everything for drupal website
-        - get from the 3 types
-        - read and write to settings.php
-        - install
+    - create project manager that will discover and provide
+      interface to project types for available operations
+        - this should wrap the container manager so
+          that it will setup containers for projects
+        - it should handle stored data about projects
+        - it manages IP hosts aliases
 
-    - container base class that will be extended by the different services
-    - docker composer which assembles services
+    - create project handler base class (ex. drupal, laravel etc)
+        - this will be extended by the different project types
+        - handles setup of the project
+        - can provide additional console operations (ex. drush)
+
+    - logging for container services
+
+    - server watcher that provides a server for all domain aliases
+      and on request automatically starts container for project
+        - optionally used
+
+NOTES:
+    - the process should be in the following order:
+        - configure project and download/clone
+        - configure container for project
+        - post project configuration with available services
+        - optional project installation
+
 */
