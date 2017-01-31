@@ -4,12 +4,13 @@ const inquirer  = require("inquirer");
 const prompt = inquirer.prompt;
 const yaml = require("node-yaml");
 const utils = require("../utils");
+const fs = require("../fs_utils");
 
 const ServiceCollection = require("./service_collection");
 
 const ENV_FILENAME = "drup-env.json";
 
-class Container {
+class Environment {
 
   constructor(services, config) {
     this.services = services;
@@ -87,6 +88,8 @@ class Container {
   }
 
   static load(path) {
+    path = fs.toPath(path);
+
     let environment = yaml.read(path + ENV_FILENAME);
     let availableServices = ServiceCollection.collect();
     let services = new ServiceCollection();
@@ -97,11 +100,11 @@ class Container {
     }
 
     this.path = path;
-    return new Container(services, environment.config);
+    return new Environment(services, environment.config);
   }
 
   save(path) {
-    path = path || this.path;
+    path = fs.toPath(path) || this.path;
 
     let environment = {
       config: this.config,
@@ -136,6 +139,8 @@ class Container {
   }
 
   getContainer(containerType, path) {
+    path = fs.toPath(path);
+
     let containers = utils.collectModules(__dirname + "/containers", "getKey");
 
     if (!containers[containerType]) {
@@ -147,4 +152,4 @@ class Container {
 
 }
 
-module.exports = Container;
+module.exports = Environment;
