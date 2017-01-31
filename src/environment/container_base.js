@@ -11,6 +11,10 @@ class ContainerBase {
     this.config = envConfig;
   }
 
+  getIp() {
+    utils.mustImplement(this, "getIp");
+  }
+
   start() {
     utils.mustImplement(this, "start");
   }

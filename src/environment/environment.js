@@ -17,14 +17,15 @@ class Environment {
     this.config = config;
   }
 
-  static create(requiredTypes = [], restrictedTypes = []) {
+  static create(config, requiredTypes = [], restrictedTypes = []) {
     let availableServices = ServiceCollection.collect();
     let services = new ServiceCollection();
+    config = config || {};
 
     let resolve;
     let promise = new Promise((res, rej) => resolve = res);
 
-    let questions = [];
+    let serviceQuestions = [];
     let addedServices = [];
 
     requiredTypes.forEach((type) => {
@@ -33,7 +34,7 @@ class Environment {
         addedServices.push(choices[0].value);
       }
       else if (choices.length != 0) {
-        questions.push({
+        serviceQuestions.push({
           type: 'list',
           name: type,
           message: "Choose " + type.toUpperCase(),
@@ -53,7 +54,7 @@ class Environment {
         }
       }
 
-      questions.push({
+      serviceQuestions.push({
         type: 'checkbox',
         name: 'additional',
         message: 'Select additional services',
@@ -61,7 +62,7 @@ class Environment {
       });
     }
 
-    prompt(questions).then((values) => {
+    prompt(serviceQuestions).then((values) => {
       let serviceKeys = addedServices.concat(values.additional || []);
       requiredTypes.forEach((type) => {
         values[type] && serviceKeys.push(values[type]);
@@ -84,7 +85,7 @@ class Environment {
       });
 
       lastPromise.then(() => {
-        resolve(new Environment(services, {}));
+        resolve(new Environment(services, config));
       }).catch((reason) => {
         console.log(reason);
       });

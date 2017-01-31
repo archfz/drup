@@ -7,10 +7,32 @@ const ContainerBase = require('../container_base');
 
 class DockerContainer extends ContainerBase {
 
+  getIp(serviceName) {
+    return new Command("sudo docker", [
+      "ps",
+      "-q",
+      ["-f", `'name=${this.config.projectName}_${serviceName}'`],
+    ]).execute().then((serviceId) => {
+      if (!serviceId) {
+        return Promise.reject();
+      }
+      else {
+        return new Command("sudo docker", [
+          "inspect",
+          ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
+          serviceId,
+        ]).execute();
+      }
+    });
+  }
+
   start() {
     this.directoryToPath();
 
-    let promise = new Command("sudo docker-compose", ["up", "-d"]).execute();
+    let promise = new Command("sudo docker-compose", [
+      ["-p", this.config.projectName],
+      ["up", "-d"],
+    ]).execute();
     promise.catch((error) => {
       throw "Failed to start environment container:\n" + error;
     });
