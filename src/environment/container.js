@@ -105,12 +105,12 @@ class DockerContainer {
       throw `Could not compose docker container. ${err}.`;
     }
 
-    let promise = require("node-yaml").write(path + "/docker-compose.yml", composition);
+    let promise = require("node-yaml").write(path + "/environment-compose.yml", composition);
 
     promise.then(() => {
       this.path = path;
     }).catch((error) => {
-      console.log("Failed to save docker-compose file:\n" + error);
+      console.log("Failed to save environment-compose file:\n" + error);
     });
 
     return promise;
@@ -136,9 +136,9 @@ class DockerContainer {
   start() {
     this.directoryToPath();
 
-    let promise = new Command("sudo docker-compose", ["up", "-d"]).execute();
+    let promise = new Command("sudo environment-compose", ["up", "-d"]).execute();
     promise.catch((error) => {
-      throw "Failed to start docker container:\n" + error;
+      throw "Failed to start environment container:\n" + error;
     });
 
     return promise;
@@ -147,10 +147,10 @@ class DockerContainer {
   stop() {
     this.directoryToPath();
 
-    let promise = new Command("docker-compose", ["stop"]).execute();
+    let promise = new Command("environment-compose", ["stop"]).execute();
 
     promise.catch((error) => {
-      throw "Failed to stop docker container:\n" + error;
+      throw "Failed to stop environment container:\n" + error;
     });
 
     return promise;
@@ -163,7 +163,7 @@ class DockerContainer {
       execInService = this.services.ofType("web")[0];
     }
 
-    let cmd = new Command("docker-compose", [
+    let cmd = new Command("environment-compose", [
       "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
     ]).execute();
 
