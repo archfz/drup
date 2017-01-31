@@ -1,8 +1,6 @@
 "use strict";
 
-function mustImplement(method) {
-  throw `Docker service '${this.constructor.name}' must implement ${method}()`;
-}
+const utils = require("../utils");
 
 class DockerService {
 
@@ -15,7 +13,7 @@ class DockerService {
   }
 
   defaults() {
-    mustImplement("defaults");
+    utils.mustImplement(this, "defaults");
   }
 
   compose(container) {
@@ -35,7 +33,7 @@ class DockerService {
   }
 
   static getKey() {
-    mustImplement("getKey");
+    utils.mustImplement(this, "getKey");
   }
 
   static getType() {
@@ -43,7 +41,7 @@ class DockerService {
   }
 
   static getLabel() {
-    mustImplement("getName");
+    utils.mustImplement(this, "getName");
   }
 
 }

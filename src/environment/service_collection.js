@@ -1,5 +1,7 @@
 "use strict";
 
+const utils = require("../utils");
+
 let serviceDiscovery;
 
 class ServiceCollection {
@@ -13,8 +15,8 @@ class ServiceCollection {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
 
-      require("fs").readdirSync(__dirname + "/services").forEach(function (file) {
-        serviceDiscovery.addService(require('./services/' + file));
+      utils.collectModules(__dirname + "/services").forEach(function (service) {
+        serviceDiscovery.addService(service);
       });
     }
 
