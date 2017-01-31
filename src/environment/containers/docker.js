@@ -10,7 +10,7 @@ class DockerContainer extends ContainerBase {
   start() {
     this.directoryToPath();
 
-    let promise = new Command("sudo environment-compose", ["up", "-d"]).execute();
+    let promise = new Command("sudo docker-compose", ["up", "-d"]).execute();
     promise.catch((error) => {
       throw "Failed to start environment container:\n" + error;
     });
@@ -21,7 +21,7 @@ class DockerContainer extends ContainerBase {
   stop() {
     this.directoryToPath();
 
-    let promise = new Command("environment-compose", ["stop"]).execute();
+    let promise = new Command("sudo docker-compose", ["stop"]).execute();
 
     promise.catch((error) => {
       throw "Failed to stop environment container:\n" + error;
@@ -37,7 +37,7 @@ class DockerContainer extends ContainerBase {
       execInService = this.services.ofType("web")[0];
     }
 
-    let cmd = new Command("environment-compose", [
+    let cmd = new Command("sudo docker-compose", [
       "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
     ]).execute();
 
@@ -49,7 +49,7 @@ class DockerContainer extends ContainerBase {
     return promise;
   }
 
-  compose() {
+  compose(envConfig) {
     if (!this.services) {
       throw "Cannot compose. No services are configured yet.";
     }
@@ -60,14 +60,15 @@ class DockerContainer extends ContainerBase {
     };
 
     this.services.each((key, Service) => {
-      composition.services[key] = Service.compose(this);
+      composition.services[key] =
+        Service.compose(this.constructor.getKey(), this.services, envConfig);
     });
 
     return composition;
   }
 
-  write() {
-    return yaml.write(this.path + this.getFilename(), this.compose());
+  write(envConfig) {
+    return yaml.write(this.path + this.constructor.getFilename(), this.compose(envConfig));
   }
 
   static getFilename() {

@@ -15,7 +15,7 @@ class ServiceCollection {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
 
-      utils.collectModules(__dirname + "/services").forEach(function (service) {
+      utils.collectModules(__dirname + "/services").forEach((service) => {
         serviceDiscovery.addService(service);
       });
     }
@@ -46,6 +46,10 @@ class ServiceCollection {
   }
 
   get(key) {
+    if (!this.servicesByKey[key]) {
+      throw "Tried to get un-existent service by key: " + key;
+    }
+
     return this.servicesByKey[key];
   }
 

@@ -4,21 +4,25 @@ const Service = require("../service_base");
 
 class NginxService extends Service {
 
-  defaults() {
-    return {
-      NGINX_SERVER_NAME: "localhost",
-      NGINX_UPSTREAM_NAME: "php",
-      DRUPAL_VERSION: 8,
-    }
+  compose_docker() {
+    let compose = {
+      image: "wodby/drupal-nginx:1.10-1.1.0",
+      environment: {
+        NGINX_SERVER_NAME: this.config.server_name,
+        NGINX_UPSTREAM_NAME: this.config.upstream_name,
+      },
+      volumes_from: [this.config.upstream_name],
+      ports: ["8000:80"],
+    };
+
+    return compose;
   }
 
-  compose(container) {
+  static defaults() {
     return {
-      image: "wodby/drupal-nginx:1.10-1.1.0",
-      environment: this.config,
-      volumes_from: ["php"],
-      ports: ["8000:80"],
-    }
+      server_name: "localhost",
+      upstream_name: "php",
+    };
   }
 
   static getKey() {

@@ -8,7 +8,7 @@ const fs = require("../fs_utils");
 
 const ServiceCollection = require("./service_collection");
 
-const ENV_FILENAME = "drup-env.json";
+const ENV_FILENAME = "drup-env.yml";
 
 class Environment {
 
@@ -27,10 +27,10 @@ class Environment {
     let questions = [];
     let addedServices = [];
 
-    for (let type in requiredTypes) {
+    requiredTypes.forEach((type) => {
       let choices = availableServices.typeToChoices(type);
       if (choices.length == 1) {
-        addedServices.push(type);
+        addedServices.push(choices[0].value);
       }
       else if (choices.length != 0) {
         questions.push({
@@ -40,7 +40,7 @@ class Environment {
           choices: choices,
         });
       }
-    }
+    });
 
     let additionalServices = availableServices.notOfTypes(requiredTypes.concat(restrictedTypes));
     if (additionalServices) {
@@ -62,24 +62,30 @@ class Environment {
     }
 
     prompt(questions).then((values) => {
-      let serviceKeys = values.additional || [];
-      serviceKeys.push("php", values.web, values.database);
+      let serviceKeys = addedServices.concat(values.additional || []);
+      requiredTypes.forEach((type) => {
+        values[type] && serviceKeys.push(values[type]);
+      });
 
       let lastPromise;
 
       serviceKeys.forEach((key) => {
         let Service = new (availableServices.get(key))();
-        this.services.addService(Service);
+        services.addService(Service);
 
         if (!lastPromise) {
           lastPromise = Service.configure();
         }
         else {
-          lastPromise = lastPromise.then(Service.configure());
+          lastPromise = lastPromise.then(() => {
+            return Service.configure();
+          });
         }
       });
 
-      lastPromise.then(() => resolve()).catch((reason) => {
+      lastPromise.then(() => {
+        resolve(new Environment(services, {}));
+      }).catch((reason) => {
         console.log(reason);
       });
     });
@@ -90,17 +96,26 @@ class Environment {
   static load(path) {
     path = fs.toPath(path);
 
-    let environment = yaml.read(path + ENV_FILENAME);
-    let availableServices = ServiceCollection.collect();
-    let services = new ServiceCollection();
+    let promise = yaml.read(path + ENV_FILENAME).then((data) => {
+      let availableServices = ServiceCollection.collect();
+      let services = new ServiceCollection();
 
-    for (let [key, serviceConfig] of Object.entries(environment.services)) {
-      let Service = availableServices.get(key);
-      services.addService(new Service(serviceConfig));
-    }
+      for (let [key, serviceConfig] of Object.entries(data.services)) {
+        let Service = availableServices.get(key);
+        services.addService(new Service(serviceConfig));
+      }
 
-    this.path = path;
-    return new Environment(services, environment.config);
+      let env = new Environment(services, data.config);
+      env.path = path;
+
+      return env;
+    });
+
+    promise.catch((err) => {
+      console.log("Failed loading in environment:\n" + err);
+    });
+
+    return promise;
   }
 
   save(path) {
@@ -111,31 +126,33 @@ class Environment {
       services: {},
     };
 
-    this.services.each((service) => {
-      environment.services[service.getKey()] = service.config;
+    this.services.each((key, service) => {
+      environment.services[key] = service.config;
     });
 
     this.path = path;
-    let promise = yaml.write(this.path + ENV_FILENAME);
+    let promise = yaml.write(this.path + ENV_FILENAME, environment);
 
     promise.catch((err) => {
       console.log("Failed to save environment configuration.\n" + err);
     });
 
-    return promise;
+    return promise.then(() => {
+      return this;
+    });
   }
 
   write(containerType, path) {
     let container = this.getContainer(containerType, path);
-    let promise = container.write().then(() => {
-      return container;
-    });
+    let promise = container.write(this.config);
 
     promise.catch((err) => {
-      console.log(`Failed writing ${container.constructor.name} container composition: ` + err);
+      console.log(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
     });
 
-    return promise;
+    return promise.then(() => {
+      return container;
+    });
   }
 
   getContainer(containerType, path) {
@@ -147,7 +164,7 @@ class Environment {
       throw "Unknown container type: " + containerType;
     }
 
-    let container = new containers[containerType](path, this.services);
+    return new containers[containerType](path, this.services);
   }
 
 }
