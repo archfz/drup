@@ -49,7 +49,7 @@ class DockerContainer extends ContainerBase {
     return promise;
   }
 
-  compose(envConfig) {
+  compose() {
     if (!this.services) {
       throw "Cannot compose. No services are configured yet.";
     }
@@ -61,14 +61,14 @@ class DockerContainer extends ContainerBase {
 
     this.services.each((key, Service) => {
       composition.services[key] =
-        Service.compose(this.constructor.getKey(), this.services, envConfig);
+        Service.compose(this.constructor.getKey(), this.services, this.config);
     });
 
     return composition;
   }
 
   write(envConfig) {
-    return yaml.write(this.path + this.constructor.getFilename(), this.compose(envConfig));
+    return yaml.write(this.path + this.constructor.getFilename(), this.compose());
   }
 
   static getFilename() {

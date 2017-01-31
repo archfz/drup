@@ -5,9 +5,10 @@ const utils = require("../utils");
 
 class ContainerBase {
 
-  constructor(path, serviceCollection) {
+  constructor(path, serviceCollection, envConfig) {
     this.path = fs.toPath(path);
     this.services = serviceCollection;
+    this.config = envConfig;
   }
 
   start() {

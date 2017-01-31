@@ -144,7 +144,7 @@ class Environment {
 
   write(containerType, path) {
     let container = this.getContainer(containerType, path);
-    let promise = container.write(this.config);
+    let promise = container.write();
 
     promise.catch((err) => {
       console.log(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
@@ -164,7 +164,7 @@ class Environment {
       throw "Unknown container type: " + containerType;
     }
 
-    return new containers[containerType](path, this.services);
+    return new containers[containerType](path, this.services, this.config);
   }
 
 }
