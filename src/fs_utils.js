@@ -13,6 +13,24 @@ module.exports = {
   setDirectory(dir, create = false) {
     create && this.ensureDirectory(dir);
     process.chdir(dir);
+  },
+
+  isFile(filePath) {
+    try {
+      fs.readFileSync(filePath, "utf8");
+      return true;
+    }
+    catch (err) {
+      return false;
+    }
+  },
+
+  toPath(path) {
+    if (path[path.length - 1] != "/") {
+      path += "/";
+    }
+
+    return path;
   }
 
 };
