@@ -8,7 +8,7 @@ module.exports = {
   run : () => {
     let loader;
 
-    Environment.create(['php', 'web', 'database']).then((env) => {
+    Environment.create({projectName: "test"}, ['php', 'web', 'database']).then((env) => {
       loader = new Loader("saving environment config");
       return env.save("/home/zoltan.fodor/Documents/Drupal/test");
     }).then((env) => {
@@ -16,9 +16,10 @@ module.exports = {
       return env.write("docker", "/home/zoltan.fodor/Documents/Drupal/test");
     }).then((docker) => {
       loader.setMessage("starting docker");
-      return docker.start();
-    }).then(() => {
-      loader.finish("container started");
+      return docker.getIp("nginx");
+    }).then((ip) => {
+      console.log(ip);
+      loader.finish("asd");
     }).catch((err) => {
       console.log(err);
       console.error("Chain failed:\n" + err);
