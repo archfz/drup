@@ -1,6 +1,6 @@
 "use strict";
 
-const DockerContainer = require("../docker/container");
+const DockerContainer = require("../environment/environment");
 
 module.exports = {
   description : "Start an environment.",
