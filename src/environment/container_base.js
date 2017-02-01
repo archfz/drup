@@ -31,8 +31,8 @@ class ContainerBase {
     utils.mustImplement(this, "compose");
   }
 
-  write() {
-    utils.mustImplement(this, "write");
+  writeComposition() {
+    utils.mustImplement(this, "writeComposition");
   }
 
   static getKey() {

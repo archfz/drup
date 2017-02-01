@@ -14,7 +14,7 @@ class DockerContainer extends ContainerBase {
       ["-f", `'name=${this.config.projectName}_${serviceName}'`],
     ]).execute().then((serviceId) => {
       if (!serviceId) {
-        return Promise.reject();
+        return Promise.reject(new Error("Docker container is not started."));
       }
       else {
         return new Command("sudo docker", [
@@ -89,7 +89,7 @@ class DockerContainer extends ContainerBase {
     return composition;
   }
 
-  write(envConfig) {
+  writeComposition(envConfig) {
     return yaml.write(this.path + this.constructor.getFilename(), this.compose());
   }
 

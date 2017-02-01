@@ -119,8 +119,9 @@ class Environment {
     return promise;
   }
 
-  save(path) {
+  saveConfigTo(path) {
     path = fs.toPath(path) || this.path;
+    fs.ensureDirectory(path);
 
     let environment = {
       config: this.config,
@@ -143,9 +144,9 @@ class Environment {
     });
   }
 
-  write(containerType, path) {
+  composeContainer(containerType, path) {
     let container = this.getContainer(containerType, path);
-    let promise = container.write();
+    let promise = container.writeComposition();
 
     promise.catch((err) => {
       console.log(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
