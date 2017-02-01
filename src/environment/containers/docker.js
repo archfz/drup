@@ -7,22 +7,26 @@ const ContainerBase = require('../container_base');
 
 class DockerContainer extends ContainerBase {
 
-  getIp(serviceName) {
+  getIp(serviceName = "") {
     return new Command("sudo docker", [
       "ps",
       "-q",
       ["-f", `'name=${this.config.projectName}_${serviceName}'`],
-    ]).execute().then((serviceId) => {
-      if (!serviceId) {
+    ]).execute().then((serviceIds) => {
+      if (!serviceIds) {
         return Promise.reject(new Error("Docker container is not started."));
       }
-      else {
-        return new Command("sudo docker", [
-          "inspect",
-          ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
-          serviceId,
-        ]).execute();
-      }
+
+      return new Command("sudo docker", [
+        "inspect",
+        ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
+        serviceIds.replace(/(\n|\r)/g, " "),
+      ]).execute();
+
+    }).then((output) => {
+      let ips = output.split("\n");
+      ips.pop();
+      return (ips.length == 1 ? ips[0] : ips);
     });
   }
 
@@ -32,7 +36,7 @@ class DockerContainer extends ContainerBase {
     let promise = new Command("sudo docker-compose", [
       ["-p", this.config.projectName],
       ["up", "-d"],
-    ]).execute();
+    ]).execute().then(() => {return this;});
     promise.catch((error) => {
       throw "Failed to start environment container:\n" + error;
     });
@@ -43,7 +47,8 @@ class DockerContainer extends ContainerBase {
   stop() {
     this.directoryToPath();
 
-    let promise = new Command("sudo docker-compose", ["stop"]).execute();
+    let promise = new Command("sudo docker-compose", ["stop"]).execute()
+      .then(() => {return this;});
 
     promise.catch((error) => {
       throw "Failed to stop environment container:\n" + error;
@@ -61,7 +66,7 @@ class DockerContainer extends ContainerBase {
 
     let cmd = new Command("sudo docker-compose", [
       "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
-    ]).execute();
+    ]).execute().then(() => {return this;});
 
     let promise = cmd.execute();
     promise.catch((error) => {

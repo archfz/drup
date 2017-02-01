@@ -119,8 +119,12 @@ class Environment {
     return promise;
   }
 
-  saveConfigTo(path) {
-    path = fs.toPath(path) || this.path;
+  saveConfigTo(path = this.path) {
+    if (!this.path && !path) {
+      throw "This environment was not saved previously. You must provide a path to save to.";
+    }
+
+    path = fs.toPath(path);
     fs.ensureDirectory(path);
 
     let environment = {
@@ -157,7 +161,7 @@ class Environment {
     });
   }
 
-  getContainer(containerType, path) {
+  getContainer(containerType, path = this.path) {
     path = fs.toPath(path);
 
     let containers = utils.collectModules(__dirname + "/containers", "getKey");
