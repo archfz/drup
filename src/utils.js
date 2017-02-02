@@ -1,5 +1,8 @@
 "use strict";
 
+const fs = require("fs");
+const annotation = require("annotations");
+
 module.exports = {
 
   mustImplement(object, method) {
@@ -8,7 +11,7 @@ module.exports = {
 
   collectModules(dir, keyMethod) {
     let modules;
-    let files = require("fs").readdirSync(dir);
+    let files = fs.readdirSync(dir);
 
     if (keyMethod) {
       modules = {};
@@ -21,6 +24,55 @@ module.exports = {
       modules = [];
       files.forEach((filename) => {
         modules.push(require(dir + "/" + filename));
+      });
+    }
+
+    return modules;
+  },
+
+  collectAnnotated(dir, keyAnnotation = null) {
+    let modules;
+    let files = fs.readdirSync(dir);
+
+    const addAnnotations = (toModule, filename) => {
+      let annotationData = annotation.getSync(dir + "/" + filename)[toModule.name];
+
+      toModule.annotations = annotationData;
+      toModule.ann = function (key) {
+        return this.annotations[key];
+      };
+      toModule.prototype.ann = function (key) {
+        return this.constructor.ann(key);
+      };
+
+      return toModule;
+    };
+
+    if (keyAnnotation) {
+      modules = {};
+
+      files.forEach((filename) => {
+        let module = require(dir + "/" + filename);
+        addAnnotations(module, filename);
+        let moduleClass = module.name;
+
+        if (!module.ann(keyAnnotation)) {
+          throw new Error(`The ${moduleClass} must have '${keyAnnotation}' annotation.`);
+        }
+
+        let key = module.ann(keyAnnotation);
+        if (modules[key]) {
+          throw new Error(`The ${moduleClass} and ${modules[key].name} have the same key: ${key}`);
+        }
+
+        modules[key] = module;
+      });
+    }
+    else {
+      modules = [];
+
+      files.forEach((filename) => {
+        modules.push(addAnnotations(require(dir + "/" + filename), filename));
       });
     }
 
