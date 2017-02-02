@@ -2,11 +2,12 @@
 
 const Service = require("../service_base");
 
-class NginxService extends Service {
+class LightTpdService extends Service {
 
   compose_docker() {
     let compose = {
-      image: "nginx:stable-alpine",
+      image: "sebp/lighttpd",
+      volumes_from: [this.config.upstream_name],
     };
 
     return compose;
@@ -14,12 +15,12 @@ class NginxService extends Service {
 
   static defaults() {
     return {
-
+      upstream_name: "php",
     };
   }
 
   static getKey() {
-    return "nginx";
+    return "lighttpd";
   }
 
   static getType() {
@@ -27,9 +28,9 @@ class NginxService extends Service {
   }
 
   static getLabel() {
-    return "NGINX";
+    return "LightTPD";
   }
 
 }
 
-module.exports = NginxService;
+module.exports = LightTpdService;

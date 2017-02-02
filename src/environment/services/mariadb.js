@@ -1,46 +1,15 @@
 "use strict";
 
-const Service = require("../service_base");
+const MysqlService = require("./mysql");
 const inquirer = require("inquirer");
 
-class MariadbService extends Service {
+class MariadbService extends MysqlService {
 
-  configure() {
-    return inquirer.prompt([{
-      type: "input",
-      name: "user",
-      message: "MySQL user:",
-      default: this.config.user,
-    }, {
-      type: "input",
-      name: "password",
-      message: "MySQL password:",
-      default: this.config.password,
-    }]).then((values) => {
-      this.config.user = values.user;
-      this.config.password = values.password;
-    });
-  }
-
-  compose_docker() {
-    let compose = {
-      image: "wodby/drupal-mariadb:1.0.0",
-      environment: {
-        MYSQL_RANDOM_ROOT_PASSWORD: 1,
-        MYSQL_DATABASE: "drupal",
-        MYSQL_USER: this.config.user,
-        MYSQL_PASSWORD: this.config.password,
-      }
-    };
+  compose_docker(env) {
+    let compose = super.compose_docker(env);
+    compose.image = "mariadb:latest";
 
     return compose;
-  }
-
-  static defaults() {
-    return {
-      user: "admin",
-      password: "admin",
-    };
   }
 
   static getKey() {

@@ -4,9 +4,9 @@ const Service = require("../service_base");
 const inquirer = require("inquirer");
 
 const images = {
-  "7.1" : "php:7.1-fpm-alpine",
-  "7.0" : "php:7.0-fpm-alpine",
-  "5.6" : "php:5.6-fpm-alpine",
+  "7.5" : "node:7.5-alpine",
+  "6.9" : "node:6.9-alpine",
+  "4.7" : "node:4.7-alpine",
 };
 
 class PhpService extends Service {
@@ -23,13 +23,8 @@ class PhpService extends Service {
     return inquirer.prompt({
       type: "list",
       name: "version",
-      message: "PHP version:",
+      message: "Node version:",
       choices: choices,
-    }, {
-      type: "confirm",
-      name: "xdebug",
-      message: "Enabled xDebug?",
-      default: true,
     }).then((values) => {
       this.config.version = values.version;
       this.config.xdebug = values.xdebug;
@@ -46,8 +41,7 @@ class PhpService extends Service {
 
   static defaults() {
     return {
-      version: "7.1",
-      xdebug: 1,
+      version: "7.5",
     };
   }
 
