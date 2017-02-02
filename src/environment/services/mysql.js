@@ -3,6 +3,11 @@
 const Service = require("../service_base");
 const inquirer = require("inquirer");
 
+/**
+ * @id mysql
+ * @group database
+ * @label MySQL
+ */
 class MysqlService extends Service {
 
   configure() {
@@ -22,7 +27,7 @@ class MysqlService extends Service {
     });
   }
 
-  compose_docker(env) {
+  compose_docker(services, env) {
     let compose = {
       image: "mysql/mysql-server:5.7",
       environment: {
@@ -31,7 +36,7 @@ class MysqlService extends Service {
         MYSQL_USER: this.config.user,
         MYSQL_PASSWORD: this.config.password,
       },
-      volumes: [`./data/${this.getKey()}:/var/lib/mysql`]
+      volumes: [`./data/${this.ann("id")}:/var/lib/mysql`]
     };
 
     return compose;
@@ -42,18 +47,6 @@ class MysqlService extends Service {
       user: "admin",
       password: "admin",
     };
-  }
-
-  static getKey() {
-    return "mysql";
-  }
-
-  static getType() {
-    return "database";
-  }
-
-  static getLabel() {
-    return "MySQL";
   }
 
 }

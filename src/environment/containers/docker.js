@@ -54,7 +54,7 @@ class DockerContainer extends ContainerBase {
     this.directoryToPath();
 
     if (execInService == "web") {
-      execInService = this.services.ofType("web")[0];
+      execInService = this.services.ofGroup("web")[0];
     }
 
     let cmd = new Command("sudo docker-compose", [
@@ -76,8 +76,8 @@ class DockerContainer extends ContainerBase {
       services: {}
     };
 
-    this.services.each((key, Service) => {
-      composition.services[key] =
+    this.services.each((id, Service) => {
+      composition.services[id] =
         Service.compose(this.constructor.getKey(), this.services, this.config);
     });
 

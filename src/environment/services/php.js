@@ -9,6 +9,11 @@ const images = {
   "5.6" : "php:5.6-fpm-alpine",
 };
 
+/**
+ * @id php
+ * @group engine
+ * @label PHP
+ */
 class PhpService extends Service {
 
   configure() {
@@ -20,7 +25,7 @@ class PhpService extends Service {
       });
     }
 
-    return inquirer.prompt({
+    return inquirer.prompt([{
       type: "list",
       name: "version",
       message: "PHP version:",
@@ -30,7 +35,7 @@ class PhpService extends Service {
       name: "xdebug",
       message: "Enabled xDebug?",
       default: true,
-    }).then((values) => {
+    }]).then((values) => {
       this.config.version = values.version;
       this.config.xdebug = values.xdebug;
     });
@@ -49,18 +54,6 @@ class PhpService extends Service {
       version: "7.1",
       xdebug: 1,
     };
-  }
-
-  static getKey() {
-    return "php";
-  }
-
-  static getType() {
-    return "php";
-  }
-
-  static getLabel() {
-    return "PHP service";
   }
 
 }

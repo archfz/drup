@@ -17,7 +17,7 @@ class Environment {
     this.config = config;
   }
 
-  static create(config, requiredTypes = [], restrictedTypes = []) {
+  static create(config, requiredGroups = [], restrictedGroups = []) {
     let availableServices = ServiceCollection.collect();
     let services = new ServiceCollection();
     config = config || {};
@@ -28,29 +28,29 @@ class Environment {
     let serviceQuestions = [];
     let addedServices = [];
 
-    requiredTypes.forEach((type) => {
-      let choices = availableServices.typeToChoices(type);
+    requiredGroups.forEach((group) => {
+      let choices = availableServices.groupToChoices(group);
       if (choices.length == 1) {
         addedServices.push(choices[0].value);
       }
       else if (choices.length != 0) {
         serviceQuestions.push({
           type: 'list',
-          name: type,
-          message: "Choose " + type.toUpperCase(),
+          name: group,
+          message: "Choose " + group.toUpperCase(),
           choices: choices,
         });
       }
     });
 
-    let additionalServices = availableServices.notOfTypes(requiredTypes.concat(restrictedTypes));
+    let additionalServices = availableServices.notOfGroup(requiredGroups.concat(restrictedGroups));
     if (additionalServices) {
       let choices = [];
 
-      for (let [type, services] of Object.entries(additionalServices)) {
-        choices.push(new inquirer.Separator(`-- ${type}:`));
-        for (let [key, service] of Object.entries(services)) {
-          choices.push({value: key, name: service.getLabel()});
+      for (let [group, services] of Object.entries(additionalServices)) {
+        choices.push(new inquirer.Separator(`-- ${group}:`));
+        for (let [id, service] of Object.entries(services)) {
+          choices.push({value: id, name: service.ann("label")});
         }
       }
 
@@ -63,15 +63,15 @@ class Environment {
     }
 
     prompt(serviceQuestions).then((values) => {
-      let serviceKeys = addedServices.concat(values.additional || []);
-      requiredTypes.forEach((type) => {
-        values[type] && serviceKeys.push(values[type]);
+      let serviceIds = addedServices.concat(values.additional || []);
+      requiredGroups.forEach((group) => {
+        values[group] && serviceIds.push(values[group]);
       });
 
       let lastPromise;
 
-      serviceKeys.forEach((key) => {
-        let Service = new (availableServices.get(key))();
+      serviceIds.forEach((id) => {
+        let Service = new (availableServices.get(id))();
         services.addService(Service);
 
         if (!lastPromise) {
@@ -101,8 +101,8 @@ class Environment {
       let availableServices = ServiceCollection.collect();
       let services = new ServiceCollection();
 
-      for (let [key, serviceConfig] of Object.entries(data.services)) {
-        let Service = availableServices.get(key);
+      for (let [id, serviceConfig] of Object.entries(data.services)) {
+        let Service = availableServices.get(id);
         services.addService(new Service(serviceConfig));
       }
 
@@ -132,8 +132,8 @@ class Environment {
       services: {},
     };
 
-    this.services.each((key, service) => {
-      environment.services[key] = service.config;
+    this.services.each((id, service) => {
+      environment.services[id] = service.config;
     });
 
     this.path = path;

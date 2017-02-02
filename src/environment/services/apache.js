@@ -2,6 +2,11 @@
 
 const Service = require("../service_base");
 
+/**
+ * @id apache
+ * @group web
+ * @label Apache
+ */
 class ApacheService extends Service {
 
   compose_docker() {
@@ -17,18 +22,6 @@ class ApacheService extends Service {
     return {
       upstream_name: "php",
     };
-  }
-
-  static getKey() {
-    return "apache";
-  }
-
-  static getType() {
-    return "web";
-  }
-
-  static getLabel() {
-    return "Apache";
   }
 
 }

@@ -2,6 +2,11 @@
 
 const Service = require("../service_base");
 
+/**
+ * @id lighttpd
+ * @group web
+ * @label LightTPD
+ */
 class LightTpdService extends Service {
 
   compose_docker() {
@@ -17,18 +22,6 @@ class LightTpdService extends Service {
     return {
       upstream_name: "php",
     };
-  }
-
-  static getKey() {
-    return "lighttpd";
-  }
-
-  static getType() {
-    return "web";
-  }
-
-  static getLabel() {
-    return "LightTPD";
   }
 
 }

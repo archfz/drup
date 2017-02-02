@@ -2,6 +2,11 @@
 
 const Service = require("../service_base");
 
+/**
+ * @id nginx
+ * @group web
+ * @label NGINX
+ */
 class NginxService extends Service {
 
   compose_docker() {
@@ -16,18 +21,6 @@ class NginxService extends Service {
     return {
 
     };
-  }
-
-  static getKey() {
-    return "nginx";
-  }
-
-  static getType() {
-    return "web";
-  }
-
-  static getLabel() {
-    return "NGINX";
   }
 
 }

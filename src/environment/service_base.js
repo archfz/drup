@@ -12,46 +12,22 @@ class DockerService {
     return Promise.resolve();
   }
 
-  compose(containerType, envConfig) {
+  compose(containerType, services, envConfig) {
     let fnName = "compose_" + containerType;
 
     if (typeof this[fnName] !== "function") {
       utils.mustImplement(this, fnName);
     }
 
-    return this[fnName](envConfig);
+    return this[fnName](services, envConfig);
   }
 
   write(envConfig) {
     utils.mustImplement(this, "write");
   }
 
-  getKey() {
-    return this.constructor.getKey();
-  }
-
-  getType() {
-    return this.constructor.getType();
-  }
-
-  getLabel() {
-    return this.constructor.getLabel();
-  }
-
   static defaults() {
     return {};
-  }
-
-  static getKey() {
-    utils.mustImplement(this, "getKey");
-  }
-
-  static getType() {
-    return "misc";
-  }
-
-  static getLabel() {
-    utils.mustImplement(this, "getName");
   }
 
 }

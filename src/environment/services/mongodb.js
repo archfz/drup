@@ -3,6 +3,11 @@
 const Service = require("../service_base");
 const inquirer = require("inquirer");
 
+/**
+ * @id mongodb
+ * @group database
+ * @label MongoDB
+ */
 class MongodbService extends Service {
 
   configure() {
@@ -30,7 +35,7 @@ class MongodbService extends Service {
         MONGODB_USER: this.config.user,
         MONGODB_PASSWORD: this.config.password,
       },
-      volumes: [`./data/${this.getKey()}:/bitnami/mongodb`]
+      volumes: [`./data/${this.ann("id")}:/bitnami/mongodb`]
     };
 
     return compose;
@@ -41,18 +46,6 @@ class MongodbService extends Service {
       user: "admin",
       password: "admin",
     };
-  }
-
-  static getKey() {
-    return "mariadb";
-  }
-
-  static getType() {
-    return "database";
-  }
-
-  static getLabel() {
-    return "MariaDB";
   }
 
 }

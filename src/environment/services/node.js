@@ -9,6 +9,11 @@ const images = {
   "4.7" : "node:4.7-alpine",
 };
 
+/**
+ * @id node
+ * @group engine
+ * @label Node
+ */
 class PhpService extends Service {
 
   configure() {
@@ -27,7 +32,6 @@ class PhpService extends Service {
       choices: choices,
     }).then((values) => {
       this.config.version = values.version;
-      this.config.xdebug = values.xdebug;
     });
   }
 
@@ -43,18 +47,6 @@ class PhpService extends Service {
     return {
       version: "7.5",
     };
-  }
-
-  static getKey() {
-    return "php";
-  }
-
-  static getType() {
-    return "php";
-  }
-
-  static getLabel() {
-    return "PHP service";
   }
 
 }

@@ -2,6 +2,11 @@
 
 const Service = require("../service_base");
 
+/**
+ * @id pma
+ * @group misc
+ * @label PHPMyAdmin
+ */
 class PhpMyAdminService extends Service {
 
   compose_docker(env) {
@@ -10,18 +15,6 @@ class PhpMyAdminService extends Service {
     };
 
     return compose;
-  }
-
-  static getKey() {
-    return "pma";
-  }
-
-  static getType() {
-    return "misc";
-  }
-
-  static getLabel() {
-    return "PhpMyAdmin";
   }
 
 }

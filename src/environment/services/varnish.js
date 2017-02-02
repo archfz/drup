@@ -2,6 +2,11 @@
 
 const Service = require("../service_base");
 
+/**
+ * @id varnish
+ * @group cache
+ * @label Varnish
+ */
 class VarnishService extends Service {
 
   compose_docker(env) {
@@ -10,18 +15,6 @@ class VarnishService extends Service {
     };
 
     return compose;
-  }
-
-  static getKey() {
-    return "varnish";
-  }
-
-  static getType() {
-    return "cache";
-  }
-
-  static getLabel() {
-    return "Varnish";
   }
 
 }

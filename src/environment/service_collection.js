@@ -8,14 +8,14 @@ class ServiceCollection {
 
   constructor() {
     this.servicesByType = {};
-    this.servicesByKey = {};
+    this.servicesById = {};
   }
 
   static collect() {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
 
-      utils.collectModules(__dirname + "/services").forEach((service) => {
+      utils.collectAnnotated(__dirname + "/services").forEach((service) => {
         serviceDiscovery.addService(service);
       });
     }
@@ -24,50 +24,50 @@ class ServiceCollection {
   }
 
   addService(Service) {
-    let [serviceType, serviceKey] = [Service.getType(), Service.getKey()];
+    let [serviceType, serviceId] = [Service.ann("group"), Service.ann("id")];
 
-    if (this.servicesByKey[serviceKey]) {
-      throw new Error(`Service keys must be unique: duplicate for '${serviceKey}'.`);
+    if (this.servicesById[serviceId]) {
+      throw new Error(`Service ID must be unique: duplicate for '${serviceId}'.`);
     }
 
-    this.servicesByKey[serviceKey] = Service;
+    this.servicesById[serviceId] = Service;
 
     if (!this.servicesByType[serviceType]) {
       this.servicesByType[serviceType] = {};
     }
 
-    this.servicesByType[serviceType][serviceKey] = Service;
+    this.servicesByType[serviceType][serviceId] = Service;
   }
 
   each(fn) {
-    for (let [key, service] of Object.entries(this.servicesByKey)) {
+    for (let [key, service] of Object.entries(this.servicesById)) {
       fn(key, service);
     }
   }
 
   get(key) {
-    if (!this.servicesByKey[key]) {
+    if (!this.servicesById[key]) {
       throw new Error("Tried to get un-existent service by key: " + key);
     }
 
-    return this.servicesByKey[key];
+    return this.servicesById[key];
   }
 
-  ofType(type) {
-    return this.servicesByType[type] || {};
+  ofGroup(group) {
+    return this.servicesByType[group] || {};
   }
 
-  notOfTypes(types) {
-    if (!Array.isArray(types)) {
-      types = [types];
+  notOfGroup(groups) {
+    if (!Array.isArray(groups)) {
+      groups = [groups];
     }
 
     let services = {};
     Object.assign(services, this.servicesByType);
 
-    types.forEach((type) => {
-      if (services[type]) {
-        delete services[type];
+    groups.forEach((group) => {
+      if (services[group]) {
+        delete services[group];
       }
     });
 
@@ -78,12 +78,12 @@ class ServiceCollection {
     return services;
   }
 
-  typeToChoices(type) {
-    let services = this.ofType(type);
+  groupToChoices(group) {
+    let services = this.ofGroup(group);
 
     let choices = [];
-    for (let [key, Service] of Object.entries(services)) {
-      choices.push({name: Service.getLabel(), value: key});
+    for (let [id, Service] of Object.entries(services)) {
+      choices.push({name: Service.ann("label"), value: id});
     }
 
     return choices;
