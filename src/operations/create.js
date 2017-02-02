@@ -2,26 +2,24 @@
 
 const Environment = require('../environment/environment');
 const Loader = require("../terminal-utils/async_loader");
+const cmd = require("../cmd");
 
 module.exports = {
   description : "Create new environment and install drupal in it.",
   run : () => {
     let loader;
 
-    Environment.create({projectName: "test"}, ['php', 'web', 'database']).then((env) => {
+    Environment.create({projectName: "test2"}, ['engine', 'web', 'database']).then((env) => {
       loader = new Loader("saving environment config");
-      return env.save("/home/zoltan.fodor/Documents/Drupal/test");
+      return env.saveConfigTo("/home/zoltan.fodor/Documents/Drupal/test2");
     }).then((env) => {
+      console.log("Environment config created.");
       loader.setMessage("generating docker env");
-      return env.write("docker", "/home/zoltan.fodor/Documents/Drupal/test");
+      return env.composeContainer("docker");
     }).then((docker) => {
-      loader.setMessage("starting docker");
-      return docker.getIp("nginx");
-    }).then((ip) => {
-      console.log(ip);
-      loader.finish("asd");
+      console.log("Docker environment generated.");
+      loader.finish("over");
     }).catch((err) => {
-      console.log(err);
       console.error("Chain failed:\n" + err);
     });
   }
