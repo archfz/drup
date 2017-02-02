@@ -2,7 +2,7 @@
 
 const utils = require("../utils");
 
-class DockerService {
+module.exports = class ServiceBase {
 
   constructor(config) {
     this.config = config || this.constructor.defaults();
@@ -30,6 +30,4 @@ class DockerService {
     return {};
   }
 
-}
-
-module.exports = DockerService;
+};

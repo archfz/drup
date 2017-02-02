@@ -7,7 +7,7 @@ const Service = require("../service_base");
  * @group web
  * @label NGINX
  */
-class NginxService extends Service {
+module.exports = class NginxService extends Service {
 
   compose_docker() {
     let compose = {
@@ -23,6 +23,4 @@ class NginxService extends Service {
     };
   }
 
-}
-
-module.exports = NginxService;
+};

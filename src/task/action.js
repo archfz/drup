@@ -1,6 +1,6 @@
 "use strict";
 
-class Action {
+module.exports = class Action {
 
   constructor() {
     this._completed = false;
@@ -60,6 +60,4 @@ class Action {
     }
   }
 
-}
-
-module.exports = Action;
+};

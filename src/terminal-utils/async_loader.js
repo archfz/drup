@@ -15,7 +15,7 @@ function trim(string, max) {
   }
 }
 
-class AsyncLoader {
+module.exports = class AsyncLoader {
 
   constructor(message = "Loading..", speed = 100) {
     this.state = 0;
@@ -65,6 +65,4 @@ class AsyncLoader {
       delete this;
     }.bind(this), 4000);
   }
-}
-
-module.exports = AsyncLoader;
+};

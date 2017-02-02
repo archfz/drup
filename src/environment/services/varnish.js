@@ -7,7 +7,7 @@ const Service = require("../service_base");
  * @group cache
  * @label Varnish
  */
-class VarnishService extends Service {
+module.exports = class VarnishService extends Service {
 
   compose_docker(env) {
     let compose = {
@@ -17,6 +17,4 @@ class VarnishService extends Service {
     return compose;
   }
 
-}
-
-module.exports = VarnishService;
+};

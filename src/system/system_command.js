@@ -2,7 +2,7 @@
 
 const exec = require('child_process').exec;
 
-class SystemCommand {
+module.exports = class SystemCommand {
 
   constructor(command, args = []) {
     if (typeof command !== "string") {
@@ -58,7 +58,5 @@ class SystemCommand {
     return promise;
   }
 
-}
-
-module.exports = SystemCommand;
+};
 

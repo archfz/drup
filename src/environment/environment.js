@@ -10,7 +10,7 @@ const ServiceCollection = require("./service_collection");
 
 const ENV_FILENAME = "drup-env.yml";
 
-class Environment {
+module.exports = class Environment {
 
   constructor(services, config) {
     this.services = services;
@@ -173,6 +173,4 @@ class Environment {
     return new containers[containerType](path, this.services, this.config);
   }
 
-}
-
-module.exports = Environment;
+};

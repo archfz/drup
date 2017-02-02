@@ -4,7 +4,7 @@ const utils = require("../utils");
 
 let serviceDiscovery;
 
-class ServiceCollection {
+module.exports = class ServiceCollection {
 
   constructor() {
     this.servicesByType = {};
@@ -89,6 +89,4 @@ class ServiceCollection {
     return choices;
   }
 
-}
-
-module.exports = ServiceCollection;
+};

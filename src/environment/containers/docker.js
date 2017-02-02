@@ -9,7 +9,7 @@ const ContainerBase = require('../container_base');
  * @id docker
  * @filename docker-compose.yml
  */
-class DockerContainer extends ContainerBase {
+module.exports = class DockerContainer extends ContainerBase {
 
   getIp(serviceName = "") {
     return new Command("sudo docker", [
@@ -92,6 +92,4 @@ class DockerContainer extends ContainerBase {
     return yaml.write(this.path + this.ann("filename"), this.compose());
   }
 
-}
-
-module.exports = DockerContainer;
+};

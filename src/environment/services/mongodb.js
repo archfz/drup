@@ -8,7 +8,7 @@ const inquirer = require("inquirer");
  * @group database
  * @label MongoDB
  */
-class MongodbService extends Service {
+module.exports = class MongodbService extends Service {
 
   configure() {
     return inquirer.prompt([{
@@ -48,6 +48,4 @@ class MongodbService extends Service {
     };
   }
 
-}
-
-module.exports = MongodbService;
+};

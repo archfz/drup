@@ -8,7 +8,7 @@ const inquirer = require("inquirer");
  * @group database
  * @label MariaDB
  */
-class MariadbService extends MysqlService {
+module.exports = class MariadbService extends MysqlService {
 
   compose_docker(services, env) {
     let compose = super.compose_docker(services, env);
@@ -17,6 +17,4 @@ class MariadbService extends MysqlService {
     return compose;
   }
 
-}
-
-module.exports = MariadbService;
+};

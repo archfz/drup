@@ -85,7 +85,7 @@ const BottomLines = {
   }
 };
 
-class BottomLine {
+module.exports = class BottomLine {
   constructor(outputCallback) {
     this.setOutputCallback(outputCallback);
     BottomLines.register(this);
@@ -133,6 +133,4 @@ class BottomLine {
   destroy() {
     BottomLines.remove(this);
   }
-}
-
-module.exports = BottomLine;
+};

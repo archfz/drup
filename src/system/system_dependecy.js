@@ -2,7 +2,7 @@
 
 const SystemCommand = require('./system_command');
 
-class DependencyCheck extends SystemCommand {
+module.exports = class DependencyCheck extends SystemCommand {
 
   constructor([command, version]) {
     let args = [];
@@ -73,11 +73,9 @@ class DependencyCheck extends SystemCommand {
     return this.finalResolve(DependencyCheck.NOT_MET);
   }
 
-}
+};
 
 DependencyCheck.NOT_MET = -1;
 DependencyCheck.OUTDATED = 0;
 DependencyCheck.MET = 10;
 DependencyCheck.AMBIGUOUS = 5;
-
-module.exports = DependencyCheck;

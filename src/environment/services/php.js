@@ -14,7 +14,7 @@ const images = {
  * @group engine
  * @label PHP
  */
-class PhpService extends Service {
+module.exports = class PhpService extends Service {
 
   configure() {
     let choices = [];
@@ -56,6 +56,4 @@ class PhpService extends Service {
     };
   }
 
-}
-
-module.exports = PhpService;
+};

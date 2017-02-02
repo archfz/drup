@@ -8,7 +8,7 @@ const inquirer = require("inquirer");
  * @group database
  * @label MySQL
  */
-class MysqlService extends Service {
+module.exports = class MysqlService extends Service {
 
   configure() {
     return inquirer.prompt([{
@@ -49,6 +49,4 @@ class MysqlService extends Service {
     };
   }
 
-}
-
-module.exports = MysqlService;
+};

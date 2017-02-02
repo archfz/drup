@@ -7,7 +7,7 @@ const Service = require("../service_base");
  * @group misc
  * @label PHPMyAdmin
  */
-class PhpMyAdminService extends Service {
+module.exports = class PhpMyAdminService extends Service {
 
   compose_docker(env) {
     let compose = {
@@ -17,6 +17,4 @@ class PhpMyAdminService extends Service {
     return compose;
   }
 
-}
-
-module.exports = PhpMyAdminService;
+};

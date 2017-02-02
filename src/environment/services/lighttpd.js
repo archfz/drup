@@ -7,7 +7,7 @@ const Service = require("../service_base");
  * @group web
  * @label LightTPD
  */
-class LightTpdService extends Service {
+module.exports = class LightTpdService extends Service {
 
   compose_docker() {
     let compose = {
@@ -24,6 +24,4 @@ class LightTpdService extends Service {
     };
   }
 
-}
-
-module.exports = LightTpdService;
+};

@@ -7,7 +7,7 @@ const Service = require("../service_base");
  * @group web
  * @label Apache
  */
-class ApacheService extends Service {
+module.exports = class ApacheService extends Service {
 
   compose_docker() {
     let compose = {
@@ -24,6 +24,4 @@ class ApacheService extends Service {
     };
   }
 
-}
-
-module.exports = ApacheService;
+};

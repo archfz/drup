@@ -2,7 +2,7 @@
 
 const Action = require('./action');
 
-class Task {
+module.exports = class Task {
 
   constructor() {
     this._actionQueue = [];
@@ -78,6 +78,4 @@ class Task {
     this._events[eventName].forEach(fn => fn());
   }
 
-}
-
-module.exports = Task;
+};

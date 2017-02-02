@@ -3,7 +3,7 @@
 const fs = require("../fs_utils");
 const utils = require("../utils");
 
-class ContainerBase {
+module.exports = class ContainerBase {
 
   constructor(path, serviceCollection, envConfig) {
     this.path = fs.toPath(path);
@@ -51,6 +51,4 @@ class ContainerBase {
     fs.setDirectory(this.path, true);
   }
 
-}
-
-module.exports = ContainerBase;
+};
