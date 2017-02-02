@@ -5,6 +5,10 @@ const yaml = require("node-yaml");
 const Command = require('../../system/system_command');
 const ContainerBase = require('../container_base');
 
+/**
+ * @id docker
+ * @filename docker-compose.yml
+ */
 class DockerContainer extends ContainerBase {
 
   getIp(serviceName = "") {
@@ -78,22 +82,14 @@ class DockerContainer extends ContainerBase {
 
     this.services.each((id, Service) => {
       composition.services[id] =
-        Service.compose(this.constructor.getKey(), this.services, this.config);
+        Service.compose(this.ann("id"), this.services, this.config);
     });
 
     return composition;
   }
 
   writeComposition(envConfig) {
-    return yaml.write(this.path + this.constructor.getFilename(), this.compose());
-  }
-
-  static getFilename() {
-    return "docker-compose.yml";
-  }
-
-  static getKey() {
-    return "docker";
+    return yaml.write(this.path + this.ann("filename"), this.compose());
   }
 
 }

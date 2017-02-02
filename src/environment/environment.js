@@ -164,7 +164,7 @@ class Environment {
   getContainer(containerType, path = this.path) {
     path = fs.toPath(path);
 
-    let containers = utils.collectModules(__dirname + "/containers", "getKey");
+    let containers = utils.collectAnnotated(__dirname + "/containers", "id");
 
     if (!containers[containerType]) {
       throw new Error("Unknown container type: " + containerType);

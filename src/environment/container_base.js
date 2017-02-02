@@ -35,14 +35,6 @@ class ContainerBase {
     utils.mustImplement(this, "writeComposition");
   }
 
-  static getKey() {
-    utils.mustImplement(this, "getKey");
-  }
-
-  static getFilename() {
-    utils.mustImplement(this, "getFilename");
-  }
-
   exists() {
     if (!this.path) {
       return false;
