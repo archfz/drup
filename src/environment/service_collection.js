@@ -27,7 +27,7 @@ class ServiceCollection {
     let [serviceType, serviceKey] = [Service.getType(), Service.getKey()];
 
     if (this.servicesByKey[serviceKey]) {
-      throw `Service keys must be unique: duplicate for '${serviceKey}'.`;
+      throw new Error(`Service keys must be unique: duplicate for '${serviceKey}'.`);
     }
 
     this.servicesByKey[serviceKey] = Service;
@@ -47,7 +47,7 @@ class ServiceCollection {
 
   get(key) {
     if (!this.servicesByKey[key]) {
-      throw "Tried to get un-existent service by key: " + key;
+      throw new Error("Tried to get un-existent service by key: " + key);
     }
 
     return this.servicesByKey[key];

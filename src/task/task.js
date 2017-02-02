@@ -18,7 +18,7 @@ class Task {
 
   complete(action) {
     if (!(action instanceof Action)) {
-      throw "Task: only objects of type Action can be _completed.";
+      throw new Error("Task: only objects of type Action can be _completed.");
     }
 
     this._actionQueue.push(action);
@@ -37,7 +37,7 @@ class Task {
 
   on(event, fn) {
     if (!this._events[event]) {
-      throw `Task: type of '${event}' is not recognized.`;
+      throw new Error(`Task: type of '${event}' is not recognized.`);
     }
 
     this._events[event].push(fn);

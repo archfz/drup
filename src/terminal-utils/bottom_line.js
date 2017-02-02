@@ -95,7 +95,7 @@ class BottomLine {
 
   setOutputCallback(callback) {
     if (typeof callback !== "function") {
-      throw "You must provide a callback function that returns output.";
+      throw new Error("You must provide a callback function that returns output.");
     }
     this.requestOutput = callback;
     return this;
@@ -110,7 +110,7 @@ class BottomLine {
     let length = stripAnsi(output);
 
     if (length > width) {
-      throw "The output length should be less than the terminal width.";
+      throw new Error("The output length should be less than the terminal width.");
     } else if (length < width) {
       output += " ".repeat(width - length);
     }

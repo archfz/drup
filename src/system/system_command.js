@@ -6,11 +6,11 @@ class SystemCommand {
 
   constructor(command, args = []) {
     if (typeof command !== "string") {
-      throw "Command must be a string.";
+      throw new Error("Command must be a string.");
     }
 
     if (!Array.isArray(args)) {
-      throw "Parameters should be provided in array format.";
+      throw new Error("Parameters should be provided in array format.");
     }
 
     this.command = command;

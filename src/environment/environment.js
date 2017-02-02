@@ -121,7 +121,7 @@ class Environment {
 
   saveConfigTo(path = this.path) {
     if (!this.path && !path) {
-      throw "This environment was not saved previously. You must provide a path to save to.";
+      throw new Error("This environment was not saved previously. You must provide a path to save to.");
     }
 
     path = fs.toPath(path);
@@ -167,7 +167,7 @@ class Environment {
     let containers = utils.collectModules(__dirname + "/containers", "getKey");
 
     if (!containers[containerType]) {
-      throw "Unknown container type: " + containerType;
+      throw new Error("Unknown container type: " + containerType);
     }
 
     return new containers[containerType](path, this.services, this.config);

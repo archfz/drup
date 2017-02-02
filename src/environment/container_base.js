@@ -53,7 +53,7 @@ class ContainerBase {
 
   directoryToPath() {
     if (!this.path) {
-      throw `Container without path.`;
+      throw new Error(`Container without path.`);
     }
 
     fs.setDirectory(this.path, true);

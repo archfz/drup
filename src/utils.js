@@ -3,7 +3,7 @@
 module.exports = {
 
   mustImplement(object, method) {
-    throw `${object.constructor.name}' must implement ${method}().`;
+    throw new Error(`${object.constructor.name}' must implement ${method}().`);
   },
 
   collectModules(dir, keyMethod) {

@@ -14,7 +14,7 @@ class DockerContainer extends ContainerBase {
       ["-f", `'name=${this.config.projectName}_${serviceName}'`],
     ]).execute().then((serviceIds) => {
       if (!serviceIds) {
-        return Promise.reject(new Error("Docker container is not started."));
+        throw new Error("Docker container is not started.");
       }
 
       return new Command("sudo docker", [
@@ -33,28 +33,21 @@ class DockerContainer extends ContainerBase {
   start() {
     this.directoryToPath();
 
-    let promise = new Command("sudo docker-compose", [
+    return new Command("sudo docker-compose", [
       ["-p", this.config.projectName],
       ["up", "-d"],
-    ]).execute().then(() => {return this;});
-    promise.catch((error) => {
-      throw "Failed to start environment container:\n" + error;
+    ]).execute().then(() => {return this;}).catch((error) => {
+      throw new Error("Failed to start environment container:\n" + error);
     });
-
-    return promise;
   }
 
   stop() {
     this.directoryToPath();
 
-    let promise = new Command("sudo docker-compose", ["stop"]).execute()
-      .then(() => {return this;});
-
-    promise.catch((error) => {
-      throw "Failed to stop environment container:\n" + error;
-    });
-
-    return promise;
+    return new Command("sudo docker-compose", ["stop"]).execute()
+      .then(() => {return this;}).catch((error) => {
+        throw new Error("Failed to stop environment container:\n" + error);
+      });
   }
 
   command(command, execOptions = [], execInService = "web") {
@@ -66,19 +59,16 @@ class DockerContainer extends ContainerBase {
 
     let cmd = new Command("sudo docker-compose", [
       "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
-    ]).execute().then(() => {return this;});
+    ]);
 
-    let promise = cmd.execute();
-    promise.catch((error) => {
-      throw `Failed to run docker exec:\n${cmd.toString()}:\n${error}`;
+    return cmd.execute().then(() => {return this;}).catch((error) => {
+      throw new Error(`Failed to run docker exec:\n${cmd.toString()}:\n${error}`);
     });
-
-    return promise;
   }
 
   compose() {
     if (!this.services) {
-      throw "Cannot compose. No services are configured yet.";
+      throw new Error("Cannot compose. No services are configured yet.");
     }
 
     let composition = {

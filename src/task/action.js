@@ -34,7 +34,7 @@ class Action {
 
   _fire(method, callback, completedModifier = true) {
     if (typeof this[method] !== "function") {
-      throw `Action: an action must implement the ${method} method.`;
+      throw new Error(`Action: an action must implement the ${method} method.`);
     }
 
     let completion = this[method]();
@@ -56,7 +56,7 @@ class Action {
         console.error(error);
       });
     } else {
-      throw `Action: ${method} method must return boolean or a Promise.`;
+      throw new Error(`Action: ${method} method must return boolean or a Promise.`);
     }
   }
 
