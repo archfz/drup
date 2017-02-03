@@ -7,6 +7,7 @@ const inquirer = require("inquirer");
  * @id mongodb
  * @group database
  * @label MongoDB
+ * @priority 10
  */
 module.exports = class MongodbService extends Service {
 

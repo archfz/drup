@@ -7,6 +7,7 @@ const inquirer = require("inquirer");
  * @id mariadb
  * @group database
  * @label MariaDB
+ * @priority 20
  */
 module.exports = class MariadbService extends MysqlService {
 

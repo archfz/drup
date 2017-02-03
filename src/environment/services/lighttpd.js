@@ -6,6 +6,7 @@ const Service = require("../service_base");
  * @id lighttpd
  * @group web
  * @label LightTPD
+ * @priority 10
  */
 module.exports = class LightTpdService extends Service {
 

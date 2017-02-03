@@ -23,6 +23,8 @@ module.exports = class ServiceCollection {
           }
         });
 
+        service.annotations.priority = Number(service.ann("priority") || 0);
+
         serviceDiscovery.addService(service);
       });
     }
@@ -120,8 +122,14 @@ module.exports = class ServiceCollection {
 
     let choices = [];
     for (let [id, Service] of Object.entries(services)) {
-      choices.push({name: Service.ann("label"), value: id});
+      choices.push({
+        name: Service.ann("label"),
+        value: id,
+        priority: Service.ann("priority") || 0,
+      });
     }
+
+    choices.sort((a, b) => a.priority < b.priority);
 
     return choices;
   }

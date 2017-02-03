@@ -7,6 +7,7 @@ const inquirer = require("inquirer");
  * @id mysql
  * @group database
  * @label MySQL
+ * @priority 15
  */
 module.exports = class MysqlService extends Service {
 

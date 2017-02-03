@@ -6,6 +6,7 @@ const Service = require("../service_base");
  * @id apache
  * @group web
  * @label Apache
+ * @priority 5
  */
 module.exports = class ApacheService extends Service {
 
