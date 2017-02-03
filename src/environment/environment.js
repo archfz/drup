@@ -1,7 +1,6 @@
 "use strict";
 
 const inquirer  = require("inquirer");
-const prompt = inquirer.prompt;
 const yaml = require("node-yaml");
 const utils = require("../utils");
 const fs = require("../fs_utils");
@@ -17,81 +16,10 @@ module.exports = class Environment {
     this.config = config;
   }
 
-  static create(config, requiredGroups = [], restrictedGroups = []) {
-    let availableServices = ServiceCollection.collect();
-    let services = new ServiceCollection();
-    config = config || {};
-
-    let resolve;
-    let promise = new Promise((res, rej) => resolve = res);
-
-    let serviceQuestions = [];
-    let addedServices = [];
-
-    requiredGroups.forEach((group) => {
-      let choices = availableServices.groupToChoices(group);
-      if (choices.length == 1) {
-        addedServices.push(choices[0].value);
-      }
-      else if (choices.length != 0) {
-        serviceQuestions.push({
-          type: 'list',
-          name: group,
-          message: "Choose " + group.toUpperCase(),
-          choices: choices,
-        });
-      }
+  static create(envConfigurator, additionalConfig = {projectName: "test"}) {
+    return envConfigurator.configure().then((services) => {
+      return new Environment(services, additionalConfig);
     });
-
-    let additionalServices = availableServices.notOfGroup(requiredGroups.concat(restrictedGroups));
-    if (additionalServices) {
-      let choices = [];
-
-      for (let [group, services] of Object.entries(additionalServices)) {
-        choices.push(new inquirer.Separator(`-- ${group}:`));
-        for (let [id, service] of Object.entries(services)) {
-          choices.push({value: id, name: service.ann("label")});
-        }
-      }
-
-      serviceQuestions.push({
-        type: 'checkbox',
-        name: 'additional',
-        message: 'Select additional services',
-        choices: choices
-      });
-    }
-
-    prompt(serviceQuestions).then((values) => {
-      let serviceIds = addedServices.concat(values.additional || []);
-      requiredGroups.forEach((group) => {
-        values[group] && serviceIds.push(values[group]);
-      });
-
-      let lastPromise;
-
-      serviceIds.forEach((id) => {
-        let Service = new (availableServices.get(id))();
-        services.addService(Service);
-
-        if (!lastPromise) {
-          lastPromise = Service.configure();
-        }
-        else {
-          lastPromise = lastPromise.then(() => {
-            return Service.configure();
-          });
-        }
-      });
-
-      lastPromise.then(() => {
-        resolve(new Environment(services, config));
-      }).catch((reason) => {
-        console.log(reason);
-      });
-    });
-
-    return promise;
   }
 
   static load(path) {
@@ -132,7 +60,7 @@ module.exports = class Environment {
       services: {},
     };
 
-    this.services.each((id, service) => {
+    this.services.each((service, id) => {
       environment.services[id] = service.config;
     });
 

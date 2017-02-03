@@ -7,15 +7,22 @@ let serviceDiscovery;
 module.exports = class ServiceCollection {
 
   constructor() {
-    this.servicesByType = {};
+    this.servicesByGroup = {};
     this.servicesById = {};
   }
 
   static collect() {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
+      serviceDiscovery.frozen = true;
 
       utils.collectAnnotated(__dirname + "/services").forEach((service) => {
+        ["id", "label", "group"].forEach((key) => {
+          if (!service.annotations[key]) {
+            throw new Error(`A service must define the '${key}' annotation.`);
+          }
+        });
+
         serviceDiscovery.addService(service);
       });
     }
@@ -24,7 +31,7 @@ module.exports = class ServiceCollection {
   }
 
   addService(Service) {
-    let [serviceType, serviceId] = [Service.ann("group"), Service.ann("id")];
+    let [serviceGroup, serviceId] = [Service.ann("group"), Service.ann("id")];
 
     if (this.servicesById[serviceId]) {
       throw new Error(`Service ID must be unique: duplicate for '${serviceId}'.`);
@@ -32,29 +39,29 @@ module.exports = class ServiceCollection {
 
     this.servicesById[serviceId] = Service;
 
-    if (!this.servicesByType[serviceType]) {
-      this.servicesByType[serviceType] = {};
+    if (!this.servicesByGroup[serviceGroup]) {
+      this.servicesByGroup[serviceGroup] = {};
     }
 
-    this.servicesByType[serviceType][serviceId] = Service;
+    this.servicesByGroup[serviceGroup][serviceId] = Service;
   }
 
   each(fn) {
-    for (let [key, service] of Object.entries(this.servicesById)) {
-      fn(key, service);
+    for (let [id, service] of Object.entries(this.servicesById)) {
+      fn(service, id);
     }
   }
 
-  get(key) {
-    if (!this.servicesById[key]) {
-      throw new Error("Tried to get un-existent service by key: " + key);
+  get(id) {
+    if (!this.servicesById[id]) {
+      throw new Error("Tried to get un-existent service by ID: " + id);
     }
 
-    return this.servicesById[key];
+    return this.servicesById[id];
   }
 
   ofGroup(group) {
-    return this.servicesByType[group] || {};
+    return this.servicesByGroup[group] || false;
   }
 
   notOfGroup(groups) {
@@ -63,7 +70,7 @@ module.exports = class ServiceCollection {
     }
 
     let services = {};
-    Object.assign(services, this.servicesByType);
+    Object.assign(services, this.servicesByGroup);
 
     groups.forEach((group) => {
       if (services[group]) {
@@ -78,6 +85,36 @@ module.exports = class ServiceCollection {
     return services;
   }
 
+  remove(id) {
+    if (this.frozen) {
+      throw new Error("Remove not allowed on frozen service collection.");
+    }
+
+    if (!this.servicesById[id]) {
+      return;
+    }
+
+    let group = this.servicesById[id].ann("group");
+    delete this.servicesById[id];
+    delete this.servicesByGroup[group][id];
+  }
+
+  removeGroup(group) {
+    if (this.frozen) {
+      throw new Error("Remove not allowed on frozen service collection.");
+    }
+
+    if (!this.servicesByGroup[group]) {
+      return;
+    }
+
+    for (const [id] of Object.entries(this.servicesByGroup[group])) {
+      delete this.servicesById[id];
+    }
+
+    delete this.servicesByGroup[group];
+  }
+
   groupToChoices(group) {
     let services = this.ofGroup(group);
 
@@ -87,6 +124,17 @@ module.exports = class ServiceCollection {
     }
 
     return choices;
+  }
+
+  clone() {
+    let collection = new ServiceCollection();
+
+    this.each((service) => {
+      service.ann("group");
+      collection.addService(service);
+    });
+
+    return collection;
   }
 
 };

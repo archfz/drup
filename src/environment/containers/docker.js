@@ -80,7 +80,7 @@ module.exports = class DockerContainer extends ContainerBase {
       services: {}
     };
 
-    this.services.each((id, Service) => {
+    this.services.each((Service, id) => {
       composition.services[id] =
         Service.compose(this.ann("id"), this.services, this.config);
     });
