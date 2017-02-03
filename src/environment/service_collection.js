@@ -54,8 +54,12 @@ module.exports = class ServiceCollection {
     }
   }
 
+  has(id) {
+    return this.servicesById.hasOwnProperty(id);
+  }
+
   get(id) {
-    if (!this.servicesById[id]) {
+    if (!this.has(id)) {
       throw new Error("Tried to get un-existent service by ID: " + id);
     }
 

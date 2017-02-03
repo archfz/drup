@@ -11,26 +11,50 @@ const ContainerBase = require('../container_base');
  */
 module.exports = class DockerContainer extends ContainerBase {
 
-  getIp(serviceName = "") {
-    return new Command("sudo docker", [
-      "ps",
-      "-q",
-      ["-f", `'name=${this.config.projectName}_${serviceName}'`],
-    ]).execute().then((serviceIds) => {
-      if (!serviceIds) {
-        throw new Error("Docker container is not started.");
+  getIp(serviceOrGroupName = "") {
+    if (serviceOrGroupName === "") {
+      this.services.each((service) => {
+        serviceOrGroupName += `${this.config.projectName}_${service.ann("id")}_1 `;
+      });
+    }
+    else {
+      if (!this.services.has(serviceOrGroupName)) {
+        let group = this.services.ofGroup(serviceOrGroupName);
+
+        if (group === false) {
+          throw new Error("No services found in the group: " + serviceOrGroupName);
+        }
+
+        serviceOrGroupName = group[Object.keys(group)[0]].ann("id");
       }
 
-      return new Command("sudo docker", [
-        "inspect",
-        ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
-        serviceIds.replace(/(\n|\r)/g, " "),
-      ]).execute();
+      serviceOrGroupName = `${this.config.projectName}_${serviceOrGroupName}_1`;
+    }
 
-    }).then((output) => {
+    let cmd = new Command("sudo docker", [
+      "inspect",
+      ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
+      serviceOrGroupName,
+    ]);
+
+    return cmd.execute().then((output) => {
+      if (!output) {
+        throw new Error("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
+      }
+
       let ips = output.split("\n");
       ips.pop();
-      return (ips.length == 1 ? ips[0] : ips);
+
+      if (ips.length == 1) {
+        return ips[0];
+      }
+
+      let serviceIps = {};
+      this.services.each((service) => {
+        serviceIps[service.ann("id")] = ips.shift();
+      });
+
+      return serviceIps;
     });
   }
 
