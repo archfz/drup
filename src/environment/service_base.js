@@ -9,7 +9,12 @@ module.exports = class ServiceBase {
   }
 
   configure() {
-    return Promise.resolve();
+    if (!this._configure) {
+      return Promise.resolve();
+    }
+
+    console.log("\n-- Configure " + this.ann("label"));
+    return this._configure();
   }
 
   compose(containerType, services, envConfig) {
@@ -20,10 +25,6 @@ module.exports = class ServiceBase {
     }
 
     return this[fnName](services, envConfig);
-  }
-
-  write(envConfig) {
-    utils.mustImplement(this, "write");
   }
 
   static defaults() {

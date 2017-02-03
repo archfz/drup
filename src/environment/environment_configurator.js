@@ -138,7 +138,7 @@ module.exports = class EnvironmentConfigurator {
       choices.push({
         type: "checkbox",
         name: "additional",
-        message: "Select additional services",
+        message: "Select optional services",
         choices: additional
       });
     }

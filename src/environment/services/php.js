@@ -16,7 +16,7 @@ const images = {
  */
 module.exports = class PhpService extends Service {
 
-  configure() {
+  _configure() {
     let choices = [];
     for (const [key] of Object.entries(images)) {
       choices.push({

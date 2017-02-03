@@ -10,7 +10,7 @@ const inquirer = require("inquirer");
  */
 module.exports = class MongodbService extends Service {
 
-  configure() {
+  _configure() {
     return inquirer.prompt([{
       type: "input",
       name: "user",
