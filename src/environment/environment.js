@@ -7,8 +7,6 @@ const fs = require("../fs_utils");
 
 const ServiceCollection = require("./service_collection");
 
-const ENV_FILENAME = "drup-env.yml";
-
 module.exports = class Environment {
 
   constructor(services, config) {
@@ -22,10 +20,17 @@ module.exports = class Environment {
     });
   }
 
-  static load(path) {
-    path = fs.toPath(path);
+  static load(configFileOrData) {
+    let promise, configFile;
+    if (typeof configFileOrData === "object") {
+      promise = Promise.resolve(configFileOrData);
+    }
+    else {
+      configFile = configFileOrData;
+      promise = yaml.read(configFile);
+    }
 
-    let promise = yaml.read(path + ENV_FILENAME).then((data) => {
+    promise = promise.then((data) => {
       let availableServices = ServiceCollection.collect();
       let services = new ServiceCollection();
 
@@ -35,25 +40,24 @@ module.exports = class Environment {
       }
 
       let env = new Environment(services, data.config);
-      env.path = path;
+      env.configFile = configFile;
 
       return env;
     });
 
     promise.catch((err) => {
-      console.log("Failed loading in environment:\n" + err);
+      throw new Error("Failed loading in environment:\n" + err);
     });
 
     return promise;
   }
 
-  saveConfigTo(path = this.path) {
-    if (!this.path && !path) {
-      throw new Error("This environment was not saved previously. You must provide a path to save to.");
+  saveConfigTo(configFile = this.configFile) {
+    if (!this.configFile && !configFile) {
+      throw new Error("This environment was not saved previously. You must provide a config file path to save to.");
     }
 
-    path = fs.toPath(path);
-    fs.ensureDirectory(path);
+    fs.ensureDirectory(this.getConfigPath());
 
     let environment = {
       config: this.config,
@@ -64,11 +68,11 @@ module.exports = class Environment {
       environment.services[id] = service.config;
     });
 
-    this.path = path;
-    let promise = yaml.write(this.path + ENV_FILENAME, environment);
+    this.configFile = configFile;
+    let promise = yaml.write(this.configFile, environment);
 
     promise.catch((err) => {
-      console.log("Failed to save environment configuration.\n" + err);
+      throw new Error("Failed to save environment configuration.\n" + err);
     });
 
     return promise.then(() => {
@@ -81,7 +85,7 @@ module.exports = class Environment {
     let promise = container.writeComposition();
 
     promise.catch((err) => {
-      console.log(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
+      throw new Error(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
     });
 
     return promise.then(() => {
@@ -89,9 +93,7 @@ module.exports = class Environment {
     });
   }
 
-  getContainer(containerType, path = this.path) {
-    path = fs.toPath(path);
-
+  getContainer(containerType, path = this.getConfigPath()) {
     let containers = utils.collectAnnotated(__dirname + "/containers", "id");
 
     if (!containers[containerType]) {
@@ -99,6 +101,12 @@ module.exports = class Environment {
     }
 
     return new containers[containerType](path, this.services, this.config);
+  }
+
+  getConfigPath() {
+    let pathParts = this.configFile.split("/");
+    pathParts.pop();
+    return pathParts.join("/");
   }
 
 };
