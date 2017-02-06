@@ -33,7 +33,7 @@ module.exports = class DockerContainer extends ContainerBase {
 
     let cmd = new Command("docker", [
       "inspect",
-      ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
+      ["-f", '"{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'],
       serviceOrGroupName,
     ]);
 
