@@ -31,7 +31,7 @@ module.exports = class DockerContainer extends ContainerBase {
       serviceOrGroupName = `${this.config.projectName}_${serviceOrGroupName}_1`;
     }
 
-    let cmd = new Command("sudo docker", [
+    let cmd = new Command("docker", [
       "inspect",
       ["-f", "'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"],
       serviceOrGroupName,
@@ -61,7 +61,7 @@ module.exports = class DockerContainer extends ContainerBase {
   start() {
     this.directoryToPath();
 
-    return new Command("sudo docker-compose", [
+    return new Command("docker-compose", [
       ["-p", this.config.projectName],
       ["up", "-d"],
     ]).execute().then(() => {return this;}).catch((error) => {
@@ -72,7 +72,7 @@ module.exports = class DockerContainer extends ContainerBase {
   stop() {
     this.directoryToPath();
 
-    return new Command("sudo docker-compose", ["stop"]).execute()
+    return new Command("docker-compose", ["stop"]).execute()
       .then(() => {return this;}).catch((error) => {
         throw new Error("Failed to stop environment container:\n" + error);
       });
@@ -85,7 +85,7 @@ module.exports = class DockerContainer extends ContainerBase {
       execInService = this.services.ofGroup("web")[0];
     }
 
-    let cmd = new Command("sudo docker-compose", [
+    let cmd = new Command("docker-compose", [
       "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
     ]);
 
