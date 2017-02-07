@@ -1,7 +1,7 @@
 "use strict";
 
 const utils = require("../utils");
-const projectManager = require("./projects_manager");
+const projectManager = require("./manager");
 
 const Environment = require("../environment/environment");
 
