@@ -7,6 +7,16 @@ const fs = require("../fs_utils");
 
 const ServiceCollection = require("./service_collection");
 
+let containers;
+
+function getContainers() {
+  if (!containers) {
+    containers = utils.collectAnnotated(__dirname + "/containers", "id");
+  }
+
+  return containers;
+}
+
 module.exports = class Environment {
 
   constructor(services, config) {
@@ -81,6 +91,17 @@ module.exports = class Environment {
   }
 
   composeContainer(containerType, path) {
+    if (containerType == "*") {
+      let promises = [];
+
+      for (let [type, Container] of Object.keys(getContainers())) {
+        let cont = new Container(path, this.services, this.config);
+        promises.push(cont.writeComposition());
+      }
+
+      return Promise.all(promises);
+    }
+
     let container = this.getContainer(containerType, path);
     let promise = container.writeComposition();
 
@@ -94,7 +115,7 @@ module.exports = class Environment {
   }
 
   getContainer(containerType, path = this.getConfigPath()) {
-    let containers = utils.collectAnnotated(__dirname + "/containers", "id");
+    let containers = getContainers();
 
     if (!containers[containerType]) {
       throw new Error("Unknown container type: " + containerType);
