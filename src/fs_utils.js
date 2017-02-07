@@ -1,8 +1,12 @@
 "use strict";
 
-const fs = require("fs");
+const fs = require("fs-extra");
 
 module.exports = {
+
+  copy(source, destintation) {
+    fs.copySync(source, destintation);
+  },
 
   ensureDirectory(dir) {
     if (!fs.existsSync(dir)){
