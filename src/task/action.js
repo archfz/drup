@@ -4,7 +4,16 @@ const utils = require("../utils");
 
 module.exports = class Action {
 
-  complete(vars) {
+  constructor(data) {
+    this.data = data;
+    this._promise = this.complete(data);
+
+    if (!(this._promise instanceof Promise)) {
+      throw new Error(`Action '${this.constructor.name}' didn't return a promise.`)
+    }
+  }
+
+  complete(data) {
     utils.mustImplement(this, "complete");
   }
 
