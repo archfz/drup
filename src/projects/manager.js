@@ -1,49 +1,45 @@
 "use strict";
 
 const act = require("./actions");
+const Task = require("../task");
 
-let projectTypes;
+let projectTypes = {drupal: require("./drupal")};
 
-const manager = {
+module.exports = {
 
   setupFromDirectory(dir) {
-    const detectEnv = new act.DetectEnvironment();
-    const askConfig = new act.AskProjectConfig();
-    const askType = new act.AskProjectType();
-    const detectType = new act.DetectProjectType();
-    const createStructure = new act.CreateDirectoryStructure();
-    const createEnv = new act.CreateProjectEnvironment();
-    const moveProject = new act.MoveProject();
-    const saveEnv = new act.SaveEnvironment();
-    const composeEnv = new act.ComposeEnvironment();
-
-    createStructure.after(detectEnv, (env) => env !== false);
-    detectType.after(detectEnv, (env) => env === false);
-
-    askType.after(detectType, (type) => type === false);
-    askConfig.after(detectType, (type) => type !== false);
-
-    createStructure.after(askConfig);
-    createEnv.after(askConfig);
-
-    moveProject.after(createStructure);
 
   },
 
   setupFromGit(repository) {
+    return new Task(act.CloneProject)
+      .then(act.DetectEnvironment)
+      .ifThen((data) => data.get("env_data") !== false, (task) => {
+        task.then(act.CreateDirectoryStructure)
+          .then(act.MoveProject, act.SaveEnvironment, act.ComposeEnvironment);
+      })
+      .otherwise((task) => {
+        task.then(act.DetectProjectType)
+          .ifThen((data) => data.get("type") === false, act.AskProjectType)
+          .then(act.AskProjectDirectory)
+          .then(act.AskProjectConfig, {dirCreated: act.CreateDirectoryStructure})
+          .after("dirCreated", act.MoveProject)
+          .then({envCreated: act.CreateProjectEnvironment})
+          .after(["dirCreated", "envCreated"], act.SaveEnvironment, act.ComposeEnvironment);
 
+      })
+      .start({
+        repository: repository,
+        project_types: this.getTypes(),
+      });
   },
 
   setupNew(type, args) {
 
   },
 
+  getTypes() {
+    return projectTypes;
+  }
 
-
-};
-
-module.exports = function() {
-
-
-  return manager;
 };

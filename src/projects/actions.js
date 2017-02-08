@@ -1,6 +1,7 @@
 "use strict";
 
-const fs = require("../fs_utils");
+const fs = require("fs-promise");
+const path = require("path");
 const inquirer = require("inquirer");
 const yaml = require("node-yaml");
 const globals = require("./globals");
@@ -8,200 +9,166 @@ const globals = require("./globals");
 const Action = require("../task/action");
 const Command = require("../system/system_command");
 const Environment = require("../environment/environment");
+const Loader = require("../terminal-utils/async_loader");
 
-const manager = require("./manager");
+module.exports = {
 
-class CloneProjectAction extends Action {
+  CloneProject: class extends Action {
+    complete(data) {
+      let loader = new Loader("Preparing temp dir");
 
-  get resultKey() {
-    return "directory";
-  }
+      return fs.ensureDir(globals.TEMPORARY_DIR)
+        .then(() => fs.emptyDir(globals.TEMPORARY_DIR))
+        .then(() => {
+          process.chdir(globals.TEMPORARY_DIR);
 
-  complete(params) {
-    fs.setDirectory(globals.TEMPORARY_DIR, true);
+          loader.setMessage("Cloning repository");
+          return new Command("git", ["clone", data.get("repository")])
+            .execute();
+        }).then((output) => {
+          const dir = output.match(/Cloning into '(\w+)'\.{3}/);
 
-    new Command("git", ["clone", params.repository]).execute().then((output) => {
-      const dir = output.match(/Cloning into '(\w+)'\.{3}/);
+          if (typeof dir[1] !== "string") {
+            throw new Error("Failed to determine target directory on git clone.");
+          }
 
-      if (typeof dir[1] !== "string") {
-        throw new Error("Failed to determine target directory on git clone.");
-      }
-
-      this.resolve(globals.TEMPORARY_DIR + dir[1] + "/");
-    });
-  }
-
-}
-
-class DetectEnvironmentAction extends Action {
-
-  get resultKey() {
-    return "env_data";
-  }
-
-  complete(params) {
-    yaml.read(fs.toPath(params.directory) + globals.ENV_CONFIG_FILENAME).then(
-      (data) => this.resolve(data),
-      () => this.resolve(false)
-    );
-  }
-
-}
-
-class DetectProjectTypeAction extends Action {
-
-  get resultKey() {
-    return "project_type";
-  }
-
-  complete(params) {
-    let promises;
-
-    for (const [, Project] of Object.entries(manager.getTypes())) {
-      promises.push(Project.isInDirectory(params.directory, false));
+          data.set("tmp_directory", globals.TEMPORARY_DIR + dir[1]);
+          loader.finish("Project successfully cloned!");
+        });
     }
+  },
 
-    Promise.all(promises).then(
-      () => this.resolve(false),
-      (type) => this.resolve(type)
-    );
-  }
+  DetectEnvironment: class extends Action {
+    complete(data) {
+      let file = path.normalize(data.get("tmp_directory") + "/" + globals.ENV_CONFIG_FILENAME);
 
-}
+      return yaml.read(file).then(
+        (content) => data.set("env_data", content || false),
+        () => data.set("env_data", false)
+      );
+    }
+  },
 
-class AskProjectTypeAction extends Action {
+  DetectProjectType: class extends Action {
+    complete(data) {
+      let promises = [];
 
-  get resultKey() {
-    return "project_type";
-  }
-
-  complete() {
-    inquirer.prompt({
-      type: "list",
-      name: "type",
-      message: "Select project type",
-      choices: Object.keys(manager.getTypes()),
-    }).then((values) => this.resolve(values.type));
-  }
-
-}
-
-class AskProjectConfigAction extends Action {
-
-  get resultKey() {
-    return "config";
-  }
-
-  complete(params) {
-    const dirName = params.directory.split("/").pop();
-    const projectName = dirName.charAt(0).toUpperCase() + dirName.slice(0).toLowerCase();
-    const urlSafeName = dirName.toLowerCase().replace(/\s+/g, "-");
-
-    inquirer.prompt([{
-      type: "input",
-      name: "name",
-      message: "Project name",
-      default: projectName,
-    }, {
-      type: "input",
-      name: "hostAlias",
-      message: "Project host alias",
-      default: urlSafeName + ".dev",
-    }, {
-      type: "input",
-      name: "directory",
-      message: "Project directory",
-      default: `${globals.PROJECTS_DIR}${params.project_type}/${urlSafeName}`,
-    }]).then((values) => this.resolve(values));
-  }
-
-}
-
-class CreatDirectorySructureAction extends Action {
-
-  complete(params) {
-    const baseDir = fs.toPath(params.config.directory);
-    fs.ensureDirectory(baseDir);
-    ["project", "data", "config", "log"].forEach((dir) => {
-      fs.ensureDirectory(baseDir + dir);
-    });
-
-    this.resolve();
-  }
-
-}
-
-class MoveProjectDataAction extends Action {
-
-  complete(params) {
-    fs.copy(params.tmp_dir, params.config.directory + "/project");
-    this.resolve();
-  }
-
-}
-
-
-class CreateProjectEnvironmentAction extends Action {
-
-  get resultKey() {
-    return "environment";
-  }
-
-  complete(params) {
-    const configurator = manager.getTypes()[params.project_type].envConfigurator();
-
-    Environment.create(configurator, params.config)
-      .then((env) => this.resolve(env));
-  }
-
-}
-
-class SaveEnvironmentAction extends Action {
-  
-  get resultKey() {
-    return "environment_path";
-  }
-  
-  complete(params) {
-    inquirer.prompt({
-      type: "question",
-      message: "Include environment config in repository?",
-      name: "include",
-      default: true,
-    }).then((values) => {
-      let path = params.config.directory;
-      
-      if (values.include) {
-        path += "/project";
+      for (const [, Project] of Object.entries(data.get("project_types"))) {
+        promises.push(Project.isInDirectory(data.get("tmp_directory"), false));
       }
 
-      params.environment.saveConfigTo();
-      this.resolve(path);
-    });
-  }
-  
-}
+      return Promise.all(promises).then(
+        () => data.set("type", false),
+        (type) => data.set("type", type)
+      ).then(this.resolve);
+    }
+  },
 
-class ComposeEnvironmentContainers extends Action {
-
-  complete(params) {
-    params.environment.composeContainer("*", params.config.directory)
-      .then(() => {
-        this.resolve();
+  AskProjectType: class extends Action {
+    complete(data) {
+      return inquirer.prompt({
+        type: "list",
+        name: "type",
+        message: "Select project type",
+        choices: Object.keys(data.get("project_types")),
+      }).then((values) => {
+        data.set("type", values.type);
       });
+    }
+  },
+
+  AskProjectConfig: class extends Action {
+    complete(data) {
+      const dirName = data.get("tmp_directory").split("/").pop();
+      const projectName = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+      const urlSafeName = dirName.toLowerCase().replace(/\s+/g, "-");
+
+      return inquirer.prompt([{
+        type: "input",
+        name: "name",
+        message: "Project name",
+        default: projectName,
+      }, {
+        type: "input",
+        name: "hostAlias",
+        message: "Project host alias",
+        default: urlSafeName + ".dev",
+      }]).then((values) => data.set("config", values));
+    }
+  },
+
+  AskProjectDirectory: class extends Action {
+    complete(data) {
+      const dirName = data.get("tmp_directory").split("/").pop();
+      const urlSafeName = dirName.toLowerCase().replace(/\s+/g, "-");
+
+      return inquirer.prompt({
+        type: "input",
+        name: "directory",
+        message: "Project directory",
+        default: `${globals.PROJECTS_DIR}${data.get("type")}/${urlSafeName}`,
+      }).then((values) => data.set("directory", values.directory));
+    }
+  },
+
+  CreateDirectoryStructure: class extends Action {
+    complete(data) {
+      const baseDir = path.normalize(data.get("directory"));
+
+      return fs.ensureDir(baseDir).then(() => {
+        return Promise.all(
+          ["project", "data", "config", "log"].map((dir) => {
+            return fs.ensureDir(baseDir + dir);
+          })
+        );
+      });
+    }
+  },
+
+  MoveProject: class extends Action {
+    complete(data) {
+      let loader = new Loader("Moving project");
+
+      return fs.copy(data.get("tmp_directory"), data.get("directory") + "/project")
+        .then(() => {
+          loader.finish("Project moved to new location");
+        });
+    }
+  },
+
+  CreateProjectEnvironment: class extends Action {
+    complete(data) {
+      const configurator = data.get("project_types")[data.get("type")].getEnvConfigurator();
+
+      return Environment.create(configurator, data.get("config"))
+        .then((env) => data.set("env", env));
+    }
+  },
+
+  SaveEnvironment: class extends Action {
+    complete(data) {
+      return inquirer.prompt({
+        type: "question",
+        message: "Include environment config in repository?",
+        name: "include",
+        default: true,
+      }).then((values) => {
+        let path = data.get("directory");
+
+        if (values.include) {
+          path += "/project";
+        }
+
+        data.get("env").saveConfigTo();
+        data.set("env_path", path);
+      });
+    }
+  },
+
+  ComposeEnvironment: class extends Action {
+    complete(data) {
+      return data.get("env").composeContainer("*", data.get("directory"));
+    }
   }
 
-}
-
-exports.CloneProject = CloneProjectAction;
-exports.DetectEnvironment = DetectEnvironmentAction;
-exports.DetectProjectType = DetectProjectTypeAction;
-exports.AskProjectType = AskProjectTypeAction;
-exports.AskProjectConfig = AskProjectConfigAction;
-exports.CreateDirectoryStructure = CreatDirectorySructureAction;
-exports.MoveProject = MoveProjectDataAction;
-exports.CreateProjectEnvironment = CreateProjectEnvironmentAction;
-exports.SaveEnvironment = SaveEnvironmentAction;
-exports.ComposeEnvironment = ComposeEnvironmentContainers;
-
-module.exports = exports;
+};
