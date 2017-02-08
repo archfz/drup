@@ -47,11 +47,11 @@ module.exports = class SystemCommand {
       this.rejectPromise = rej;
     });
 
-    exec(this.toString(), (error, stdout) => {
+    exec(this.toString(), (error, stdout, stderr) => {
       if (error) {
         this.reject(error);
       } else {
-        this.resolve(stdout);
+        this.resolve(stdout || stderr);
       }
     });
 
