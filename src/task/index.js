@@ -208,16 +208,14 @@ module.exports = class Task {
       }
 
       task.promises.push(Action._promise);
+      task.references.splice(refIndex, 1);
 
-      if (task.references.length === 1) {
+      if (!task.references.length) {
         this._finalPromises.push(
           Promise.all(task.promises).then(() => {
             return task.task.start(this._data);
           })
         );
-      }
-      else {
-        task.references.slice(refIndex, 1);
       }
     });
 
