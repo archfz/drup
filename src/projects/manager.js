@@ -35,7 +35,22 @@ module.exports = {
   },
 
   setupNew(type, args) {
-
+    return new Task(act.AskProjectType)
+      .then(act.AskInstallationMethod)
+      .then({projectDownloaded: act.DownloadProject, gotConfig: act.AskProjectConfig})
+      .after("gotConfig", (task) => {
+        task.then(act.AskProjectDirectory)
+          .then({
+            envCreated: act.CreateProjectEnvironment,
+            dirCreated: act.CreateDirectoryStructure
+          })
+          .after(["dirCreated", "projectDownloaded"], {projectMoved: act.MoveProject})
+          .then(act.SaveEnvironment, act.ComposeEnvironment)
+          .after(["envCreated", "projectMoved"], act.RunProjectPostInstall);
+      })
+      .start({
+        project_types: this.getTypes(),
+      });
   },
 
   getTypes() {

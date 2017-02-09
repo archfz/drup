@@ -28,6 +28,14 @@ module.exports = class ProjectBase {
     utils.mustImplement(this, "isInDirectory");
   }
 
+  static getInstallationMethods() {
+    utils.mustImplement(this, "getInstallationMethods");
+  }
+
+  static download(method, toDir) {
+    utils.mustImplement(this, "download");
+  }
+
   getEnvironment() {
     if (!this.environment) {
       return Environment.load(this.projectRoot).then((env) => {

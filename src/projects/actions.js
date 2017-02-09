@@ -15,14 +15,24 @@ module.exports = {
 
   CloneProject: class extends Action {
     complete(data) {
-      let loader = new Loader("Preparing temp dir");
+      let loader, promise = Promise.resolve();
 
-      return fs.ensureDir(globals.TEMPORARY_DIR)
-        .then(() => fs.emptyDir(globals.TEMPORARY_DIR))
+      if (!data.get("repository")) {
+        promise = inquirer.prompt({
+          type: "input",
+          name: "repository",
+          message: "Git repository",
+        }).then((values) => data.set("repository", values.repository));
+      }
+
+      return promise
+        .then(() => {
+          loader = new Loader("Cloning repository");
+          return fs.emptyDir(globals.TEMPORARY_DIR);
+        })
         .then(() => {
           process.chdir(globals.TEMPORARY_DIR);
 
-          loader.setMessage("Cloning repository");
           return new Command("git", ["clone", data.get("repository")])
             .execute();
         }).then((output) => {
@@ -73,34 +83,76 @@ module.exports = {
         choices: Object.keys(data.get("project_types")),
       }).then((values) => {
         data.set("type", values.type);
+        data.set("project_type", data.get("project_types")[values.type]);
       });
+    }
+  },
+
+  AskInstallationMethod: class extends Action {
+    complete(data) {
+      let project = data.get("project_type");
+      let choices = [];
+
+      for (let [method, description] of Object.entries(project.getInstallationMethods())) {
+        choices.push({
+          name: method,
+          value: method,
+          description: description,
+        });
+      }
+
+      return inquirer.prompt({
+        type: "list",
+        name: "method",
+        message: "Select installation method",
+        choices: choices,
+      }).then((values) => data.set("installation_method", values.method));
+    }
+  },
+
+  DownloadProject: class extends Action {
+    complete(data) {
+      const method = data.get("installation_method");
+      const tmpDir = path.normalize(globals.TEMPORARY_DIR + "/new_tmp" + Date.now());
+
+      data.set("tmp_directory", tmpDir);
+
+      const loader = new Loader("Downloading project");
+      return fs.emptyDir(globals.TEMPORARY_DIR)
+        .then(() => data.get("project_type").download(method, tmpDir))
+        .then(() => {
+          loader.finish("Project downloaded!");
+        });
     }
   },
 
   AskProjectConfig: class extends Action {
     complete(data) {
       const dirName = data.get("tmp_directory").split("/").pop();
-      const projectName = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
-      const urlSafeName = dirName.toLowerCase().replace(/\s+/g, "-");
+      let projectName = null;
+
+      if (dirName.search("new_tmp") === -1) {
+        projectName = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+      }
 
       return inquirer.prompt([{
         type: "input",
         name: "name",
         message: "Project name",
         default: projectName,
+        validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
       }, {
         type: "input",
         name: "hostAlias",
         message: "Project host alias",
-        default: urlSafeName + ".dev",
+        default: (values) => values.name.toLowerCase().replace(/\s+/g, "-") + ".dev",
       }]).then((values) => data.set("config", values));
     }
   },
 
   AskProjectDirectory: class extends Action {
     complete(data) {
-      const dirName = data.get("tmp_directory").split("/").pop();
-      const urlSafeName = dirName.toLowerCase().replace(/\s+/g, "-");
+      const urlSafeName = data.get("config.name").toLowerCase().replace(/\s+/g, "-");
 
       return inquirer.prompt({
         type: "input",
@@ -118,7 +170,7 @@ module.exports = {
       return fs.ensureDir(baseDir).then(() => {
         return Promise.all(
           ["project", "data", "config", "log"].map((dir) => {
-            return fs.ensureDir(baseDir + dir);
+            return fs.ensureDir(path.normalize(baseDir + "/" + dir));
           })
         );
       });
@@ -127,9 +179,10 @@ module.exports = {
 
   MoveProject: class extends Action {
     complete(data) {
-      let loader = new Loader("Moving project");
+      const loader = new Loader("Moving project");
+      const dest = path.normalize(data.get("directory") + "/project");
 
-      return fs.copy(data.get("tmp_directory"), data.get("directory") + "/project")
+      return fs.copy(data.get("tmp_directory"), dest)
         .then(() => {
           loader.finish("Project moved to new location");
         });
@@ -171,6 +224,12 @@ module.exports = {
   ComposeEnvironment: class extends Action {
     complete(data) {
       return data.get("env").composeContainer("*", data.get("directory"));
+    }
+  },
+
+  RunProjectPostInstall: class extends Action {
+    complete(data) {
+      return data.get("project_type").postInstall(data);
     }
   }
 
