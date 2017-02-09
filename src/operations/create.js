@@ -7,9 +7,9 @@ module.exports = {
   description : "Create new environment and install drupal in it.",
   run : () => {
 
-    projectManager.setupFromGit("git@gitlab.pitechplus.com:Henkel/Silan.git")
+    projectManager.setupNew()
       .then((data) => {
-        console.log(data);
+        console.log(data.get("config.name") + " project is ready.");
       })
       .catch(cmd.error);
 
