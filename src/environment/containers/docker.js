@@ -14,7 +14,7 @@ module.exports = class DockerContainer extends ContainerBase {
   getIp(serviceOrGroupName = "") {
     if (serviceOrGroupName === "") {
       this.services.each((service) => {
-        serviceOrGroupName += `${this.config.projectName}_${service.ann("id")}_1 `;
+        serviceOrGroupName += `${this.config.env_name}_${service.ann("id")}_1 `;
       });
     }
     else {
@@ -28,7 +28,7 @@ module.exports = class DockerContainer extends ContainerBase {
         serviceOrGroupName = group[Object.keys(group)[0]].ann("id");
       }
 
-      serviceOrGroupName = `${this.config.projectName}_${serviceOrGroupName}_1`;
+      serviceOrGroupName = `${this.config.env_name}_${serviceOrGroupName}_1`;
     }
 
     let cmd = new Command("docker", [
@@ -62,7 +62,7 @@ module.exports = class DockerContainer extends ContainerBase {
     this.directoryToPath();
 
     return new Command("docker-compose", [
-      ["-p", this.config.projectName],
+      ["-p", this.config.env_name],
       ["up", "-d"],
     ]).execute().then(() => {return this;}).catch((error) => {
       throw new Error("Failed to start environment container:\n" + error);

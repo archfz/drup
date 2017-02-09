@@ -7,6 +7,10 @@ const fs = require("../fs_utils");
 
 const ServiceCollection = require("./service_collection");
 
+const requiredConfig = {
+  env_name: (str) => str.match(/^[a-z_]+$/),
+};
+
 let containers;
 
 function getContainers() {
@@ -24,9 +28,19 @@ module.exports = class Environment {
     this.config = config;
   }
 
-  static create(envConfigurator, additionalConfig = {projectName: "test"}) {
+  static create(envConfigurator, config) {
+    for (const [name, validate] of Object.entries(requiredConfig)) {
+      if (!config.hasOwnProperty(name)) {
+        throw Error(`'${name}' configuration value is required for environment.`);
+      }
+
+      if (!validate(config[name])) {
+        throw Error(`'${name}' configuration value is invalid.`);
+      }
+    }
+
     return envConfigurator.configure().then((services) => {
-      return new Environment(services, additionalConfig);
+      return new Environment(services, config);
     });
   }
 
@@ -94,7 +108,7 @@ module.exports = class Environment {
     if (containerType == "*") {
       let promises = [];
 
-      for (let [type, Container] of Object.keys(getContainers())) {
+      for (let [, Container] of Object.entries(getContainers())) {
         let cont = new Container(path, this.services, this.config);
         promises.push(cont.writeComposition());
       }

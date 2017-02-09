@@ -32,7 +32,7 @@ module.exports = class MongodbService extends Service {
     let compose = {
       image: "bitnami/mongodb:latest",
       environment: {
-        MONGODB_DATABASE: env.projectName,
+        MONGODB_DATABASE: env.env_name,
         MONGODB_USER: this.config.user,
         MONGODB_PASSWORD: this.config.password,
       },
