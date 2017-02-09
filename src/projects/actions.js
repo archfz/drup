@@ -140,6 +140,8 @@ module.exports = {
     complete(data) {
       const configurator = data.get("project_types")[data.get("type")].getEnvConfigurator();
 
+      data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase())
+
       return Environment.create(configurator, data.get("config"))
         .then((env) => data.set("env", env));
     }
@@ -153,14 +155,15 @@ module.exports = {
         name: "include",
         default: true,
       }).then((values) => {
-        let path = data.get("directory");
+        let envPath = data.get("directory");
 
         if (values.include) {
-          path += "/project";
+          envPath += "/project";
         }
 
-        data.get("env").saveConfigTo();
-        data.set("env_path", path);
+        envPath = path.normalize(`${envPath}/${globals.ENV_CONFIG_FILENAME}`);
+        data.get("env").saveConfigTo(envPath);
+        data.set("env_path", envPath);
       });
     }
   },

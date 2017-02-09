@@ -81,8 +81,6 @@ module.exports = class Environment {
       throw new Error("This environment was not saved previously. You must provide a config file path to save to.");
     }
 
-    fs.ensureDirectory(this.getConfigPath());
-
     let environment = {
       config: this.config,
       services: {},
@@ -93,6 +91,7 @@ module.exports = class Environment {
     });
 
     this.configFile = configFile;
+    fs.ensureDirectory(this.getConfigPath());
     let promise = yaml.write(this.configFile, environment);
 
     promise.catch((err) => {
