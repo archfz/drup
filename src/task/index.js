@@ -56,9 +56,11 @@ module.exports = class Task {
 
   constructor(...actions) {
     this._references = {};
+
     this._actionStack = [];
     this._finalPromises = [];
 
+    this._startedSubTasks = [];
     this._subTasks = [];
 
     if (!actions.length) {
@@ -191,11 +193,12 @@ module.exports = class Task {
 
     return promise.then(() => {
       return Promise.all(this._finalPromises);
-    }).then(() => this._data);
+    })
+    .then(() => this._data);
   }
 
-  _addReferenceAction(reference, Action) {
-    this._references[reference] = Action;
+  _onReferenceAdded(reference) {
+    let action = this._references[reference];
 
     this._subTasks.forEach((task) => {
       if (!task.references.length) {
@@ -207,7 +210,7 @@ module.exports = class Task {
         return;
       }
 
-      task.promises.push(Action._promise);
+      task.promises.push(action._promise);
       task.references.splice(refIndex, 1);
 
       if (!task.references.length) {
@@ -216,10 +219,14 @@ module.exports = class Task {
             return task.task.start(this._data);
           })
         );
+
+        this._startedSubTasks.push(task.task);
       }
     });
 
-    return Action;
+    this._subTasks.forEach(({task:task}) => {
+      task._onReferenceAdded(reference);
+    });
   }
 
   _processActions(actions) {
@@ -245,10 +252,9 @@ module.exports = class Task {
               throw new Error(`Type of 'Action' expected, got '${typeof Action}': ${Action}`);
             }
 
-
-            promises.push(
-              this._addReferenceAction(reference, new Action(this._data))
-            );
+            this._references[reference] = new Action(this._data);
+            promises.push(this._references[reference]._promise);
+            this._onReferenceAdded(reference);
           }
           break;
         default:

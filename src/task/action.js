@@ -9,7 +9,7 @@ module.exports = class Action {
     this._promise = this.complete(data);
 
     if (!(this._promise instanceof Promise)) {
-      throw new Error(`Action '${this.constructor.name}' didn't return a promise.`)
+      throw new Error(`Action '${this.constructor.name}' didn't return a promise. Got '${this._promise}'`)
     }
   }
 
