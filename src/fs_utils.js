@@ -29,12 +29,4 @@ module.exports = {
     }
   },
 
-  toPath(path) {
-    if (path[path.length - 1] != "/") {
-      path += "/";
-    }
-
-    return path;
-  }
-
 };

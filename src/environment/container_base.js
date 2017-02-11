@@ -1,12 +1,13 @@
 "use strict";
 
 const fs = require("../fs_utils");
+const path = require("path");
 const utils = require("../utils");
 
 module.exports = class ContainerBase {
 
-  constructor(path, serviceCollection, envConfig) {
-    this.path = fs.toPath(path);
+  constructor(containerPath, serviceCollection, envConfig) {
+    this.path = path.normalize(containerPath);
     this.services = serviceCollection;
     this.config = envConfig;
   }
@@ -40,7 +41,7 @@ module.exports = class ContainerBase {
       return false;
     }
 
-    return fs.isFile(this.path + this.constructor.getFilename());
+    return fs.isFile(path.join(this.path, this.ann("filename")));
   }
 
   directoryToPath() {

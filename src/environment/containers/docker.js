@@ -1,6 +1,7 @@
 "use strict";
 
 const yaml = require("node-yaml");
+const path = require("path");
 
 const Command = require('../../system/system_command');
 const ContainerBase = require('../container_base');
@@ -113,7 +114,7 @@ module.exports = class DockerContainer extends ContainerBase {
   }
 
   writeComposition(envConfig) {
-    return yaml.write(this.path + this.ann("filename"), this.compose());
+    return yaml.write(path.join(this.path, this.ann("filename")), this.compose());
   }
 
 };

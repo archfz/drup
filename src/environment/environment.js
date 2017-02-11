@@ -4,6 +4,7 @@ const inquirer  = require("inquirer");
 const yaml = require("node-yaml");
 const utils = require("../utils");
 const fs = require("../fs_utils");
+const path = require("path");
 
 const ServiceCollection = require("./service_collection");
 
@@ -90,14 +91,14 @@ module.exports = class Environment {
       environment.services[id] = service.config;
     });
 
-    this.configFile = configFile;
-    fs.ensureDirectory(this.getConfigPath());
-    let promise = yaml.write(this.configFile, environment);
+    fs.ensureDirectory(path.dirname(configFile));
+    let promise = yaml.write(configFile, environment);
 
     promise.catch((err) => {
       throw new Error("Failed to save environment configuration.\n" + err);
     });
 
+    this.configFile = configFile;
     return promise.then(() => {
       return this;
     });
@@ -127,7 +128,7 @@ module.exports = class Environment {
     });
   }
 
-  getContainer(containerType, path = this.getConfigPath()) {
+  getContainer(containerType, path = path.dirname(this.configFile)) {
     let containers = getContainers();
 
     if (!containers[containerType]) {
@@ -135,12 +136,6 @@ module.exports = class Environment {
     }
 
     return new containers[containerType](path, this.services, this.config);
-  }
-
-  getConfigPath() {
-    let pathParts = this.configFile.split("/");
-    pathParts.pop();
-    return pathParts.join("/");
   }
 
 };

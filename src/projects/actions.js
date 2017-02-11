@@ -42,7 +42,7 @@ module.exports = {
             throw new Error("Failed to determine target directory on git clone.");
           }
 
-          data.set("tmp_directory", globals.TEMPORARY_DIR + dir[1]);
+          data.set("tmp_directory", path.normalize(globals.TEMPORARY_DIR + dir[1]));
           loader.finish("Project successfully cloned!");
         });
     }
@@ -50,7 +50,7 @@ module.exports = {
 
   DetectEnvironment: class extends Action {
     complete(data) {
-      let file = path.normalize(data.get("tmp_directory") + "/" + globals.ENV_CONFIG_FILENAME);
+      let file = path.join(data.get("tmp_directory"), globals.ENV_CONFIG_FILENAME);
 
       return yaml.read(file).then(
         (content) => data.set("env_data", content || false),
@@ -113,7 +113,7 @@ module.exports = {
   DownloadProject: class extends Action {
     complete(data) {
       const method = data.get("installation_method");
-      const tmpDir = path.normalize(globals.TEMPORARY_DIR + "/new_tmp" + Date.now());
+      const tmpDir = path.join(globals.TEMPORARY_DIR, "new_tmp" + Date.now());
 
       data.set("tmp_directory", tmpDir);
 
@@ -153,13 +153,16 @@ module.exports = {
   AskProjectDirectory: class extends Action {
     complete(data) {
       const urlSafeName = data.get("config.name").toLowerCase().replace(/\s+/g, "-");
+      const defaultPath = path.join(globals.PROJECTS_DIR, data.get("type"), urlSafeName);
 
       return inquirer.prompt({
         type: "input",
         name: "directory",
         message: "Project directory",
-        default: `${globals.PROJECTS_DIR}${data.get("type")}/${urlSafeName}`,
-      }).then((values) => data.set("directory", values.directory));
+        default: defaultPath,
+      }).then((values) => {
+        data.set("directory", path.normalize(values.directory));
+      });
     }
   },
 
@@ -170,7 +173,7 @@ module.exports = {
       return fs.ensureDir(baseDir).then(() => {
         return Promise.all(
           ["project", "data", "config", "log"].map((dir) => {
-            return fs.ensureDir(path.normalize(baseDir + "/" + dir));
+            return fs.ensureDir(path.join(baseDir, dir));
           })
         );
       });
@@ -180,7 +183,7 @@ module.exports = {
   MoveProject: class extends Action {
     complete(data) {
       const loader = new Loader("Moving project");
-      const dest = path.normalize(data.get("directory") + "/project");
+      const dest = path.join(data.get("directory"), "project");
 
       return fs.copy(data.get("tmp_directory"), dest)
         .then(() => {
@@ -193,7 +196,7 @@ module.exports = {
     complete(data) {
       const configurator = data.get("project_types")[data.get("type")].getEnvConfigurator();
 
-      data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase())
+      data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
 
       return Environment.create(configurator, data.get("config"))
         .then((env) => data.set("env", env));
@@ -214,7 +217,7 @@ module.exports = {
           envPath += "/project";
         }
 
-        envPath = path.normalize(`${envPath}/${globals.ENV_CONFIG_FILENAME}`);
+        envPath = path.join(envPath, globals.ENV_CONFIG_FILENAME);
         data.get("env").saveConfigTo(envPath);
         data.set("env_path", envPath);
       });
