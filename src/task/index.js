@@ -52,15 +52,56 @@ class TaskData {
 
 }
 
+class ActionReferences {
+
+  constructor() {
+    this._references = {};
+    this._listeners = [];
+  }
+
+  add(key, action) {
+    if (typeof key !== "string") {
+      throw new Error(`Action reference key must be a string. '${typeof key}' provided.`);
+    }
+
+    if (!(action instanceof ActionBase)) {
+      throw new Error(`Reference action must be an instance of ActionBase. Got '${typeof action}'.`);
+    }
+
+    if (this._references.hasOwnProperty(key)) {
+      throw new Error(`Duplicate action reference key: '${key}'`);
+    }
+
+    this._references[key] = action;
+    this._notifyReferenceAdded(key, action);
+  }
+
+  get(key) {
+    if (!this._references[key]) {
+      throw new Error(`Referenced Action not found with key: ${key}`);
+    }
+
+    return this._references[key];
+  }
+
+  onAdd(callback) {
+    this._listeners.push(callback);
+  }
+
+  _notifyReferenceAdded(key, action) {
+    this._listeners.forEach((callback) => callback(key, action));
+  }
+
+}
+
 module.exports = class Task {
 
   constructor(...actions) {
-    this._references = {};
+    this._references = new ActionReferences();
 
     this._actionStack = [];
     this._finalPromises = [];
 
-    this._startedSubTasks = [];
     this._subTasks = [];
 
     if (!actions.length) {
@@ -158,6 +199,7 @@ module.exports = class Task {
 
   start(initData) {
     this._data = initData instanceof TaskData ? initData : new TaskData(initData);
+    this._references.onAdd(this._onReferenceAdded.bind(this));
 
     let promise = Promise.all(
       this._processActions(this._actionStack.shift().actions)
@@ -191,41 +233,46 @@ module.exports = class Task {
       });
     });
 
-    return promise.then(() => {
-      return Promise.all(this._finalPromises);
-    })
-    .then(() => this._data);
+    return promise
+      .then(() => this._awaitAll())
+      .then(() => this._data);
   }
 
-  _onReferenceAdded(reference) {
-    let action = this._references[reference];
+  _awaitAll() {
+    let promises = this._finalPromises;
+    this._finalPromises = [];
 
-    this._subTasks.forEach((task) => {
-      if (!task.references.length) {
+    if (!promises.length) {
+      return Promise.resolve();
+    }
+
+    return Promise.all(promises)
+      .then(() => this._awaitAll());
+  }
+
+  _onReferenceAdded(key, action) {
+    this._subTasks.forEach((subTask) => {
+      if (!subTask.references.length) {
         return;
       }
 
-      let refIndex = task.references.indexOf(reference);
+      let refIndex = subTask.references.indexOf(key);
       if (refIndex === -1) {
         return;
       }
 
-      task.promises.push(action._promise);
-      task.references.splice(refIndex, 1);
+      subTask.promises.push(action._promise);
+      subTask.references.splice(refIndex, 1);
 
-      if (!task.references.length) {
-        this._finalPromises.push(
-          Promise.all(task.promises).then(() => {
-            return task.task.start(this._data);
-          })
-        );
-
-        this._startedSubTasks.push(task.task);
+      if (subTask.references.length) {
+        return;
       }
-    });
 
-    this._subTasks.forEach(({task:task}) => {
-      task._onReferenceAdded(reference);
+      this._finalPromises.push(
+        Promise.all(subTask.promises).then(() => {
+          return subTask.task.start(this._data);
+        })
+      );
     });
   }
 
@@ -240,11 +287,7 @@ module.exports = class Task {
 
       switch (typeof action) {
         case "string":
-          if (!this._references[action]) {
-            throw new Error(`Referenced Action not found with key: ${action}`);
-          }
-
-          promises.push(this._references[action]._promise);
+          promises.push(this._references.get(action)._promise);
           break;
         case "object":
           for (let [reference, Action] of Object.entries(action)) {
@@ -252,9 +295,9 @@ module.exports = class Task {
               throw new Error(`Type of 'Action' expected, got '${typeof Action}': ${Action}`);
             }
 
-            this._references[reference] = new Action(this._data);
-            promises.push(this._references[reference]._promise);
-            this._onReferenceAdded(reference);
+            const action = new Action(this._data);
+            this._references.add(reference, action);
+            promises.push(action._promise);
           }
           break;
         default:
