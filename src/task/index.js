@@ -1,56 +1,7 @@
 "use strict";
 
-const ActionBase = require('./action');
-
-class TaskData {
-
-  constructor(data) {
-    if (typeof data !== "object") {
-      throw new Error("Task initial data must be of type object.");
-    }
-
-    this.data = data;
-  }
-
-  get(selector) {
-    let path = selector.split(".");
-    let variable = this.data;
-
-    for (let i = 0; i < path.length; i++) {
-      if (!variable.hasOwnProperty(path[i])) {
-        return null;
-      }
-
-      variable = variable[path[i]];
-    }
-
-    return variable;
-  }
-
-  set(selector, value) {
-    let path = selector.split(".");
-    let _data = this.data;
-
-    for (let i = 0, l = path.length; i < l; i++) {
-      let p = path[i];
-
-      if (!_data.hasOwnProperty(p)) {
-        if (i === l - 1) {
-          _data[p] = value;
-          break;
-        } else {
-          _data[p] = {};
-        }
-      } else if (i === l - 1) {
-        _data[p] = value;
-        break;
-      }
-
-      _data = _data[p];
-    }
-  }
-
-}
+const ActionBase = require("./action");
+const TaskData = require("./data");
 
 class ActionReferences {
 
