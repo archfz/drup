@@ -19,7 +19,7 @@ class Action {
    *    The task data.
    */
   constructor(data) {
-    this.data = data;
+    this._data = data;
     this._promise = this.complete(data);
 
     if (!(this._promise instanceof Promise)) {
@@ -41,11 +41,16 @@ class Action {
 
   /**
    * Optionally reverts the things that the action completed.
+   *
+   * @param data
+   *    The task data.
+   *
+   * @return {Promise|void}
    */
-  revert() {
+  revert(data) {
 
   }
 
-};
+}
 
 module.exports = Action;

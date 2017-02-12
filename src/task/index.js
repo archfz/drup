@@ -4,49 +4,92 @@ const ActionBase = require("./action");
 const TaskData = require("./data");
 
 /**
- * Class ActionReferences.
+ * Class ActionRunner.
  *
- * Provides a helper for tasks to keep track of referenced actions.
+ * Provides a helper for tasks to start actions and keep references.
  */
-class ActionReferences {
+class ActionRunner {
 
   constructor() {
+    this._running = [];
+    this._completed = [];
     this._references = {};
-    this._listeners = [];
+    this._listeners = {
+      reference: [],
+      fail: [],
+    };
   }
 
   /**
-   * Adds a reference action to storage.
+   * Starts an action
    *
-   * @param {string} key
-   *    The name of the reference.
    * @param {ActionBase} action
-   *    The referenced action.
+   *    The action to start.
+   * @param {TaskData} data
+   *    The task data to pass to the action.
+   * @param {string} reference
+   *    Optionally reference the action.
+   *
+   * @returns {Promise}
+   *    The action's promise or a rejected promise with error.
    */
-  add(key, action) {
-    if (typeof key !== "string") {
-      throw new Error(`Action reference key must be a string. '${typeof key}' provided.`);
+  start(action, data, reference = "") {
+    if (this._err) {
+      return Promise.reject(this._err);
     }
 
-    if (!(action instanceof ActionBase)) {
-      throw new Error(`Reference action must be an instance of ActionBase. Got '${typeof action}'.`);
+    if (!(action.prototype instanceof ActionBase)) {
+      throw new Error(`Type of 'Action' expected, got '${typeof action}': ${action}`);
     }
 
-    if (this._references.hasOwnProperty(key)) {
-      throw new Error(`Duplicate action reference key: '${key}'`);
+    let act = new action(data);
+    this._running.push(act);
+
+    let promise = act._promise
+      .catch((err) => {
+        // If this action fails revert it right away and remove from running
+        // so that it doesn't interfere with the other running tasks.
+        act.revert(act._data);
+        this._running.splice(this._running.indexOf(act), 1);
+
+        err.message = `Action '${act.constructor.name}' failed:\n${err.message}`;
+
+        this._fail(err);
+      })
+      .then(() => {
+        this._completed.push(act);
+
+        // Only remove from the running if there were no errors, so that if
+        // there was we can identify the actions that were running when an error
+        // occurred.
+        if (!this._err) {
+          this._running.splice(this._running.indexOf(act), 1);
+        }
+      });
+
+    if (reference !== "") {
+      if (typeof reference !== "string") {
+        throw new Error(`Action reference key must be a string. '${typeof reference}' provided.`);
+      }
+
+      if (this._references.hasOwnProperty(reference)) {
+        throw new Error(`Duplicate action reference key: '${reference}'`);
+      }
+
+      this._references[reference] = act;
+      // Notify all listeners that a new action was referenced.
+      this._notifyReferenceAdded(reference, act);
     }
 
-    this._references[key] = action;
-    // Notify all listeners that a new action was referenced.
-    this._notifyReferenceAdded(key, action);
+    return promise;
   }
 
   /**
-   *
    * Gets a referenced action.
    *
    * @param {string} key
    *    The name of the reference.
+   *
    * @returns {ActionBase}
    */
   get(key) {
@@ -58,14 +101,70 @@ class ActionReferences {
   }
 
   /**
+   * Adds fail listener.
+   *
+   * @param {Function} callback
+   *    The function to be called when a action fails. Will receive the error.
+   */
+  onFail(callback) {
+    this._listeners.fail.push(callback);
+  }
+
+  /**
+   * Fail the action chain, revert all completed actions and notify listeners.
+   *
+   * @param {Error} err
+   *    The error that caused the failure.
+   * @private
+   */
+  _fail(err) {
+    if (this._err) {
+      return;
+    }
+
+    this._err = err;
+
+    // Start reverting completed actions and collect their promises.
+    let revertPromises = [];
+    this._completed.forEach((action) => {
+      const promise = action.revert(action._data);
+
+      if (promise instanceof Promise) {
+        revertPromises.push(promise)
+      }
+    });
+
+    // Await running actions to finish then revert them as-well.
+    const awaitRevert = Promise.all(this._running.map((act) => act._promise))
+      .then(() => {
+        let promises = [];
+
+        this._running.forEach((action) => {
+          const promise = action.revert(action._data);
+
+          if (promise instanceof Promise) {
+            promises.push(promise)
+          }
+        });
+      });
+
+    // Add the awaiting reverts.
+    revertPromises.push(awaitRevert);
+
+    // Create the final promise and send to listeners.
+    const awaitReverts = Promise.all(revertPromises);
+    this._listeners.fail.forEach((callback) => callback(awaitReverts));
+  }
+
+  /**
    * Adds reference addition listener.
    *
    * @param {Function} callback
    *    The function to be called on the event. This will get as parameters
    *    the reference name and the action.
    */
-  onAdd(callback) {
-    this._listeners.push(callback);
+  onReference(callback) {
+    this._listeners.reference.push(callback);
   }
 
   /**
@@ -78,7 +177,7 @@ class ActionReferences {
    * @private
    */
   _notifyReferenceAdded(key, action) {
-    this._listeners.forEach((callback) => callback(key, action));
+    this._listeners.reference.forEach((callback) => callback(key, action));
   }
 
 }
@@ -90,10 +189,8 @@ class ActionReferences {
  * the form of graphs for actions {ActionBase}, that provide a promise to
  * complete something. It also handles the reverting of completed actions if
  * any fail in the chain.
- *
- * @type {Task}
  */
-module.exports = class Task {
+class Task {
 
   /**
    * Task constructor.
@@ -105,14 +202,15 @@ module.exports = class Task {
    *    class: {referenceKey: MyAction, ..}.
    */
   constructor(...actions) {
-    // Keeps track of started actions that are referenced.
+    // Helper to start, revert and reference actions.
     // This will persist for sub-tasks.
-    this._references = new ActionReferences();
+    this._actionRunner = new ActionRunner();
 
     // Stores all parallel actions on each row.
     this._actionStack = [];
     // Stores all sub-tasks that will ran.
     this._subTasks = [];
+    // Keeps track of started actions.
 
     if (!actions.length) {
       throw new Error("You must provide at-least one action for a task.");
@@ -130,8 +228,9 @@ module.exports = class Task {
    */
   subTask() {
     let task = new Task("");
-    // Make sure the sub-task has access to the same references.
-    task._references = this._references;
+    // Make sure the sub-task has access to the same started actions and
+    // references.
+    task._actionRunner = this._actionRunner;
     // Reset the action stack as we want to start clean.
     task._actionStack = [];
 
@@ -295,7 +394,7 @@ module.exports = class Task {
 
     this._data = initData instanceof TaskData ? initData : new TaskData(initData);
     // Listen to references being added by this task or any sub-task.
-    this._references.onAdd(this._onReferenceAdded.bind(this));
+    this._actionRunner.onReference(this._onReferenceAdded.bind(this));
 
     // Process first stack of actions to build the initial promise.
     let promise = Promise.all(
@@ -344,7 +443,28 @@ module.exports = class Task {
     // started by references. At the end return the data.
     return promise
       .then(() => this._awaitAll())
+      .then(() => {
+        // Check if there was an error and if yes forward it.
+        if (this._actionRunner._err) {
+          throw this._actionRunner._err;
+        }
+      })
       .then(() => this._data);
+  }
+
+  /**
+   * Registers a callback for when reverting is initiated.
+   *
+   * @param callback
+   *    Callback function that will called on fail and will receive a promise
+   *    that will resolve when all actions reverted.
+   *
+   * @return {Task}
+   *    Self.
+   */
+  onReverting(callback) {
+    this._actionRunner.onFail(callback);
+    return this;
   }
 
   /**
@@ -436,7 +556,7 @@ module.exports = class Task {
     actions.forEach((action) => {
       // If this a simple action then just add it's promises and continue.
       if (action.prototype instanceof ActionBase) {
-        promises.push(new action(this._data)._promise);
+        promises.push(this._actionRunner.start(action, this._data));
         return;
       }
 
@@ -444,7 +564,7 @@ module.exports = class Task {
         // If we get a string it means that we got a reference.
         case "string":
           // Add the referenced action's promise.
-          promises.push(this._references.get(action)._promise);
+          promises.push(this._actionRunner.get(action)._promise);
           break;
         // In case of object we got actions that should be referenced.
         case "object":
@@ -456,9 +576,8 @@ module.exports = class Task {
 
             // Add the reference. This in turn will notify all sub-tasks,
             // super-tasks and this task.
-            const action = new Action(this._data);
-            this._references.add(reference, action);
-            promises.push(action._promise);
+            const promise = this._actionRunner.start(Action, this._data, reference);
+            promises.push(promise);
           }
           break;
         default:
@@ -469,4 +588,6 @@ module.exports = class Task {
     return promises;
   }
 
-};
+}
+
+module.exports = Task;
