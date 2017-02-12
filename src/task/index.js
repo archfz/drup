@@ -52,7 +52,12 @@ class ActionRunner {
         act.revert(act._data);
         this._running.splice(this._running.indexOf(act), 1);
 
-        err.message = `Action '${act.constructor.name}' failed:\n${err.message}`;
+        if (err instanceof Error) {
+          err.message = `Action '${act.constructor.name}' failed:\n${err.message}`;
+        }
+        else {
+          err = `Action '${act.constructor.name}' failed:\n${err}`;
+        }
 
         this._fail(err);
       })
