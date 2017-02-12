@@ -39,7 +39,7 @@ module.exports = class DockerContainer extends ContainerBase {
     ]);
 
     return cmd.execute().then((output) => {
-      if (!output) {
+      if (output.length < 5) {
         throw new Error("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
       }
 
@@ -73,7 +73,10 @@ module.exports = class DockerContainer extends ContainerBase {
   stop() {
     this.directoryToPath();
 
-    return new Command("docker-compose", ["stop"]).execute()
+    return new Command("docker-compose", [
+      ["-p", this.config.env_name],
+      "stop"
+    ]).execute()
       .then(() => {return this;}).catch((error) => {
         throw new Error("Failed to stop environment container:\n" + error);
       });
