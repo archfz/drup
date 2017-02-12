@@ -3,11 +3,7 @@
 const Service = require("../service_base");
 const inquirer = require("inquirer");
 
-const images = {
-  "7.1" : "php:7.1-fpm-alpine",
-  "7.0" : "php:7.0-fpm-alpine",
-  "5.6" : "php:5.6-fpm-alpine",
-};
+const versions = ["7.1", "7.0" , "5.6" ];
 
 /**
  * @id php
@@ -18,12 +14,12 @@ module.exports = class PhpService extends Service {
 
   _configure() {
     let choices = [];
-    for (const [key] of Object.entries(images)) {
+    versions.forEach((version) => {
       choices.push({
-        name: key,
-        checked: key == this.config.version,
+        name: version,
+        checked: version == this.config.version,
       });
-    }
+    });
 
     return inquirer.prompt([{
       type: "list",
@@ -43,7 +39,12 @@ module.exports = class PhpService extends Service {
 
   compose_docker() {
     let compose = {
-      image: images[this.config.version],
+      image: PhpService.imageDir(),
+      environment: {
+        PHP_VERSION: this.config.version,
+        PHP_XDEBUG: this.config.xdebug,
+        PHP_EXTENSIONS: this.config.additional_extensions.join(" "),
+      }
     };
 
     return compose;
@@ -53,6 +54,7 @@ module.exports = class PhpService extends Service {
     return {
       version: "7.1",
       xdebug: 1,
+      additional_extensions: ["opcache"],
     };
   }
 

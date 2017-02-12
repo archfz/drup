@@ -1,6 +1,7 @@
 "use strict";
 
 const utils = require("../utils");
+const path = require("path");
 
 module.exports = class ServiceBase {
 
@@ -25,6 +26,10 @@ module.exports = class ServiceBase {
     }
 
     return this[fnName](services, envConfig);
+  }
+
+  static imageDir() {
+    return path.join(__dirname, "images", __filename);
   }
 
   static defaults() {
