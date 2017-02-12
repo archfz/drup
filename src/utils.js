@@ -16,6 +16,10 @@ module.exports = {
     if (keyMethod) {
       modules = {};
       files.forEach((filename) => {
+        if (!filename.match(/\.js$/)) {
+          return;
+        }
+
         let module = require(dir + "/" + filename);
         modules[module[keyMethod]()] = module;
       });
@@ -23,6 +27,10 @@ module.exports = {
     else {
       modules = [];
       files.forEach((filename) => {
+        if (!filename.match(/\.js$/)) {
+          return;
+        }
+
         modules.push(require(dir + "/" + filename));
       });
     }
@@ -52,6 +60,10 @@ module.exports = {
       modules = {};
 
       files.forEach((filename) => {
+        if (!filename.match(/\.js$/)) {
+          return;
+        }
+
         let module = require(dir + "/" + filename);
         addAnnotations(module, filename);
         let moduleClass = module.name;
@@ -72,6 +84,10 @@ module.exports = {
       modules = [];
 
       files.forEach((filename) => {
+        if (!filename.match(/\.js$/)) {
+          return;
+        }
+
         modules.push(addAnnotations(require(dir + "/" + filename), filename));
       });
     }
