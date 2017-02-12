@@ -1,5 +1,7 @@
 "use strict";
 
+const os = require("os");
+
 const ProjectBase = require("../base");
 const EnvConfigurator = require("../../environment/environment_configurator");
 const Command = require("../../system/system_command");
@@ -38,11 +40,19 @@ class DrupalProject extends ProjectBase {
 
     switch (method) {
       case "standard":
-        cmd = new Command("composer", [
+        let params = [
           ["create-project", "drupal-composer/drupal-project:8.x-dev"],
           [dir, "--no-interaction"],
           ["--stability", "dev"],
-       ]);
+        ];
+
+        // In case of windows max path length will be reached and composer
+        // create will fail. Prefer source so that this doesn't happen.
+        if (os.platform() == "win32") {
+          params.push("--prefer-source");
+        }
+
+        cmd = new Command("composer", params);
         break;
       default:
         throw new Error("Unhandled installation method: " + method);
