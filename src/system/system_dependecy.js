@@ -29,10 +29,10 @@ module.exports = class DependencyCheck extends SystemCommand {
       result.status = status;
     }
 
-    this.resolvePromise(result);
+    this._resolvePromise(result);
   }
 
-  resolve(output) {
+  _resolve(output) {
     if (this.version) {
       let gotVersion = (output.match(/ ([\d+].[\d+](.[\d+])?)/) || [])[0];
       let versionParts = this.version.split('.');
@@ -69,7 +69,7 @@ module.exports = class DependencyCheck extends SystemCommand {
     return this.finalResolve(DependencyCheck.MET);
   }
 
-  reject(error) {
+  _reject(error) {
     return this.finalResolve(DependencyCheck.NOT_MET);
   }
 
