@@ -72,7 +72,7 @@ module.exports = {
     }
 
     if (!this.isIpValid(ip)) {
-      throw new Error("Itest2.devnvalid ip provided: " + ip);
+      throw new Error("Invalid ip provided: " + ip);
     }
 
     if (comment !== "") {
