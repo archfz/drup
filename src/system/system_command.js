@@ -150,8 +150,8 @@ class SystemCommand {
 
     this._process.on("error", (err) => this._reject(err));
     this._process.on("close", () => {
-      if (errorData !== "") {
-        this._reject(new Error(errorData));
+      if (this._process.exitCode !== 0) {
+        this._reject(new Error(errorData + "\n" + this._process.exitCode));
       }
 
       this._resolve(data);
