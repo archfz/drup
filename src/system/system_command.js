@@ -122,6 +122,8 @@ class SystemCommand {
    */
   execute(inDir = null) {
     let data = "";
+    let errorData = "";
+
     let options = {
       cwd: inDir,
       env: process.env,
@@ -135,16 +137,25 @@ class SystemCommand {
 
     this._process = spawn(this.command, this.getArgumentArray(), options);
 
-    const onData = (d) => {
+    this._process.stdout.on("data", (d) => {
       d = d.toString();
       data += d;
       this._dataCallbacks.forEach((callback) => callback(d));
-    };
-    this._process.stdout.on("data", onData);
-    this._process.stderr.on("data", onData);
+    });
+
+    this._process.stderr.on("data", (d) => {
+      d = d.toString();
+      errorData += d;
+    });
 
     this._process.on("error", (err) => this._reject(err));
-    this._process.on("close", () => this._resolve(data));
+    this._process.on("close", () => {
+      if (errorData !== "") {
+        this._reject(new Error(errorData));
+      }
+
+      this._resolve(data);
+    });
 
     return promise;
   }
