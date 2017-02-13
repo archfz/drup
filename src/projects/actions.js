@@ -240,15 +240,19 @@ module.exports = {
         }
 
         envPath = path.join(envPath, globals.ENV_CONFIG_FILENAME);
-        data.get("env").saveConfigTo(envPath);
         data.set("env_path", envPath);
+        return data.get("env").saveConfigTo(envPath);
       });
     }
   },
 
   ComposeEnvironment: class extends Action {
     complete(data) {
-      return data.get("env").composeContainer("*", data.get("directory"));
+      this.loader = new Loader("Composing environment");
+      return data.get("env").composeContainer("*", data.get("directory"))
+        .then(() => {
+          this.loader.finish("Environment composed");
+        });
     }
   },
 
