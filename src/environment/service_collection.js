@@ -16,7 +16,7 @@ module.exports = class ServiceCollection {
       serviceDiscovery = new ServiceCollection();
       serviceDiscovery.frozen = true;
 
-      utils.collectAnnotated(__dirname + "/services").forEach((service) => {
+      utils.collectAnnotated(__dirname + "/services", null, true).forEach((service) => {
         ["id", "label", "group"].forEach((key) => {
           if (!service.annotations[key]) {
             throw new Error(`A service must define the '${key}' annotation.`);

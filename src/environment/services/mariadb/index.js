@@ -1,6 +1,6 @@
 "use strict";
 
-const MysqlService = require("./mysql");
+const MysqlService = require("../mysql");
 const inquirer = require("inquirer");
 
 /**

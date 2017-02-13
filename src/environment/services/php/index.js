@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../service_base");
+const Service = require("../../service_base");
 const inquirer = require("inquirer");
 
 const versions = ["7.1", "7.0" , "5.6" ];

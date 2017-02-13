@@ -1,7 +1,4 @@
-ARG PHP_VERSION
-ARG PHP_EXTENSIONS
-ARG PHP_XDEBUG
-
+FROM php:${PHP_VERSION}-fpm-alpine
 MAINTAINER zoltan.fodor@pitechnologies.ro
 
 RUN apk upgrade --update

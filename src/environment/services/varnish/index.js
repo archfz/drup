@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../service_base");
+const Service = require("../../service_base");
 
 /**
  * @id varnish
