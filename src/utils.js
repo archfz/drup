@@ -38,11 +38,15 @@ module.exports = {
     return modules;
   },
 
-  collectAnnotated(dir, keyAnnotation = null) {
+  collectAnnotated(dir, keyAnnotation = null, searchDir = false) {
     let modules;
     let files = fs.readdirSync(dir);
 
     const addAnnotations = (toModule, filename) => {
+      if (searchDir) {
+        filename += "/index.js";
+      }
+
       let annotationData = annotation.getSync(dir + "/" + filename)[toModule.name];
 
       toModule.annotations = annotationData;
@@ -60,7 +64,7 @@ module.exports = {
       modules = {};
 
       files.forEach((filename) => {
-        if (!filename.match(/\.js$/)) {
+        if (Boolean(filename.match(/\.js$/)) === searchDir) {
           return;
         }
 
@@ -84,7 +88,7 @@ module.exports = {
       modules = [];
 
       files.forEach((filename) => {
-        if (!filename.match(/\.js$/)) {
+        if (Boolean(filename.match(/\.js$/)) === searchDir) {
           return;
         }
 

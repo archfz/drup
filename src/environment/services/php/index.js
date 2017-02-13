@@ -33,18 +33,20 @@ module.exports = class PhpService extends Service {
       default: true,
     }]).then((values) => {
       this.config.version = values.version;
-      this.config.xdebug = values.xdebug;
+      this.config.xdebug = values.xdebug ? 1 : 0;
     });
   }
 
   compose_docker() {
     let compose = {
-      image: PhpService.imageDir(),
-      environment: {
-        PHP_VERSION: this.config.version,
-        PHP_XDEBUG: this.config.xdebug,
-        PHP_EXTENSIONS: this.config.additional_extensions.join(" "),
-      }
+      build: {
+        context: PhpService.imageDir(),
+        args:  {
+          PHP_VERSION: this.config.version,
+          PHP_XDEBUG: this.config.xdebug,
+          PHP_EXTENSIONS: this.config.additional_extensions.join(" "),
+        }
+      },
     };
 
     return compose;
