@@ -1,0 +1,27 @@
+FROM php:{{= env.PHP_VERSION }}-fpm-alpine
+MAINTAINER zoltan.fodor@pitechnologies.ro
+
+RUN apk upgrade --update
+
+{{/* Install any additional php extensions. */}}
+{{~ env.PHP_EXTENSIONS :extension}}
+    {{/* GD library dependencies */}}
+    {{? extension == "gd" }}
+        apk add \
+            coreutils \
+            freetype-dev \
+            libjpeg-turbo-dev \
+            libltdl \
+            libmcrypt-dev \
+            libpng-dev \
+    {{?}}
+
+    RUN docker-php-ext-install -j$(nproc) {{= extension }} \
+{{~}}
+
+{{/* If so install xdebug and configure it. */}}
+{{? env.PHP_XDEBUG }}
+    RUN docker-php-ext-install -j$(nproc) dev && \
+        pecl install xdebug && \
+        docker-php-ext-enable xdebug
+{{?}}

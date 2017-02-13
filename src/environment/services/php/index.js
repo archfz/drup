@@ -40,12 +40,9 @@ module.exports = class PhpService extends Service {
   compose_docker() {
     let compose = {
       build: {
-        context: PhpService.imageDir(),
-        args:  {
-          PHP_VERSION: this.config.version,
-          PHP_XDEBUG: this.config.xdebug,
-          PHP_EXTENSIONS: this.config.additional_extensions.join(" "),
-        }
+        PHP_VERSION: this.config.version,
+        PHP_XDEBUG: this.config.xdebug,
+        PHP_EXTENSIONS: this.config.additional_extensions,
       },
     };
 

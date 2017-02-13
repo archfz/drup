@@ -28,10 +28,6 @@ module.exports = class ServiceBase {
     return this[fnName](services, envConfig);
   }
 
-  static imageDir() {
-    return path.join(__dirname, "images", __filename);
-  }
-
   static defaults() {
     return {};
   }
