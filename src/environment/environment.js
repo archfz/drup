@@ -70,11 +70,9 @@ module.exports = class Environment {
       return env;
     });
 
-    promise.catch((err) => {
-      throw new Error("Failed loading in environment:\n" + err);
+    return promise.catch((err) => {
+      throw new Error(`Failed loading in environment config:\nPATH: ${configFile}\n` + err);
     });
-
-    return promise;
   }
 
   saveConfigTo(configFile = this.configFile) {
@@ -94,14 +92,12 @@ module.exports = class Environment {
     fs.ensureDirectory(path.dirname(configFile));
     let promise = yaml.write(configFile, environment);
 
-    promise.catch((err) => {
-      throw new Error("Failed to save environment configuration.\n" + err);
-    });
-
     this.configFile = configFile;
     return promise.then(() => {
-      return this;
-    });
+        return this;
+      }).catch((err) => {
+        throw new Error("Failed to save environment configuration.\n" + err);
+      });
   }
 
   composeContainer(containerType, path) {
@@ -119,13 +115,11 @@ module.exports = class Environment {
     let container = this.getContainer(containerType, path);
     let promise = container.writeComposition();
 
-    promise.catch((err) => {
-      throw new Error(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
-    });
-
     return promise.then(() => {
-      return container;
-    });
+        return container;
+      }).catch((err) => {
+        throw new Error(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
+      });
   }
 
   getContainer(containerType, path = path.dirname(this.configFile)) {
