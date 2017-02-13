@@ -117,12 +117,24 @@ module.exports = {
 
       data.set("tmp_directory", tmpDir);
 
-      const loader = new Loader("Downloading project");
+      this.loader = new Loader("Downloading project");
       return fs.emptyDir(globals.TEMPORARY_DIR)
-        .then(() => data.get("project_type").download(method, tmpDir))
         .then(() => {
-          loader.finish("Project downloaded!");
+          this.cmd = data.get("project_type").download(method, tmpDir);
+          this.cmd.onData((data) => {
+            this.loader.setMessage(data);
+          });
+
+          return this.cmd.execute();
+        })
+        .then(() => {
+          this.loader.finish("Project downloaded!");
         });
+    }
+
+    revert() {
+      this.cmd.kill();
+      this.loader.destroy();
     }
   },
 
@@ -152,7 +164,12 @@ module.exports = {
 
   AskProjectDirectory: class extends Action {
     complete(data) {
-      const urlSafeName = data.get("config.name").toLowerCase().replace(/\s+/g, "-");
+      let baseName = data.get("config.name");
+      if (!baseName) {
+        baseName = path.basename(data.get("tmp_directory"));
+      }
+
+      const urlSafeName = baseName.toLowerCase().replace(/\s+/g, "-");
       const defaultPath = path.join(globals.PROJECTS_DIR, data.get("type"), urlSafeName);
 
       return inquirer.prompt({
@@ -182,13 +199,18 @@ module.exports = {
 
   MoveProject: class extends Action {
     complete(data) {
-      const loader = new Loader("Moving project");
-      const dest = path.join(data.get("directory"), "project");
+      this.loader = new Loader("Moving project");
+      this.dest = path.join(data.get("directory"), "project");
 
-      return fs.copy(data.get("tmp_directory"), dest)
+      return fs.copy(data.get("tmp_directory"), this.dest)
         .then(() => {
-          loader.finish("Project moved to new location");
+          this.loader.finish("Project moved to new location");
         });
+    }
+
+    revert() {
+      console.log("FUCK");
+      this.loader.destroy();
     }
   },
 

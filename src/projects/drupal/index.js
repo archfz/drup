@@ -58,7 +58,7 @@ class DrupalProject extends ProjectBase {
         throw new Error("Unhandled installation method: " + method);
     }
 
-    return cmd.execute();
+    return cmd;
   }
 
   static postInstall(data) {

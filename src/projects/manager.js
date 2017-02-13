@@ -8,12 +8,7 @@ let projectTypes = {drupal: require("./drupal")};
 module.exports = {
 
   setupFromDirectory(dir) {
-
-  },
-
-  setupFromGit(repository) {
-    return new Task(act.CloneProject)
-      .then(act.DetectEnvironment)
+    return new Task(act.DetectEnvironment)
       .ifThen((data) => data.get("env_data") !== false, (task) => {
         task.then(act.CreateDirectoryStructure)
           .then(act.MoveProject, act.SaveEnvironment, act.ComposeEnvironment);
@@ -29,9 +24,19 @@ module.exports = {
 
       })
       .start({
-        repository: repository,
+        tmp_directory: dir,
         project_types: this.getTypes(),
       });
+  },
+
+  setupFromGit(repository) {
+    return new Task(act.CloneProject)
+      .start({
+        repository: repository,
+      })
+      .then((data) => {
+        return this.setupFromDirectory(data.get("tmp_directory"));
+      })
   },
 
   setupNew(type, args) {
