@@ -28,11 +28,11 @@ module.exports = class MongodbService extends Service {
     });
   }
 
-  compose_docker(env) {
+  _composeDocker() {
     let compose = {
       image: "bitnami/mongodb:latest",
       environment: {
-        MONGODB_DATABASE: env.env_name,
+        MONGODB_DATABASE: this.env.config.env_name,
         MONGODB_USER: this.config.user,
         MONGODB_PASSWORD: this.config.password,
       },

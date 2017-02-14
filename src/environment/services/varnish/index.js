@@ -9,7 +9,7 @@ const Service = require("../../service_base");
  */
 module.exports = class VarnishService extends Service {
 
-  compose_docker(env) {
+  _composeDocker() {
     let compose = {
       image: "wodby/varnish-alpine"
     };

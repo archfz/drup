@@ -41,7 +41,7 @@ class ServiceBase {
   }
 
   compose(containerType) {
-    let fnName = "compose_" + containerType;
+    let fnName = "_compose" + containerType.charAt(0).toUpperCase() + containerType.slice(1);
 
     if (typeof this[fnName] !== "function") {
       utils.mustImplement(this, fnName);

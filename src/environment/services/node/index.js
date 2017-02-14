@@ -35,7 +35,7 @@ module.exports = class NodeService extends Service {
     });
   }
 
-  compose_docker() {
+  _composeDocker() {
     let compose = {
       image: images[this.config.version],
     };

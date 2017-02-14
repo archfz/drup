@@ -16,7 +16,7 @@ module.exports = class NginxService extends Service {
     env.on("composedDocker", this._onComposedDocker.bind(this))
   }
 
-  compose_docker() {
+  _composeDocker() {
     return {
       image: "nginx:stable-alpine",
       volumes: [

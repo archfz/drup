@@ -10,7 +10,7 @@ const Service = require("../../service_base");
  */
 module.exports = class LightTpdService extends Service {
 
-  compose_docker() {
+  _composeDocker() {
     let compose = {
       image: "sebp/lighttpd",
       volumes_from: [this.config.upstream_name],

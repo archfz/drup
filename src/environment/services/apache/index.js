@@ -10,7 +10,7 @@ const Service = require("../../service_base");
  */
 module.exports = class ApacheService extends Service {
 
-  compose_docker() {
+  _composeDocker() {
     let compose = {
       image: "httpd:alpine",
       volumes_from: [this.config.upstream_name],

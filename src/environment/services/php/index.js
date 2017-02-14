@@ -37,7 +37,7 @@ module.exports = class PhpService extends Service {
     });
   }
 
-  compose_docker() {
+  _composeDocker() {
     let compose = {
       build: {
         PHP_VERSION: this.config.version,

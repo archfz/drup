@@ -28,7 +28,7 @@ module.exports = class MysqlService extends Service {
     });
   }
 
-  compose_docker() {
+  _composeDocker() {
     let compose = {
       image: "mysql/mysql-server:5.7",
       environment: {
