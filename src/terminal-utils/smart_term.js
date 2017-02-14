@@ -13,7 +13,10 @@ const ANSI_VISIBLITY_REGEX = /[\u001b\u009b]\[\?25([hl])/;
 
 let JSTermInitialized = false;
 
-let nativeWrite = process.stdout.write.bind(process.stdout);
+let nativeWrite = {
+  out: process.stdout.write.bind(process.stdout),
+  err: process.stderr.write.bind(process.stderr),
+};
 
 let cursor = { x: 0, y: 0, n: 0 };
 let isCursorVisible = true;
@@ -164,27 +167,29 @@ const SmartTerminal = {
    * @param buff
    * @param encoding
    * @param callback
+   * @param type
    */
-  nativeWrite(buff, encoding, callback) {
-    nativeWrite(buff, encoding, callback);
+  nativeWrite(buff, encoding, callback, type = "out") {
+    nativeWrite[type](buff, encoding, callback);
   },
 
   /**
    * Write controlled output.
    *
-   * This function replaces the core stdout.write and parses the to be
+   * This function replaces the core stdout/err.write and parses the to be
    * written output in a way that cursor position is in any moment known.
    *
    * @param buff
    * @param encoding
    * @param callback
+   * @param type
    * @returns {*}
    */
-  parsedWrite(buff, encoding, callback) {
+  parsedWrite(buff, encoding, callback, type) {
     // When calling charm we can skip costly parsing. This is known
     // internally and prevents counting of ANSI sequences.
     if (this.charming) {
-      return this.nativeWrite(buff, encoding, callback);
+      return this.nativeWrite(buff, encoding, callback, type);
     }
 
     // To easily manipulate the data we convert it to string.
@@ -252,7 +257,7 @@ const SmartTerminal = {
       this.notify("before_write");
     }
 
-    this.nativeWrite(buff, encoding, callback);
+    this.nativeWrite(buff, encoding, callback, type);
 
     // Even if we got until this point the cursor might be in the same
     // location so prevent registering and positioning.
@@ -321,8 +326,12 @@ module.exports = function() {
     charm.pipe(process.stdout);
     process.stdin.setEncoding("utf8");
 
+    const func = function (buff, encoding, callback) {
+      SmartTerminal.parsedWrite(buff, encoding, callback, this.type);
+    };
     // Replace original write method so we can have more control.
-    process.stdout.write = SmartTerminal.parsedWrite.bind(SmartTerminal);
+    process.stdout.write = func.bind({type: "out"});
+    process.stderr.write = func.bind({type: "err"});
 
     // Pipe exit event.
     process.on("exit", function() {
