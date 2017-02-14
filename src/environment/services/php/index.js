@@ -49,6 +49,15 @@ module.exports = class PhpService extends Service {
     return compose;
   }
 
+  addExtensions(extension) {
+    if (typeof extension === "string") {
+      extension = [extension];
+    }
+
+    this.config.additional_extensions = this.config.additional_extensions
+      .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) == i);
+  }
+
   static defaults() {
     return {
       version: "7.1",
