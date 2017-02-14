@@ -13,6 +13,7 @@
     "charm": "^1.0.1",
     "colors": "^1.1.2",
     "dot": "^1.1.1",
+    "escape-string-regexp": "^1.0.5",
     "fs-extra": "^2.0.0",
     "fs-promise": "^1.0.0",
     "inquirer": "^1.2.2",
