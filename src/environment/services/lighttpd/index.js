@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../../service_base");
+const WebService = require("../web_base");
 
 /**
  * @id lighttpd
@@ -8,21 +8,14 @@ const Service = require("../../service_base");
  * @label LightTPD
  * @priority 10
  */
-module.exports = class LightTpdService extends Service {
+module.exports = class LightTpdService extends WebService {
 
   _composeDocker() {
     let compose = {
       image: "sebp/lighttpd",
-      volumes_from: [this.config.upstream_name],
     };
 
     return compose;
-  }
-
-  static defaults() {
-    return {
-      upstream_name: "php",
-    };
   }
 
 };

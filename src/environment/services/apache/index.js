@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../../service_base");
+const WebService = require("../web_base");
 
 /**
  * @id apache
@@ -8,21 +8,14 @@ const Service = require("../../service_base");
  * @label Apache
  * @priority 5
  */
-module.exports = class ApacheService extends Service {
+module.exports = class ApacheService extends WebService {
 
   _composeDocker() {
     let compose = {
       image: "httpd:alpine",
-      volumes_from: [this.config.upstream_name],
     };
 
     return compose;
-  }
-
-  static defaults() {
-    return {
-      upstream_name: "php",
-    };
   }
 
 };

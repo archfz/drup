@@ -1,6 +1,6 @@
 "use strict";
 
-const Service = require("../../service_base");
+const WebService = require("../web_base");
 
 /**
  * @id nginx
@@ -8,7 +8,7 @@ const Service = require("../../service_base");
  * @label NGINX
  * @priority 20
  */
-module.exports = class NginxService extends Service {
+module.exports = class NginxService extends WebService {
 
   bindEnvironment(env) {
     super.bindEnvironment(env);
@@ -42,13 +42,8 @@ module.exports = class NginxService extends Service {
       'default.conf.dot': {
         DOC_ROOT: this.config.doc_root,
         CONNECT_PHP: this.env.services.has("php"),
+        INDEXES: this.config.index_files,
       }
-    };
-  }
-
-  static defaults() {
-    return {
-      doc_root: "",
     };
   }
 
