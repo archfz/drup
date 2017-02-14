@@ -1,13 +1,14 @@
 FROM php:{{= env.PHP_VERSION }}-fpm-alpine
 MAINTAINER zoltan.fodor@pitechnologies.ro
 
-RUN apk upgrade --update
+RUN apk upgrade --update \
+    && NPROC=$(getconf _NPROCESSORS_ONLN) \
 
 {{/* Install any additional php extensions. */}}
-{{~ env.PHP_EXTENSIONS :extension}}
+{{? env.PHP_EXTENSIONS.length }}
     {{/* GD library dependencies */}}
-    {{? extension == "gd" }}
-        apk add \
+    {{? env.PHP_EXTENSIONS.indexOf("gd") !== -1 }}
+        && apk add \
             coreutils \
             freetype-dev \
             libjpeg-turbo-dev \
@@ -15,13 +16,13 @@ RUN apk upgrade --update
             libmcrypt-dev \
             libpng-dev \
     {{?}}
-
-    RUN docker-php-ext-install -j$(nproc) {{= extension }} \
-{{~}}
+    && docker-php-ext-install -j$NPROC {{= env.PHP_EXTENSIONS.join(" ") }} \
+{{?}}
 
 {{/* If so install xdebug and configure it. */}}
 {{? env.PHP_XDEBUG }}
-    RUN docker-php-ext-install -j$(nproc) dev && \
-        pecl install xdebug && \
-        docker-php-ext-enable xdebug
+    && apk add autoconf make gcc g++ \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && apk del autoconf make gcc g++ \
 {{?}}
