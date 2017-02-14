@@ -50,7 +50,7 @@ module.exports = {
 
   DetectEnvironment: class extends Action {
     complete(data) {
-      let file = path.join(data.get("tmp_directory"), globals.ENV_CONFIG_FILENAME);
+      let file = path.join(data.get("tmp_directory"), Environment.FILENAME);
 
       return yaml.read(file).then(
         (content) => data.set("env_data", content || false),
@@ -183,25 +183,21 @@ module.exports = {
     }
   },
 
-  CreateDirectoryStructure: class extends Action {
-    complete(data) {
-
-    }
-  },
-
   MoveProject: class extends Action {
     complete(data) {
       this.loader = new Loader("Moving project");
-      this.dest = path.join(data.get("directory"), "project");
+      this.dest = path.join(data.get("directory"), Environment.DIRECTORIES.PROJECT);
 
-      return fs.copy(data.get("tmp_directory"), this.dest)
+      return fs.ensureDir(this.dest)
+        .then(() => {
+          return fs.copy(data.get("tmp_directory"), this.dest)
+        })
         .then(() => {
           this.loader.finish("Project moved to new location");
         });
     }
 
     revert() {
-      console.log("FUCK");
       this.loader.destroy();
     }
   },
@@ -212,7 +208,7 @@ module.exports = {
 
       data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
 
-      return Environment.create(configurator, data.get("config"))
+      return Environment.create(configurator, data.get("config"), data.get("directory"))
         .then((env) => data.set("env", env));
     }
   },
@@ -225,15 +221,11 @@ module.exports = {
         name: "include",
         default: true,
       }).then((values) => {
-        let envPath = data.get("directory");
-
-        if (values.include) {
-          envPath += "/project";
-        }
-
-        envPath = path.join(envPath, globals.ENV_CONFIG_FILENAME);
-        data.set("env_path", envPath);
-        return data.get("env").saveConfigTo(envPath);
+        this.loader = new Loader("Creating environment structure");
+        return data.get("env").save(values.include)
+          .then(() => {
+            this.loader.finish("Environment structure created");
+          });
       });
     }
   },
@@ -241,7 +233,7 @@ module.exports = {
   ComposeEnvironment: class extends Action {
     complete(data) {
       this.loader = new Loader("Composing environment");
-      return data.get("env").composeContainer("*", data.get("directory"))
+      return data.get("env").composeContainer("*")
         .then(() => {
           this.loader.finish("Environment composed");
         });
@@ -251,7 +243,7 @@ module.exports = {
   CreateServiceConfigFiles: class extends Action {
     complete(data) {
       this.loader = new Loader("Creating service configurations");
-      return data.get("env").createServiceConfigFiles()
+      return data.get("env").addServiceConfigFiles()
         .then(() => {
           this.loader.finish("Service configurations created");
         });

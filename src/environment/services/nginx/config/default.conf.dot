@@ -1,7 +1,7 @@
 server {
     listen       80;
     server_name  localhost;
-    root   {{= service.doc_root }};
+    root   {{= service.DOC_ROOT }};
 
     #charset koi8-r;
     #access_log  /var/log/nginx/log/host.access.log  main;
@@ -19,7 +19,7 @@ server {
         root   /usr/share/nginx/html;
     }
 
-{{? service.connect_php }}
+{{? service.CONNECT_PHP }}
     # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
     location ~ \.php$ {
         fastcgi_pass   php:9000;

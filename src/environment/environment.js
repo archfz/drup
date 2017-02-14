@@ -27,7 +27,7 @@ class Environment {
   constructor(envConfig, root) {
     this._servicesInitialized = false;
 
-    this._services = envConfig._services;
+    this._services = envConfig.services;
     this.config = envConfig.config;
     this.root = root;
   }
@@ -56,7 +56,7 @@ class Environment {
 
     return yaml.read(configFile)
       .catch((err) => {
-        configFile = path.join(root, "project", Environment.FILENAME);
+        configFile = path.join(root, Environment.DIRECTORIES.PROJECT, Environment.FILENAME);
         return yaml.read(configFile);
       })
       .catch((err) => {
@@ -73,8 +73,37 @@ class Environment {
       });
   }
 
+  get services() {
+    if (this._servicesInitialized) {
+      return this._services;
+    }
+    else {
+      this._servicesInitialized = true;
+    }
+
+    if (!(this._services instanceof ServiceCollection)) {
+      const availableServices = ServiceCollection.collect();
+      const services = new ServiceCollection();
+
+      for (let [id, serviceConfig] of Object.entries(this._services)) {
+        const Service = availableServices.get(id);
+        const service = new Service(serviceConfig);
+        service.bindEnvironment(this);
+
+        services.addService(service);
+      }
+
+      this._services = services;
+    }
+    else {
+      this._services.each((service) => service.bindEnvironment(this));
+    }
+
+    return this._services;
+  }
+
   save(includeInProject = true) {
-    includeInProject = includeInProject ? "project" : "";
+    includeInProject = includeInProject ? Environment.DIRECTORIES.PROJECT : "";
     const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
 
     let environment = {
@@ -108,23 +137,13 @@ class Environment {
       });
   }
 
-  _createStructure() {
-    return fs.ensureDir(this.root).then(() => {
-      return Promise.all(
-        ["project", "data", "config", "log"].map((dir) => {
-          return fs.ensureDir(path.join(this.root, dir));
-        })
-      );
-    });
-  }
-
   composeContainer(containerType) {
     if (containerType == "*") {
       let promises = [];
 
       for (let [, Container] of Object.entries(getContainerTypes())) {
-        let cont = new Container(this.root);
-        promises.push(cont.writeComposition(this.ser));
+        let cont = new Container(this);
+        promises.push(cont.writeComposition());
       }
 
       return Promise.all(promises);
@@ -147,7 +166,7 @@ class Environment {
       throw new Error("Unknown container type: " + containerType);
     }
 
-    return new containers[containerType](this.root);
+    return new containers[containerType](this);
   }
 
   addServiceConfigFiles() {
@@ -163,38 +182,24 @@ class Environment {
       });
   }
 
-  get services() {
-    if (this._servicesInitialized) {
-      return this._services;
-    }
-    else {
-      this._servicesInitialized = true;
-    }
-
-    if (!(this._services instanceof ServiceCollection)) {
-      let availableServices = ServiceCollection.collect();
-      let services = new ServiceCollection();
-
-      for (let [id, serviceConfig] of Object.entries(this._services)) {
-        let Service = availableServices.get(id);
-        let service = new Service(serviceConfig);
-        service.bindEnvironment(this);
-
-        services.addService(service);
-      }
-
-      this._services = services;
-    }
-    else {
-      this._services.each((service) => service.bindEnvironment(this));
-    }
-
-    return this._services;
+  _createStructure() {
+    return fs.ensureDir(this.root).then(() => {
+      return Promise.all(
+        Object.keys(Environment.DIRECTORIES).map((dirKey) => {
+          return fs.ensureDir(path.join(this.root, Environment.DIRECTORIES[dirKey]));
+        })
+      );
+    });
   }
 
 }
 
 Environment.FILENAME = ".drup-env.yml";
+Environment.DIRECTORIES = {
+  CONFIG: "config",
+  DATA: "data",
+  LOG: "log",
+  PROJECT: "project",
+};
 
 module.exports = Environment;
-

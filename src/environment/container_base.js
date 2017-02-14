@@ -6,8 +6,8 @@ const utils = require("../utils");
 
 module.exports = class ContainerBase {
 
-  constructor(environment, containerPath) {
-    this.path = path.normalize(containerPath);
+  constructor(environment) {
+    this.path = path.normalize(environment.root);
     this.env = environment;
   }
 

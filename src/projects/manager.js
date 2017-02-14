@@ -10,20 +10,20 @@ module.exports = {
   setupFromDirectory(dir) {
     return new Task(act.DetectEnvironment)
       .ifThen((data) => data.get("env_data") !== false, (task) => {
-        task.then(act.CreateDirectoryStructure)
-          .then(act.MoveProject, act.SaveEnvironment, act.ComposeEnvironment);
+        task.then(act.AskProjectDirectory)
+          .then(act.SaveEnvironment)
+          .then(act.MoveProject, act.ComposeEnvironment);
       })
       .otherwise((task) => {
         task.then(act.DetectProjectType)
           .ifThen((data) => data.get("type") === false, act.AskProjectType)
           .then(act.AskProjectDirectory)
-          .then(act.AskProjectConfig, {dirCreated: act.CreateDirectoryStructure})
-          .after("dirCreated", act.MoveProject)
-          .then({envCreated: act.CreateProjectEnvironment})
-          .after(["dirCreated", "envCreated"], (task) => {
-            task.then(act.SaveEnvironment, act.ComposeEnvironment, act.CreateServiceConfigFiles);
+          .then({gotProjectConfig: act.AskProjectConfig}, act.MoveProject)
+          .after("gotProjectConfig", (task) => {
+            task.then(act.CreateProjectEnvironment)
+              .then(act.SaveEnvironment)
+              .then(act.ComposeEnvironment, act.CreateServiceConfigFiles);
           });
-
       })
       .start({
         tmp_directory: dir,

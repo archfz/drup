@@ -14,7 +14,7 @@ module.exports = class NginxService extends Service {
     return {
       image: "nginx:stable-alpine",
       volumes: [
-        `./config/${this.ann("id")}:/etc/nginx/conf.d`,
+        `./${this._dir("CONFIG")}/${this.ann("id")}:/etc/nginx/conf.d`,
       ]
     };
   }
