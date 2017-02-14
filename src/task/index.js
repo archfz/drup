@@ -560,7 +560,7 @@ class Task {
 
     actions.forEach((action) => {
       // If this a simple action then just add it's promises and continue.
-      if (action.prototype instanceof ActionBase) {
+      if (action && action.prototype instanceof ActionBase) {
         promises.push(this._actionRunner.start(action, this._data));
         return;
       }
@@ -575,7 +575,7 @@ class Task {
         case "object":
           // The object may contain multiple referenced actions.
           for (let [reference, Action] of Object.entries(action)) {
-            if (!(Action.prototype instanceof ActionBase)) {
+            if (!Action || !(Action.prototype instanceof ActionBase)) {
               throw new Error(`Type of 'Action' expected, got '${typeof Action}': ${Action}`);
             }
 
