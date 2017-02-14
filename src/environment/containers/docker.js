@@ -18,13 +18,13 @@ module.exports = class DockerContainer extends ContainerBase {
 
   getIp(serviceOrGroupName = "") {
     if (serviceOrGroupName === "") {
-      this.services.each((service) => {
+      this.env.services.each((service) => {
         serviceOrGroupName += `${this.config.env_name}_${service.ann("id")}_1 `;
       });
     }
     else {
-      if (!this.services.has(serviceOrGroupName)) {
-        let group = this.services.ofGroup(serviceOrGroupName);
+      if (!this.env.services.has(serviceOrGroupName)) {
+        let group = this.env.services.ofGroup(serviceOrGroupName);
 
         if (group === false) {
           throw new Error("No services found in the group: " + serviceOrGroupName);
@@ -55,7 +55,7 @@ module.exports = class DockerContainer extends ContainerBase {
       }
 
       let serviceIps = {};
-      this.services.each((service) => {
+      this.env.services.each((service) => {
         serviceIps[service.ann("id")] = ips.shift();
       });
 
@@ -103,16 +103,12 @@ module.exports = class DockerContainer extends ContainerBase {
   }
 
   compose() {
-    if (!this.services) {
-      throw new Error("Cannot compose. No services are configured yet.");
-    }
-
     let composition = {
       version: "2",
       services: {}
     };
 
-    this.services.each((Service, id) => {
+    this.env.services.each((Service, id) => {
       composition.services[id] =
         Service.compose(this.ann("id"));
     });

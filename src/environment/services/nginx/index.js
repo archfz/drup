@@ -11,16 +11,26 @@ const Service = require("../../service_base");
 module.exports = class NginxService extends Service {
 
   compose_docker() {
-    let compose = {
+    return {
       image: "nginx:stable-alpine",
+      volumes: [
+        `./config/${this.ann("id")}:/etc/nginx/conf.d`,
+      ]
     };
+  }
 
-    return compose;
+  _getConfigFileInfo() {
+    return {
+      'default.conf.dot': {
+        DOC_ROOT: this.config.doc_root,
+        CONNECT_PHP: this.env.services.has("php"),
+      }
+    };
   }
 
   static defaults() {
     return {
-
+      doc_root: "/usr/share/nginx/html",
     };
   }
 

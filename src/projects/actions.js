@@ -185,15 +185,7 @@ module.exports = {
 
   CreateDirectoryStructure: class extends Action {
     complete(data) {
-      const baseDir = path.normalize(data.get("directory"));
 
-      return fs.ensureDir(baseDir).then(() => {
-        return Promise.all(
-          ["project", "data", "config", "log"].map((dir) => {
-            return fs.ensureDir(path.join(baseDir, dir));
-          })
-        );
-      });
     }
   },
 
@@ -252,6 +244,16 @@ module.exports = {
       return data.get("env").composeContainer("*", data.get("directory"))
         .then(() => {
           this.loader.finish("Environment composed");
+        });
+    }
+  },
+
+  CreateServiceConfigFiles: class extends Action {
+    complete(data) {
+      this.loader = new Loader("Creating service configurations");
+      return data.get("env").createServiceConfigFiles()
+        .then(() => {
+          this.loader.finish("Service configurations created");
         });
     }
   },

@@ -3,9 +3,8 @@
 const inquirer  = require("inquirer");
 const yaml = require("node-yaml");
 const utils = require("../utils");
-const fs = require("../fs_utils");
+const fs = require("fs-promise");
 const path = require("path");
-const dot = require("dot");
 
 const ServiceCollection = require("./service_collection");
 
@@ -15,7 +14,7 @@ const requiredConfig = {
 
 let containers;
 
-function getContainers() {
+function getContainerTypes() {
   if (!containers) {
     containers = utils.collectAnnotated(__dirname + "/containers", "id");
   }
@@ -23,16 +22,17 @@ function getContainers() {
   return containers;
 }
 
-module.exports = class Environment {
+class Environment {
 
-  constructor(services, config) {
-    this.services = services;
-    this.config = config;
+  constructor(envConfig, root) {
+    this._servicesInitialized = false;
 
-    services.each((service) => service.bindEnvironment(this));
+    this._services = envConfig._services;
+    this.config = envConfig.config;
+    this.root = root;
   }
 
-  static create(envConfigurator, config) {
+  static create(envConfigurator, config, root) {
     for (const [name, validate] of Object.entries(requiredConfig)) {
       if (!config.hasOwnProperty(name)) {
         throw Error(`'${name}' configuration value is required for environment.`);
@@ -44,44 +44,38 @@ module.exports = class Environment {
     }
 
     return envConfigurator.configure().then((services) => {
-      return new Environment(services, config);
+      return new Environment({
+        config: config,
+        services: services,
+      }, root);
     });
   }
 
-  static load(configFileOrData) {
-    let promise, configFile;
-    if (typeof configFileOrData === "object") {
-      promise = Promise.resolve(configFileOrData);
-    }
-    else {
-      configFile = configFileOrData;
-      promise = yaml.read(configFile);
-    }
+  static load(root) {
+    let configFile = path.join(root, Environment.FILENAME);
 
-    promise = promise.then((data) => {
-      let availableServices = ServiceCollection.collect();
-      let services = new ServiceCollection();
+    return yaml.read(configFile)
+      .catch((err) => {
+        configFile = path.join(root, "project", Environment.FILENAME);
+        return yaml.read(configFile);
+      })
+      .catch((err) => {
+        throw new Error(`Failed loading in environment config:\nPATH: ${configFile}\n` + err);
+      })
+      .then((envConfig) => {
+        let env = new Environment(envConfig, root);
+        env.configFile = configFile;
 
-      for (let [id, serviceConfig] of Object.entries(data.services)) {
-        let Service = availableServices.get(id);
-        services.addService(new Service(serviceConfig));
-      }
-
-      let env = new Environment(services, data.config);
-      env.configFile = configFile;
-
-      return env;
-    });
-
-    return promise.catch((err) => {
-      throw new Error(`Failed loading in environment config:\nPATH: ${configFile}\n` + err);
-    });
+        return env;
+      })
+      .catch((err) => {
+        throw new Error(`Failed instantiating environment from config.\n` + err);
+      });
   }
 
-  saveConfigTo(configFile = this.configFile) {
-    if (!this.configFile && !configFile) {
-      throw new Error("This environment was not saved previously. You must provide a config file path to save to.");
-    }
+  save(includeInProject = true) {
+    includeInProject = includeInProject ? "project" : "";
+    const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
 
     let environment = {
       config: this.config,
@@ -92,47 +86,115 @@ module.exports = class Environment {
       environment.services[id] = service.config;
     });
 
-    fs.ensureDirectory(path.dirname(configFile));
-    let promise = yaml.write(configFile, environment);
+    let promise = Promise.resolve();
+    if (this.configFile && this.configFile !== saveTo) {
+      promise = fs.unlink(this.configFile)
+        .catch((err) => {
+          throw new Error("Failed removing old environment config file:\n" + err);
+        });
+    }
+    else if(!this.configFile) {
+      promise = this._createStructure();
+    }
 
-    this.configFile = configFile;
     return promise.then(() => {
+        return yaml.write(saveTo, environment);
+      })
+      .then(() => {
         return this;
-      }).catch((err) => {
+      })
+      .catch((err) => {
         throw new Error("Failed to save environment configuration.\n" + err);
       });
   }
 
-  composeContainer(containerType, path) {
+  _createStructure() {
+    return fs.ensureDir(this.root).then(() => {
+      return Promise.all(
+        ["project", "data", "config", "log"].map((dir) => {
+          return fs.ensureDir(path.join(this.root, dir));
+        })
+      );
+    });
+  }
+
+  composeContainer(containerType) {
     if (containerType == "*") {
       let promises = [];
 
-      for (let [, Container] of Object.entries(getContainers())) {
-        let cont = new Container(path);
-        promises.push(cont.writeComposition());
+      for (let [, Container] of Object.entries(getContainerTypes())) {
+        let cont = new Container(this.root);
+        promises.push(cont.writeComposition(this.ser));
       }
 
       return Promise.all(promises);
     }
 
-    let container = this.getContainer(containerType, path);
+    let container = this.getContainer(containerType);
     let promise = container.writeComposition();
 
     return promise.then(() => {
         return container;
       }).catch((err) => {
-        throw new Error(`Failed writing ${container.constructor.getKey()} container composition: ` + err);
+        throw new Error(`Failed writing ${container.ann("id")} container composition: ` + err);
       });
   }
 
-  getContainer(containerType, path = path.dirname(this.configFile)) {
-    let containers = getContainers();
+  getContainer(containerType) {
+    let containers = getContainerTypes();
 
     if (!containers[containerType]) {
       throw new Error("Unknown container type: " + containerType);
     }
 
-    return new containers[containerType](path);
+    return new containers[containerType](this.root);
   }
 
-};
+  addServiceConfigFiles() {
+    let promises = [];
+
+    this.services.each((service) => {
+      promises.push(service.addConfigFiles(this.root));
+    });
+
+    return Promise.all(promises)
+      .catch((err) => {
+        throw new Error(`Failed creating configuration files for services.\n` + err);
+      });
+  }
+
+  get services() {
+    if (this._servicesInitialized) {
+      return this._services;
+    }
+    else {
+      this._servicesInitialized = true;
+    }
+
+    if (!(this._services instanceof ServiceCollection)) {
+      let availableServices = ServiceCollection.collect();
+      let services = new ServiceCollection();
+
+      for (let [id, serviceConfig] of Object.entries(this._services)) {
+        let Service = availableServices.get(id);
+        let service = new Service(serviceConfig);
+        service.bindEnvironment(this);
+
+        services.addService(service);
+      }
+
+      this._services = services;
+    }
+    else {
+      this._services.each((service) => service.bindEnvironment(this));
+    }
+
+    return this._services;
+  }
+
+}
+
+Environment.FILENAME = ".drup-env.yml";
+
+module.exports = Environment;
+

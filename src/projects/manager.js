@@ -20,7 +20,9 @@ module.exports = {
           .then(act.AskProjectConfig, {dirCreated: act.CreateDirectoryStructure})
           .after("dirCreated", act.MoveProject)
           .then({envCreated: act.CreateProjectEnvironment})
-          .after(["dirCreated", "envCreated"], act.SaveEnvironment, act.ComposeEnvironment);
+          .after(["dirCreated", "envCreated"], (task) => {
+            task.then(act.SaveEnvironment, act.ComposeEnvironment, act.CreateServiceConfigFiles);
+          });
 
       })
       .start({
