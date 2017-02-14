@@ -113,6 +113,8 @@ module.exports = class DockerContainer extends ContainerBase {
         Service.compose(this.ann("id"));
     });
 
+    this.env._fireEvent("composedDocker", composition.services);
+
     return composition;
   }
 

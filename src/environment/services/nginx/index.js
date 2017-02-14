@@ -10,13 +10,31 @@ const Service = require("../../service_base");
  */
 module.exports = class NginxService extends Service {
 
+  bindEnvironment(env) {
+    super.bindEnvironment(env);
+
+    env.on("composedDocker", this._onComposedDocker.bind(this))
+  }
+
   compose_docker() {
     return {
       image: "nginx:stable-alpine",
       volumes: [
         `./${this._dir("CONFIG")}/${this.ann("id")}:/etc/nginx/conf.d`,
+        `./${this._dir("PROJECT")}:/usr/share/nginx/html`,
       ]
     };
+  }
+
+  _onComposedDocker(services) {
+    if (this.env.services.has("php")) {
+      if (!services["php"].volumes) {
+        services["php"].volumes = [];
+      }
+
+      services["php"].volumes.push(`./${this._dir("PROJECT")}:/usr/share/nginx/html`);
+      services[this.ann("id")].depends_on = ["php"];
+    }
   }
 
   _getConfigFileInfo() {
@@ -30,7 +48,7 @@ module.exports = class NginxService extends Service {
 
   static defaults() {
     return {
-      doc_root: "/usr/share/nginx/html",
+      doc_root: "",
     };
   }
 

@@ -30,6 +30,8 @@ class Environment {
     this._services = envConfig.services;
     this.config = envConfig.config;
     this.root = root;
+
+    this._listeners = {};
   }
 
   static create(envConfigurator, config, root) {
@@ -190,6 +192,27 @@ class Environment {
         })
       );
     });
+  }
+
+  _fireEvent(eventType, ...args) {
+    if (this._listeners[eventType]) {
+      this._listeners[eventType].forEach((callback) => callback(...args));
+    }
+
+    return this;
+  }
+
+  on(eventType, callback) {
+    if (typeof callback !== "function") {
+      throw new Error("Callback must be a function.");
+    }
+
+    if (!this._listeners[eventType]) {
+      this._listeners[eventType] = [];
+    }
+
+    this._listeners[eventType].push(callback);
+    return this;
   }
 
 }
