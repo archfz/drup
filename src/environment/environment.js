@@ -5,6 +5,7 @@ const yaml = require("node-yaml");
 const utils = require("../utils");
 const fs = require("../fs_utils");
 const path = require("path");
+const dot = require("dot");
 
 const ServiceCollection = require("./service_collection");
 
@@ -27,6 +28,8 @@ module.exports = class Environment {
   constructor(services, config) {
     this.services = services;
     this.config = config;
+
+    services.each((service) => service.bindEnvironment(this));
   }
 
   static create(envConfigurator, config) {
@@ -105,7 +108,7 @@ module.exports = class Environment {
       let promises = [];
 
       for (let [, Container] of Object.entries(getContainers())) {
-        let cont = new Container(path, this.services, this.config);
+        let cont = new Container(path);
         promises.push(cont.writeComposition());
       }
 
@@ -129,7 +132,7 @@ module.exports = class Environment {
       throw new Error("Unknown container type: " + containerType);
     }
 
-    return new containers[containerType](path, this.services, this.config);
+    return new containers[containerType](path);
   }
 
 };

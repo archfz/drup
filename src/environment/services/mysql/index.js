@@ -28,12 +28,12 @@ module.exports = class MysqlService extends Service {
     });
   }
 
-  compose_docker(services, env) {
+  compose_docker() {
     let compose = {
       image: "mysql/mysql-server:5.7",
       environment: {
         MYSQL_RANDOM_ROOT_PASSWORD: 1,
-        MYSQL_DATABASE: env.env_name,
+        MYSQL_DATABASE: this.env.config.env_name,
         MYSQL_USER: this.config.user,
         MYSQL_PASSWORD: this.config.password,
       },

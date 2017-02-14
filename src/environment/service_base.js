@@ -9,6 +9,10 @@ module.exports = class ServiceBase {
     this.config = config || this.constructor.defaults();
   }
 
+  bindEnvironment(env) {
+    this.env = env;
+  }
+
   configure() {
     if (!this._configure) {
       return Promise.resolve();

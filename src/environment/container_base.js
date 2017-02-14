@@ -6,10 +6,8 @@ const utils = require("../utils");
 
 module.exports = class ContainerBase {
 
-  constructor(containerPath, serviceCollection, envConfig) {
+  constructor(containerPath) {
     this.path = path.normalize(containerPath);
-    this.services = serviceCollection;
-    this.config = envConfig;
   }
 
   getIp(services = "") {

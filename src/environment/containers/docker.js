@@ -114,13 +114,13 @@ module.exports = class DockerContainer extends ContainerBase {
 
     this.services.each((Service, id) => {
       composition.services[id] =
-        Service.compose(this.ann("id"), this.services, this.config);
+        Service.compose(this.ann("id"));
     });
 
     return composition;
   }
 
-  writeComposition(envConfig) {
+  writeComposition() {
     return new Promise((resolve, reject) => {
       let composition = this.compose();
       let promises = [];
