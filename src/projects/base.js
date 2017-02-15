@@ -7,10 +7,8 @@ const Environment = require("../environment/environment");
 
 module.exports = class ProjectBase {
 
-  constructor(projectRoot, config) {
-    this.projectRoot = projectRoot;
-    this.config = config;
-    this.envRoot = projectRoot.substr(0, projectRoot.lastIndexOf("/"));
+  constructor(config) {
+    this._config = config;
   }
 
   static getEnvConfigurator() {
@@ -36,35 +34,34 @@ module.exports = class ProjectBase {
     utils.mustImplement(this, "download");
   }
 
-  getEnvironment() {
-    if (!this.environment) {
-      return Environment.load(this.projectRoot).then((env) => {
-        this.environment = env;
-
-        return Promise.resolve(env);
-      });
-    }
-
-    return Promise.resolve(this.environment);
-  }
-
   save() {
-    let promise;
 
-    if (this.environment) {
-      promise = this.environment.saveConfigTo(this.projectRoot + projectManager.ENV_FILENAME);
-    }
-    else {
-      promise = Promise.resolve();
-    }
-
-    return promise.then(() => {
-      projectManager.save(this);
-    });
   }
 
   remove() {
-    projectManager.remove(this);
+
+  }
+
+  get environment() {
+    if (!this._environment) {
+      return Environment.load(this.root).then((env) => {
+        this._environment = env;
+      });
+    }
+
+    return Promise.resolve(this._environment);
+  }
+
+  get name() {
+    return this._config.name;
+  }
+
+  get key() {
+    return this._config.key;
+  }
+
+  get root() {
+    return this._config.root;
   }
 
 };
