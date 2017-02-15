@@ -48,68 +48,6 @@ module.exports = {
     }
   },
 
-  DetectEnvironment: class extends Action {
-    complete(data) {
-      let file = path.join(data.get("tmp_directory"), Environment.FILENAME);
-
-      return yaml.read(file).then(
-        (content) => data.set("env_data", content || false),
-        () => data.set("env_data", false)
-      );
-    }
-  },
-
-  DetectProjectType: class extends Action {
-    complete(data) {
-      let promises = [];
-
-      for (const [, Project] of Object.entries(data.get("project_types"))) {
-        promises.push(Project.isInDirectory(data.get("tmp_directory"), false));
-      }
-
-      return Promise.all(promises).then(
-        () => data.set("type", false),
-        (type) => data.set("type", type)
-      ).then(this.resolve);
-    }
-  },
-
-  AskProjectType: class extends Action {
-    complete(data) {
-      return inquirer.prompt({
-        type: "list",
-        name: "type",
-        message: "Select project type",
-        choices: Object.keys(data.get("project_types")),
-      }).then((values) => {
-        data.set("type", values.type);
-        data.set("project_type", data.get("project_types")[values.type]);
-      });
-    }
-  },
-
-  AskInstallationMethod: class extends Action {
-    complete(data) {
-      let project = data.get("project_type");
-      let choices = [];
-
-      for (let [method, description] of Object.entries(project.getInstallationMethods())) {
-        choices.push({
-          name: method,
-          value: method,
-          description: description,
-        });
-      }
-
-      return inquirer.prompt({
-        type: "list",
-        name: "method",
-        message: "Select installation method",
-        choices: choices,
-      }).then((values) => data.set("installation_method", values.method));
-    }
-  },
-
   DownloadProject: class extends Action {
     complete(data) {
       const method = data.get("installation_method");
