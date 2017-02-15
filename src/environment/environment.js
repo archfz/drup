@@ -104,6 +104,10 @@ class Environment {
     return this._services;
   }
 
+  static hasEnvironment(directory) {
+    return fs.exists(path.join(directory, Environment.FILENAME));
+  }
+
   save(includeInProject = true) {
     includeInProject = includeInProject ? Environment.DIRECTORIES.PROJECT : "";
     const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
