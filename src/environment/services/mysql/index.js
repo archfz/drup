@@ -1,7 +1,9 @@
 "use strict";
 
-const Service = require("../../service_base");
 const inquirer = require("inquirer");
+const os = require("os");
+
+const Service = require("../../service_base");
 
 /**
  * @id mysql
@@ -45,8 +47,17 @@ module.exports = class MysqlService extends Service {
         MYSQL_USER: this.config.user,
         MYSQL_PASSWORD: this.config.password,
       },
-      volumes: [`./data/${this.ann("id")}:/var/lib/mysql`]
+      volumes: []
     };
+
+    // Workaround for windows as mysql won't be able to read from the volume
+    // and container won't start. Let docker create volume manually.
+    if (os.platform() === "win32") {
+      compose.volumes.push(`/var/lib/mysql`);
+    }
+    else {
+      compose.volumes.push(`./data/${this.ann("id")}:/var/lib/mysql`)
+    }
 
     return compose;
   }
