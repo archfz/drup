@@ -144,24 +144,29 @@ module.exports = {
 
       if (env) {
         project = new (data.get("project_types")[env.config.type])(data.get("root"), env.config);
-        project.environment = env;
-
-        data.set("project", project);
-        return Promise.resolve();
       }
       else {
-        const configurator = data.get("project_type").getEnvConfigurator();
-
-        data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
         project = new (data.get("project_type"))(data.get("root"), data.get("config"));
-
-        return Environment.create(configurator, data.get("config"), data.get("root"))
-          .then((env) => {
-            project.environment = env;
-
-            data.set("project", project);
-          });
       }
+
+      console.log(project.initialize(data.get("tmp_directory")));
+
+      return project.initialize(data.get("tmp_directory"))
+        .then(() => {
+          data.set("project", project);
+
+          if (env) {
+            project.environment = env;
+            return Promise.resolve();
+          }
+          else {
+            const configurator = data.get("project_type").getEnvConfigurator();
+            data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
+
+            return Environment.create(configurator, data.get("config"), data.get("root"))
+              .then((env) => project.environment = env);
+          }
+        });
     }
   },
 

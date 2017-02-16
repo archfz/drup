@@ -38,7 +38,7 @@ class Projects {
         throw new Error(`Undefined type of project '${type}'.`);
       }
 
-      projectType = type;
+      projectType = getProjectTypes()[type];
     }
     else if (!typeChoices.length) {
       throw new Error(`No project types available.`);
@@ -87,15 +87,13 @@ class Projects {
       }
     }).then(() => {
       return new Task({projectFilesReady: act.DownloadProject, gotConfig: act.GetProjectConfig})
-        .after("gotConfig", (task) => {
-          task.then({gotRoot: act.AskProjectDirectory})
-            .then({projectCreated: act.CreateProject})
-            .then(act.SaveEnvironment)
-            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
-            .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
-            .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
-            .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
-        })
+        .then({gotRoot: act.AskProjectDirectory})
+        .then({projectCreated: act.CreateProject})
+        .then(act.SaveEnvironment)
+        .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+        .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
+        .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
+        .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject)
         .start({
           project_type: projectType,
           config: {

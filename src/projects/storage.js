@@ -2,7 +2,7 @@
 
 const yaml = require("node-yaml");
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs-promise");
 
 const globals = require("../globals");
 

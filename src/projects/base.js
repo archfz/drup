@@ -85,6 +85,10 @@ module.exports = class ProjectBase {
     utils.mustImplement(this, "download");
   }
 
+  initialize() {
+    return Promise.resolve();
+  }
+
   setup() {
     return Promise.resolve();
   }
@@ -126,6 +130,11 @@ module.exports = class ProjectBase {
     }
 
     this._environment = env;
+    this._onEnvironmentSet(env);
+  }
+
+  _onEnvironmentSet(env) {
+
   }
 
   get environment() {

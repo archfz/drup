@@ -1,5 +1,8 @@
 "use strict";
 
+const readdir = require("readdirp");
+const path = require("path");
+
 const hostManager = require("../../hosts_manager");
 
 const ProjectBase = require("../base");
@@ -35,6 +38,39 @@ class WebProject extends ProjectBase {
       .then((container) => cont = container && container.getIp())
       .then((ip) => hostManager.removeHost(this._config.host_alias))
       .then(() => getContainer ? cont : this);
+  }
+
+  _onEnvironmentSet(env) {
+    for (let [,webService] of Object.entries(env.services.ofGroup("web"))) {
+      webService.setDocumentRoot(this._docRoot);
+    }
+  }
+
+  initialize(tempDirectory) {
+    return this.findDocumentRoot(tempDirectory)
+      .then((root) => {
+        root = path.normalize(root);
+        console.log(root);
+        this._docRoot = root.substr(tempDirectory.length);
+        console.log(this._docRoot);
+      });
+  }
+
+  findDocumentRoot(directory = this.root) {
+    return new Promise((res, rej) => {
+      let stream = readdir({
+        root: directory,
+        depth: 3,
+        fileFilter: this.ann("index_file")
+      }).on("error", rej)
+        .on("end", rej)
+        .on("data", (entry) => {
+          res(entry.parentDir);
+          stream.destroy();
+        });
+    }).catch((err) => {
+      throw new Error(`Could not find document root for ${this.constructor.name} web project.\n${err}`)
+    });
   }
 
 }

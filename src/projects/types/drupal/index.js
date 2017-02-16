@@ -10,6 +10,7 @@ const Command = require("../../../system/system_command");
 
 /**
  * @id drupal
+ * @index_file index.php
  */
 class Drupal extends WebProject {
 
