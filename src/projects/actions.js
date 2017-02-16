@@ -156,7 +156,7 @@ module.exports = {
           }
           else {
             const configurator = data.get("project_type").getEnvConfigurator();
-            data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
+            data.set("config.env_name", data.get("config.name").replace(/[^a-zA-Z]+/g, "").toLowerCase());
 
             return Environment.create(configurator, data.get("config"), data.get("root"))
               .then((env) => project.environment = env);

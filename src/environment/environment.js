@@ -9,7 +9,7 @@ const path = require("path");
 const ServiceCollection = require("./service_collection");
 
 const requiredConfig = {
-  env_name: (str) => str.match(/^[a-z_]+$/),
+  env_name: (str) => str.match(/^[a-z]+$/),
 };
 
 let containers;
