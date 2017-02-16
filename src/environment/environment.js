@@ -98,13 +98,13 @@ class Environment {
 
         services.addService(service);
       }
-
       this._services = services;
     }
     else {
       this._services.each((service) => service.bindEnvironment(this));
     }
 
+    this._fireEvent("servicesInitialized", this._services);
     return this._services;
   }
 
