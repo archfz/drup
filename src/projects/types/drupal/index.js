@@ -6,6 +6,7 @@ const path = require("path");
 
 const WebProject = require("../web_base");
 const EnvConfigurator = require("../../../environment/environment_configurator");
+const Environment = require("../../../environment/environment");
 const Command = require("../../../system/system_command");
 
 /**
@@ -77,6 +78,11 @@ class Drupal extends WebProject {
     }
 
     return cmd;
+  }
+
+  setup() {
+    return new Command("composer", ["install"])
+      .execute(path.join(this.root, Environment.DIRECTORIES.PROJECT));
   }
 
 }
