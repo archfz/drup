@@ -5,7 +5,11 @@ const ServiceBase = require("../service_base");
 class WebService extends ServiceBase {
 
   setDocumentRoot(path) {
-    this.config.doc_root = path;
+    this.config.doc_root = path.replace(/\\/g, "/");
+
+    if (this.config.doc_root.charAt(0) !== "/") {
+      this.config.doc_root = "/" + this.config.doc_root;
+    }
   }
 
   addIndexFiles(index) {
@@ -18,7 +22,7 @@ class WebService extends ServiceBase {
 
   static defaults() {
     return {
-      doc_root: "",
+      doc_root: "/",
       index_files: ["index.html", "index.htm"],
     };
   }

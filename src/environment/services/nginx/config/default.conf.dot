@@ -21,7 +21,7 @@ server {
     location ~ \.php$ {
         fastcgi_pass   php:9000;
         fastcgi_index  index.php;
-        fastcgi_param  SCRIPT_FILENAME  /usr/share/nginx/html/{{= service.DOC_ROOT }}$fastcgi_script_name;
+        fastcgi_param  SCRIPT_FILENAME  /usr/share/nginx/html{{= service.DOC_ROOT }}$fastcgi_script_name;
         include        fastcgi_params;
     }
 {{?}}
