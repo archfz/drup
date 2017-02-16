@@ -28,10 +28,10 @@ module.exports = {
           return new Command("git", ["clone", data.get("repository")])
             .execute();
         }).then((output) => {
-          const dir = output.match(/Cloning into '(\w+)'\.{3}/);
+          const dir = output.match(/Cloning into '([^']+)'\.{3}/);
 
           if (!dir || typeof dir[1] !== "string") {
-            throw new Error("Failed to determine target directory on git clone.");
+            throw new Error("Failed to determine target directory on git clone.\nGIT clone output:\n" + output);
           }
 
           data.set("tmp_directory", path.normalize(globals.TEMPORARY_DIR + dir[1]));
