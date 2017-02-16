@@ -4,6 +4,7 @@ const yaml = require("node-yaml");
 const path = require("path");
 const dot = require("dot");
 const fs = require("fs-promise");
+const os = require("os");
 
 const Command = require('../../system/system_command');
 const ContainerBase = require('../container_base');
@@ -69,9 +70,28 @@ module.exports = class DockerContainer extends ContainerBase {
     return new Command("docker-compose", [
       ["-p", this.env.config.env_name],
       ["up", "-d"],
-    ]).execute().then(() => {return this;}).catch((error) => {
+    ]).execute().catch((error) => {
       throw new Error("Failed to start environment container:\n" + error);
-    });
+    }).then(() => {
+      // This provides workaround for windows. By default on linux container
+      // IPs get exposed to hosts. On windows tough docker creates a Hyper-V
+      // VM in which it puts the containers, and this VM is private. This is
+      // the way to route those IPs to host.
+      if (os.platform() === "win32") {
+        return this.getIp().then((ips) => {
+          let promises = [];
+          let ip = ips[Object.keys(ips)[0]].replace(/(\d+.\d+.)\d+.\d+/, "$10.0");
+
+          new Command("route", [
+              ["add", ip],
+              ["mask", "255.255.0.0"],
+              ["10.0.75.2"] // @ Hyper-V default IP
+            ]).execute().catch((err) => {
+            new Error("Failed to expose container IPs to hosts on windows.\n" + err);
+          });
+        });
+      }
+    }).then(() => {return this;});
   }
 
   stop() {
