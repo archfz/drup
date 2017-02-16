@@ -51,9 +51,7 @@ class WebProject extends ProjectBase {
     return this.findDocumentRoot(tempDirectory)
       .then((root) => {
         root = path.normalize(root);
-        console.log(root);
         this._docRoot = root.substr(tempDirectory.length);
-        console.log(this._docRoot);
       });
   }
 

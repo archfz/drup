@@ -10,9 +10,9 @@ const Environment = require("../environment/environment");
 
 module.exports = class ProjectBase {
 
-  constructor(root, key, config) {
+  constructor(root, config) {
     this._root = root;
-    this._key = key;
+    this._key = config.name.replace(/[^a-zA-Z0-9\-_]+/g, "").toLowerCase();
     this._config = config;
   }
 
@@ -133,9 +133,7 @@ module.exports = class ProjectBase {
     this._onEnvironmentSet(env);
   }
 
-  _onEnvironmentSet(env) {
-
-  }
+  _onEnvironmentSet(env) {}
 
   get environment() {
     if (!this._environment) {

@@ -12,15 +12,15 @@ function getStorage() {
     return Promise.resolve(_storage);
   }
 
-  return fs.exists(ProjectStorage.FILENAME)
+  return fs.exists(ProjectStorage.FULLPATH)
     .then((exists) => {
       if (!exists) {
         return Promise.resolve({});
       }
 
-      return yaml.read(ProjectStorage.FILENAME)
+      return yaml.read(ProjectStorage.FULLPATH)
         .catch((err) => {
-          throw new Error(`Failed loading in project storage file:\nFILE: ${Projects.STORAGE_FILE}\n` + err);
+          throw new Error(`Failed loading in project storage file:\nFILE: ${ProjectStorage.FULLPATH}\n` + err);
         });
     })
     .then((data) => {
@@ -34,14 +34,11 @@ class ProjectStorage {
   static get(key) {
     return getStorage()
       .then((storage) => {
-        if (storage.hasOwnProperty(key)) {
+        if (!storage.hasOwnProperty(key)) {
           return null;
         }
 
-        return {
-          key: key,
-          data: JSON.parse(JSON.stringify(storage[key])),
-        };
+        return JSON.parse(JSON.stringify(storage[key]));
       });
   }
 
@@ -57,7 +54,7 @@ class ProjectStorage {
       .then((storage) => {
         storage[key] = data;
 
-        return yaml.write(ProjectStorage.FILENAME, storage);
+        return yaml.write(ProjectStorage.FULLPATH, storage);
       })
       .catch((err) => {
         throw new Error(`Failed saving project storage when setting '${key}'.` + err);
@@ -69,7 +66,7 @@ class ProjectStorage {
       .then((storage) => {
         if (storage.hasOwnProperty(key)) {
           delete storage[key];
-          return yaml.write(ProjectStorage.FILENAME, storage);
+          return yaml.write(ProjectStorage.FULLPATH, storage);
         }
 
         return null;
@@ -99,6 +96,7 @@ class ProjectStorage {
 
 }
 
-ProjectStorage.FILENAME = path.join(globals.GLOBAL_STORE_ROOT, "projects.yml");
+ProjectStorage.FILENAME = "projects.yml";
+ProjectStorage.FULLPATH = path.join(globals.GLOBAL_STORE_ROOT, ProjectStorage.FILENAME);
 
 module.exports = ProjectStorage;

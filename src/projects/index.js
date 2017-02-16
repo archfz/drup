@@ -145,7 +145,8 @@ class Projects {
               .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
               .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
           })
-          .start(params);
+          .start(params)
+          .then((data) => data.get("project"));
       });
   }
 
@@ -180,9 +181,14 @@ class Projects {
   }
 
   static load(key) {
-    let projectData = Storage.get(key);
+    return Storage.get(key)
+      .then((data) => {
+        if (data === null) {
+          throw new Error(`Project not found by key '${key}'.`);
+        }
+        return new (getProjectTypes()[data.type])(data.root, data.config);
 
-    return new (getProjectTypes()[projectData.type])(projectData.root, projectData.config);
+      });
   }
 
   static detectType(directory) {

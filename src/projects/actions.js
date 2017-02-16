@@ -149,8 +149,6 @@ module.exports = {
         project = new (data.get("project_type"))(data.get("root"), data.get("config"));
       }
 
-      console.log(project.initialize(data.get("tmp_directory")));
-
       return project.initialize(data.get("tmp_directory"))
         .then(() => {
           data.set("project", project);
