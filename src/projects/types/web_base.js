@@ -52,8 +52,10 @@ class WebProject extends ProjectBase {
   initialize(tempDirectory) {
     return this.findDocumentRoot(tempDirectory)
       .then((root) => {
+      console.log(root);
         root = path.normalize(root);
         this._docRoot = root.substr(tempDirectory.length);
+        console.log(this._docRoot);
       });
   }
 
@@ -66,7 +68,7 @@ class WebProject extends ProjectBase {
       }).on("error", rej)
         .on("end", rej)
         .on("data", (entry) => {
-          res(entry.parentDir);
+          res(entry.fullParentDir);
           stream.destroy();
         });
     }).catch((err) => {
