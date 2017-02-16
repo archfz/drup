@@ -8,15 +8,19 @@ class WebService extends ServiceBase {
     this.config.doc_root = path;
   }
 
-  setIndexFiles(indexes) {
-    this.config.index = index;
+  addIndexFiles(index) {
+    if (typeof index === "string") {
+      index = [index];
+    }
+
+    this.config.index_files = this.config.index_files.concat(index);
   }
 
   static defaults() {
     return {
       doc_root: "",
       index_files: ["index.html", "index.htm"],
-    }
+    };
   }
 
 }
