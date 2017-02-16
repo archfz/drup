@@ -210,6 +210,8 @@ class Task {
     // Helper to start, revert and reference actions.
     // This will persist for sub-tasks.
     this._actionRunner = new ActionRunner();
+    // Listen to references being added by this task or any sub-task.
+    this._actionRunner.onReference(this._onReferenceAdded.bind(this));
 
     // Stores all parallel actions on each row.
     this._actionStack = [];
@@ -236,6 +238,9 @@ class Task {
     // Make sure the sub-task has access to the same started actions and
     // references.
     task._actionRunner = this._actionRunner;
+    // Listen to references being added by sub task.
+    task._actionRunner.onReference(task._onReferenceAdded.bind(task));
+
     // Reset the action stack as we want to start clean.
     task._actionStack = [];
 
@@ -398,8 +403,6 @@ class Task {
     this._finalPromises = [];
 
     this._data = initData instanceof TaskData ? initData : new TaskData(initData);
-    // Listen to references being added by this task or any sub-task.
-    this._actionRunner.onReference(this._onReferenceAdded.bind(this));
 
     // Process first stack of actions to build the initial promise.
     let promise = Promise.all(
