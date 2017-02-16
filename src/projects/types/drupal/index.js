@@ -80,6 +80,12 @@ class Drupal extends WebProject {
     return cmd;
   }
 
+  _onEnvironmentSet(env) {
+    super._onEnvironmentSet(env);
+
+    env.services.get("php").addExtensions("gd");
+  }
+
   setup() {
     return new Command("composer", ["install"])
       .execute(path.join(this.root, Environment.DIRECTORIES.PROJECT));
