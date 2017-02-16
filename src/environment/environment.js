@@ -94,15 +94,13 @@ class Environment {
       for (let [id, serviceConfig] of Object.entries(this._services)) {
         const Service = availableServices.get(id);
         const service = new Service(serviceConfig);
-        service.bindEnvironment(this);
 
         services.addService(service);
       }
       this._services = services;
     }
-    else {
-      this._services.each((service) => service.bindEnvironment(this));
-    }
+
+    this._services.each((service) => service.bindEnvironment(this));
 
     this._fireEvent("servicesInitialized", this._services);
     return this._services;
