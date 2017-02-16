@@ -9,7 +9,6 @@
   "author": "_Archy_",
   "license": "ISC",
   "dependencies": {
-    "annotations": "^0.1.339",
     "charm": "^1.0.1",
     "colors": "^1.1.2",
     "dot": "^1.1.1",

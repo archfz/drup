@@ -1,7 +1,8 @@
 "use strict";
 
 const fs = require("fs");
-const annotation = require("annotations");
+const annotation = require("./annotations");
+const path = require("path");
 
 module.exports = {
 
@@ -47,7 +48,7 @@ module.exports = {
         filename += "/index.js";
       }
 
-      let annotationData = annotation.getSync(dir + "/" + filename)[toModule.name];
+      let annotationData = annotation.getSync(path.join(dir, filename))[toModule.name];
 
       toModule.annotations = annotationData;
       toModule.ann = function (key) {
