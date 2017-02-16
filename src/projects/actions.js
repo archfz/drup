@@ -54,9 +54,6 @@ module.exports = {
       return fs.emptyDir(tmpDir)
         .then(() => {
           this.cmd = data.get("project_type").download(method, tmpDir);
-          this.cmd.onData((data) => {
-            this.loader.setMessage(data);
-          });
 
           return this.cmd.execute();
         })
