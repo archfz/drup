@@ -154,7 +154,7 @@ class SystemCommand {
         this._reject(new Error(errorData + "\n" + this._process.exitCode));
       }
 
-      this._resolve(data);
+      this._resolve(data + errorData);
     });
 
     return promise;

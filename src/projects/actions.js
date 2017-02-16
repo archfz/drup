@@ -4,7 +4,7 @@ const fs = require("fs-promise");
 const path = require("path");
 const inquirer = require("inquirer");
 const yaml = require("node-yaml");
-const globals = require("./globals");
+const globals = require("../globals");
 
 const Action = require("../task/action");
 const Command = require("../system/system_command");
@@ -15,19 +15,11 @@ module.exports = {
 
   CloneProject: class extends Action {
     complete(data) {
-      let loader, promise = Promise.resolve();
-
-      if (!data.get("repository")) {
-        promise = inquirer.prompt({
-          type: "input",
-          name: "repository",
-          message: "Git repository",
-        }).then((values) => data.set("repository", values.repository));
-      }
+      let promise = Promise.resolve();
 
       return promise
         .then(() => {
-          loader = new Loader("Cloning repository");
+          this.loader = new Loader("Cloning repository");
           return fs.emptyDir(globals.TEMPORARY_DIR);
         })
         .then(() => {
@@ -38,25 +30,28 @@ module.exports = {
         }).then((output) => {
           const dir = output.match(/Cloning into '(\w+)'\.{3}/);
 
-          if (typeof dir[1] !== "string") {
+          if (!dir || typeof dir[1] !== "string") {
             throw new Error("Failed to determine target directory on git clone.");
           }
 
           data.set("tmp_directory", path.normalize(globals.TEMPORARY_DIR + dir[1]));
-          loader.finish("Project successfully cloned!");
+          this.loader.finish("Project successfully cloned!");
         });
+    }
+    revert() {
+      this.loader && this.loader.destroy();
     }
   },
 
   DownloadProject: class extends Action {
     complete(data) {
-      const method = data.get("installation_method");
+      const method = data.get("config.creation");
       const tmpDir = path.join(globals.TEMPORARY_DIR, "new_tmp" + Date.now());
 
       data.set("tmp_directory", tmpDir);
 
       this.loader = new Loader("Downloading project");
-      return fs.emptyDir(globals.TEMPORARY_DIR)
+      return fs.emptyDir(tmpDir)
         .then(() => {
           this.cmd = data.get("project_type").download(method, tmpDir);
           this.cmd.onData((data) => {
@@ -71,52 +66,54 @@ module.exports = {
     }
 
     revert() {
-      this.cmd.kill();
-      this.loader.destroy();
+      this.cmd && this.cmd.kill();
+      this.loader && this.loader.destroy();
     }
   },
 
-  AskProjectConfig: class extends Action {
+  GetProjectConfig: class extends Action {
     complete(data) {
-      const dirName = data.get("tmp_directory").split("/").pop();
-      let projectName = null;
+      let env = data.get("environment");
 
-      if (dirName.search("new_tmp") === -1) {
-        projectName = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+      if (env) {
+        data.set("config", env.config);
       }
 
-      return inquirer.prompt([{
-        type: "input",
-        name: "name",
-        message: "Project name",
-        default: projectName,
-        validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
-      }, {
-        type: "input",
-        name: "hostAlias",
-        message: "Project host alias",
-        default: (values) => values.name.toLowerCase().replace(/\s+/g, "-") + ".dev",
-      }]).then((values) => data.set("config", values));
+      const dirName = path.basename(data.get("tmp_directory"));
+      let suggestions = {};
+
+      if (dirName.search("new_tmp") === -1) {
+        suggestions.name = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+      }
+
+      return inquirer.prompt(data.get("project_type").getConfigureQuestions(suggestions))
+        .then((values) => Object.assign(data.get("config"), values));
     }
   },
 
   AskProjectDirectory: class extends Action {
     complete(data) {
+      let type = data.get("config.type");
       let baseName = data.get("config.name");
+
+      if (!type) {
+        throw new Error("Type is not set.");
+      }
+
       if (!baseName) {
         baseName = path.basename(data.get("tmp_directory"));
       }
 
       const urlSafeName = baseName.toLowerCase().replace(/\s+/g, "-");
-      const defaultPath = path.join(globals.PROJECTS_DIR, data.get("type"), urlSafeName);
+      const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
       return inquirer.prompt({
         type: "input",
-        name: "directory",
+        name: "root",
         message: "Project directory",
         default: defaultPath,
       }).then((values) => {
-        data.set("directory", path.normalize(values.directory));
+        data.set("root", path.normalize(values.root));
       });
     }
   },
@@ -124,7 +121,7 @@ module.exports = {
   MoveProject: class extends Action {
     complete(data) {
       this.loader = new Loader("Moving project");
-      this.dest = path.join(data.get("directory"), Environment.DIRECTORIES.PROJECT);
+      this.dest = path.join(data.get("root"), Environment.DIRECTORIES.PROJECT);
 
       return fs.ensureDir(this.dest)
         .then(() => {
@@ -140,14 +137,31 @@ module.exports = {
     }
   },
 
-  CreateProjectEnvironment: class extends Action {
+  CreateProject: class extends Action {
     complete(data) {
-      const configurator = data.get("project_types")[data.get("type")].getEnvConfigurator();
+      const env = data.get("environment");
+      let project;
 
-      data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
+      if (env) {
+        project = new (data.get("project_types")[env.config.type])(data.get("root"), env.config);
+        project.environment = env;
 
-      return Environment.create(configurator, data.get("config"), data.get("directory"))
-        .then((env) => data.set("env", env));
+        data.set("project", project);
+        return Promise.resolve();
+      }
+      else {
+        const configurator = data.get("project_type").getEnvConfigurator();
+
+        data.set("config.env_name", data.get("config.name").replace(/\s+/g, "_").toLowerCase());
+        project = new (data.get("project_type"))(data.get("root"), data.get("config"));
+
+        return Environment.create(configurator, data.get("config"), data.get("root"))
+          .then((env) => {
+            project.environment = env;
+
+            data.set("project", project);
+          });
+      }
     }
   },
 
@@ -159,11 +173,7 @@ module.exports = {
         name: "include",
         default: true,
       }).then((values) => {
-        this.loader = new Loader("Creating environment structure");
-        return data.get("env").save(values.include)
-          .then(() => {
-            this.loader.finish("Environment structure created");
-          });
+        return data.get("project").environment.then((env) => env.save(values.include));
       });
     }
   },
@@ -171,7 +181,7 @@ module.exports = {
   ComposeEnvironment: class extends Action {
     complete(data) {
       this.loader = new Loader("Composing environment");
-      return data.get("env").composeContainer("*")
+      return data.get("project").environment.then((env) => env.composeContainer("*"))
         .then(() => {
           this.loader.finish("Environment composed");
         });
@@ -181,16 +191,22 @@ module.exports = {
   CreateServiceConfigFiles: class extends Action {
     complete(data) {
       this.loader = new Loader("Creating service configurations");
-      return data.get("env").addServiceConfigFiles()
+      return  data.get("project").environment.then((env) => env.addServiceConfigFiles())
         .then(() => {
           this.loader.finish("Service configurations created");
         });
     }
   },
 
-  RunProjectPostInstall: class extends Action {
+  SetupProject: class extends Action {
     complete(data) {
-      return data.get("project_type").postInstall(data);
+      return data.get("project").setup();
+    }
+  },
+
+  SaveProject: class extends Action {
+    complete(data) {
+      return data.get("project").save();
     }
   }
 

@@ -1,6 +1,7 @@
 "use strict";
 
 const inquirer = require("inquirer");
+const fs = require("fs-promise");
 
 const utils = require("../utils");
 
@@ -9,8 +10,9 @@ const Environment = require("../environment/environment");
 
 module.exports = class ProjectBase {
 
-  constructor(root, config) {
+  constructor(root, key, config) {
     this._root = root;
+    this._key = key;
     this._config = config;
   }
 
@@ -18,22 +20,24 @@ module.exports = class ProjectBase {
    * Gets questions for the project configuration.
    *
    * @param suggestions
-   *    Suggestion values for the questions.
+   *    Current config values to build suggestions.
    *
    * @returns {[*]}
    *    Array of inquirer questions.
    */
   static getConfigureQuestions(suggestions = {}) {
+    let name = null;
+
     if (suggestions.name) {
-      suggestions.name = suggestions.name.replace(/(_|-)+/g, " ").replace(/[^a-zA-Z0-9 ]+/g, "");
-      suggestions.name = suggestions.name.charAt(0).toUpperCase() + suggestions.name.substr(1).toLowerCase();
+      name = suggestions.name.replace(/(_|-)+/g, " ").replace(/[^a-zA-Z0-9 ]+/g, "");
+      name = name.charAt(0).toUpperCase() + name.substr(1).toLowerCase();
     }
 
     return [{
       type: "input",
       name: "name",
       message: "Project name",
-      default: suggestions.name,
+      default: name,
       validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
     }];
   }
@@ -45,7 +49,7 @@ module.exports = class ProjectBase {
    *    Object with keys as the method names and their values as description.
    */
   static getCreationMethods() {
-    utils.mustImplement(this, "getInstallationMethods");
+    utils.mustImplement(this, "getCreationMethods");
   }
 
   /**
@@ -81,12 +85,33 @@ module.exports = class ProjectBase {
     utils.mustImplement(this, "download");
   }
 
-  start() {
-
+  setup() {
+    return Promise.resolve();
   }
 
-  stop() {
+  save() {
+    return ProjectStorage.set(this._key, {
+      root: this.root,
+      type: this.ann("id"),
+      config: this._config
+    });
+  }
 
+  remove() {
+    return fs.rmdir(this.root)
+      .then(() => {
+        return ProjectStorage.remove(this._key);
+      });
+  }
+
+  start(getContainer = false) {
+    return this.environment.getContainer("docker").start()
+      .then((container) => getContainer ? container : this);
+  }
+
+  stop(getContainer = false) {
+    return this.environment.getContainer("docker").stop()
+      .then((container) => getContainer ? container : this);
   }
 
   static get requiredData() {
@@ -118,7 +143,7 @@ module.exports = class ProjectBase {
   }
 
   get name() {
-    return this._data.name;
+    return this._config.name;
   }
 
   get root() {

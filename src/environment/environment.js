@@ -25,6 +25,10 @@ function getContainerTypes() {
 class Environment {
 
   constructor(envConfig, root) {
+    if (!root) {
+      throw new Error("Environment root parameter is required.");
+    }
+
     this._servicesInitialized = false;
 
     this._services = envConfig.services;

@@ -1,15 +1,17 @@
 "use strict";
 
 const os = require("os");
+const fs = require("fs-promise");
+const path = require("path");
 
-const ProjectBase = require("../base");
-const EnvConfigurator = require("../../environment/environment_configurator");
-const Command = require("../../system/system_command");
+const WebProject = require("../web_base");
+const EnvConfigurator = require("../../../environment/environment_configurator");
+const Command = require("../../../system/system_command");
 
 /**
  * @id drupal
  */
-class DrupalProject extends ProjectBase {
+class Drupal extends WebProject {
 
   static getEnvConfigurator() {
     return new EnvConfigurator({
@@ -24,11 +26,26 @@ class DrupalProject extends ProjectBase {
     });
   }
 
-  static isInDirectory(dir) {
+  static isInDirectory(dir, resolveOnPositive = true) {
+    return new Promise((res, rej) => {
+      if (!resolveOnPositive) {
+        [res, rej] = [rej, res];
+      }
 
+      fs.readFile(path.join(dir, "composer.json"))
+        .catch(() => rej(false))
+        .then((content) => {
+          if (content.indexOf(`"drupal/core":`) !== -1) {
+            res(this.ann("id"));
+          }
+          else {
+            rej(false);
+          }
+        });
+    });
   }
 
-  static getInstallationMethods() {
+  static getCreationMethods() {
     return {
       standard: "Install new project with composer.",
       issue: "Clone drupal dev to work on issues.",
@@ -55,16 +72,12 @@ class DrupalProject extends ProjectBase {
         cmd = new Command("composer", params);
         break;
       default:
-        throw new Error("Unhandled installation method: " + method);
+        throw new Error("Unhandled creation method: " + method);
     }
 
     return cmd;
   }
 
-  static postInstall(data) {
-    console.log("post install");
-  }
-
 }
 
-module.exports = DrupalProject;
+module.exports = Drupal;

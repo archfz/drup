@@ -4,19 +4,21 @@ const yaml = require("node-yaml");
 const path = require("path");
 const fs = require("fs-promise");
 const inquirer = require("inquirer");
+const isGitUrl = require("is-git-url");
 
 const utils = require("../utils");
 const globals = require("../globals");
 
 const act = require("./actions");
 
-const ProjectBase = require("./base");
+const Storage = require("./storage");
 const Task = require("../task");
+const Environment = require("../environment/environment");
 
 let projectTypes;
 function getProjectTypes() {
   if (!projectTypes) {
-    projectTypes = utils.collectAnnotated(__dirname, "id", true);
+    projectTypes = utils.collectAnnotated(path.join(__dirname, "types"), "id", true);
   }
 
   return projectTypes;
@@ -53,14 +55,14 @@ class Projects {
       }).then((values) => projectType = values.type);
     }
 
-    promise.then(() => {
-      console.log(`\n-- Creating ${projectType.constructor.name} project\n`);
+    return promise.then(() => {
+      console.log(`\n-- Creating ${projectType.name} project\n`);
 
       const methods = projectType.getCreationMethods();
       const options = Object.keys(methods);
 
       if (!options.length) {
-        throw new Error(`Cannot create project '${projectType.constructor.name}' as it doesn't provide any creation methods.`);
+        throw new Error(`Cannot create project '${projectType.name}' as it doesn't provide any creation methods.`);
       }
       else if (options.length === 1) {
         creationMethod = methods[0];
@@ -84,12 +86,15 @@ class Projects {
         }).then((values) => creationMethod = values.method);
       }
     }).then(() => {
-      return new Task({projectDownloaded: act.DownloadProject, gotConfig: act.AskProjectConfig})
+      return new Task({projectFilesReady: act.DownloadProject, gotConfig: act.GetProjectConfig})
         .after("gotConfig", (task) => {
-          task.then(act.AskProjectDirectory)
-            .then({envCreated: act.CreateProject})
-            .then(act.SaveEnvironment, act.ComposeEnvironment, act.SaveProject)
-            .after(["projectDownloaded"], {projectMoved: act.MoveProject});
+          task.then({gotRoot: act.AskProjectDirectory})
+            .then({projectCreated: act.CreateProject})
+            .then(act.SaveEnvironment)
+            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+            .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
+            .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
+            .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
         })
         .start({
           project_type: projectType,
@@ -103,51 +108,83 @@ class Projects {
   }
 
   static register(directory) {
-    return new Task(act.DetectEnvironment)
-      .ifThen((data) => data.get("env_data") !== false, (task) => {
-        task.then(act.CreateDirectoryStructure)
-          .then(act.MoveProject, act.SaveEnvironment, act.ComposeEnvironment);
-      })
-      .otherwise((task) => {
-        task.then(act.DetectProjectType)
-          .ifThen((data) => data.get("type") === false, act.AskProjectType)
-          .then(act.AskProjectDirectory)
-          .then(act.AskProjectConfig)
-          .after("dirCreated", act.MoveProject)
-          .then({envCreated: act.CreateProjectEnvironment})
-          .after(["dirCreated", "envCreated"], (task) => {
-            task.then(act.SaveEnvironment, act.ComposeEnvironment, act.CreateServiceConfigFiles);
-          });
+    return Environment.hasEnvironment(directory)
+      .then((yes) => {
+        if (yes) {
+          return Environment.load(directory);
+        }
 
+        return this.detectType(directory);
       })
-      .start({
-        tmp_directory: dir,
-        project_types: this.getTypes(),
+      .then((type) => {
+        let params = {
+          tmp_directory: directory,
+          project_types: getProjectTypes(),
+          config: {
+            creation: "register",
+          }
+        };
+
+        if (type === false) {
+          throw new Error(`Cannot register project. Could not determine type from files.`);
+        }
+
+        if (typeof type === "string") {
+          params.project_type = getProjectTypes()[type];
+          params.config.type = type;
+          console.log(`\n-- Detected ${params.project_type.name} project\n`);
+        }
+        else if (type instanceof Environment) {
+          params.environment = type;
+        }
+
+        return new Task({gotRoot: act.AskProjectDirectory})
+          .then({gotConfig: act.GetProjectConfig, projectInPlace: act.MoveProject})
+          .after("gotConfig", (task) => {
+            task.then({projectCreated: act.CreateProject})
+              .then(act.SaveEnvironment)
+              .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+              .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
+              .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
+          })
+          .start(params);
       });
   }
 
-  static clone(repository) {
+  static clone(repository = null) {
+    let promise;
 
-  }
+    if (repository) {
+      if (!isGitUrl(repository)) {
+        throw new Error(`The provided repository is not a valid git URL:\n${repository}`);
+      }
 
-  static types() {
-
+      promise = Promise.resolve(repository);
+    }
+    else {
+      promise = inquirer.prompt({
+        type: "input",
+        name: "repository",
+        message: "Project repository",
+        validate: (repo) => isGitUrl(repo) ? true : "Enter a valid git url.",
+      }).then((values) => values.repository);
+    }
+    
+    return promise
+      .then((repository) => {
+        return new Task(act.CloneProject)
+          .start({repository: repository});
+      })
+      .then((data) => {
+        let dir = data.get("tmp_directory");
+        return this.register(dir);
+      });
   }
 
   static load(key) {
+    let projectData = Storage.get(key);
 
-  }
-
-  static loadByDirectory(dir) {
-
-  }
-
-  static list() {
-
-  }
-
-  static listByType(type) {
-
+    return new (getProjectTypes()[projectData.type])(projectData.root, projectData.config);
   }
 
   static detectType(directory) {
