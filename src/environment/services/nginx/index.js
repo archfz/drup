@@ -20,6 +20,7 @@ module.exports = class NginxService extends WebService {
     return {
       image: "nginx:stable-alpine",
       volumes: [
+        `./${this._dir("LOG")}/${this.ann("id")}:/var/log/nginx`
         `./${this._dir("CONFIG")}/${this.ann("id")}:/etc/nginx/conf.d`,
         `./${this._dir("PROJECT")}:/usr/share/nginx/html`,
       ]
