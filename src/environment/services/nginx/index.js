@@ -13,7 +13,7 @@ module.exports = class NginxService extends WebService {
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
-    env.on("composedDocker", this._onComposedDocker.bind(this))
+    env.on("composedDocker", this._onComposedDocker.bind(this));
   }
 
   _composeDocker() {

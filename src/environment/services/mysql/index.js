@@ -11,6 +11,14 @@ const inquirer = require("inquirer");
  */
 module.exports = class MysqlService extends Service {
 
+  bindEnvironment(env) {
+    super.bindEnvironment(env);
+
+    if (env.services.has("php")) {
+      env.services.get("php").addExtensions(["pdo_mysql"]);
+    }
+  }
+
   _configure() {
     return inquirer.prompt([{
       type: "input",
