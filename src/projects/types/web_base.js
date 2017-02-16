@@ -26,7 +26,10 @@ class WebProject extends ProjectBase {
     let cont;
 
     super.start(true)
-      .then((container) => cont = container && container.getIp())
+      .then((container) => {
+        cont = container;
+        return container.getIp("web");
+      })
       .then((ip) => hostManager.addHost(this._config.host_alias, ip))
       .then(() => getContainer ? cont : this);
   }
@@ -35,8 +38,7 @@ class WebProject extends ProjectBase {
     let cont;
 
     super.stop(true)
-      .then((container) => cont = container && container.getIp())
-      .then((ip) => hostManager.removeHost(this._config.host_alias))
+      .then(() => hostManager.removeHost(this._config.host_alias))
       .then(() => getContainer ? cont : this);
   }
 

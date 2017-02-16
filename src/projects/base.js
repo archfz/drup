@@ -109,12 +109,12 @@ module.exports = class ProjectBase {
   }
 
   start(getContainer = false) {
-    return this.environment.getContainer("docker").start()
+    return this.environment.then((env) => env.getContainer("docker").start())
       .then((container) => getContainer ? container : this);
   }
 
   stop(getContainer = false) {
-    return this.environment.getContainer("docker").stop()
+    return this.environment.then((env) => env.getContainer("docker").stop())
       .then((container) => getContainer ? container : this);
   }
 
@@ -140,6 +140,7 @@ module.exports = class ProjectBase {
       return Environment.load(this.root)
         .then((env) => {
           this._environment = env;
+          return env;
         })
         .catch((err) => {
           throw new Error(`Could not load environment for ${this.name} project.\n` + err);
