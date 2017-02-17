@@ -1,3 +1,4 @@
+{{## def.rules:
     # NGINX Drupal config: https://www.nginx.com/resources/wiki/start/topics/recipes/drupal/
 
     location = /favicon.ico {
@@ -97,3 +98,4 @@
         expires max;
         log_not_found off;
     }
+#}}

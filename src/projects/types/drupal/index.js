@@ -84,6 +84,12 @@ class Drupal extends WebProject {
     super._onEnvironmentSet(env);
 
     env.services.get("php").addExtensions("gd");
+
+    if (env.services.has("nginx")) {
+      env.services.get("nginx").registerConfigExtension({
+        template: path.join(__dirname, "config/nginx/default.conf.dot")
+      });
+    }
   }
 
   setup() {
