@@ -34,8 +34,12 @@ class Template {
     return this;
   }
 
-  extend({data = {}, path: path}) {
-    this._extensions.push({data: data, path: path});
+  extend({data = {}, template: template}) {
+    if (!template) {
+      throw new Error("Extension template path is required.");
+    }
+
+    this._extensions.push({data, template});
     return this;
   }
 
@@ -75,10 +79,10 @@ class Template {
 
     let extPromises = [];
     const extDefinitionOutput = this._definitions
-      .map((def) => `{{#def.${def}}`)
+      .map((def) => `{{#def.${def}}}`)
       .join(DEF_SEP);
 
-    this._extensions.forEach(({data: extData, extension: extPath}) => {
+    this._extensions.forEach(({data: extData, template: extPath}) => {
       extData = Object.assign(extData, data);
 
       extPromises.push(
@@ -93,7 +97,7 @@ class Template {
     });
 
     return Promise.all(extPromises)
-      .then((...extResults) => {
+      .then((extResults) => {
         let def = this._getDefinitionsObject();
 
         extResults.forEach((result) => {

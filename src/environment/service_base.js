@@ -48,13 +48,13 @@ class ServiceBase {
     return this[fnName]();
   }
 
-  registerConfigExtension({ext, data}) {
-    const filename = path.basename(ext);
+  registerConfigExtension({template, data}) {
+    const filename = path.basename(template);
     if (!this._config_extensions[filename]) {
       this._config_extensions[filename] = [];
     }
 
-    this._config_extensions[filename].push(ext);
+    this._config_extensions[filename].push({template, data});
   }
 
   writeConfigFiles(root) {
