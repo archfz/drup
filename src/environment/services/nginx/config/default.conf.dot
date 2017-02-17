@@ -1,8 +1,8 @@
 server {
     listen       80;
     server_name  localhost;
-    root         /usr/share/nginx/html{{= service.DOC_ROOT }};
-    index        {{= service.INDEXES.join(" ") }};
+    root         /usr/share/nginx/html{{= it.DOC_ROOT }};
+    index        {{= it.INDEXES.join(" ") }};
 
     #charset koi8-r;
     access_log  /var/log/nginx/access.log  main;
@@ -17,7 +17,7 @@ server {
         root   /usr/share/nginx/html;
     }
 
-{{? service.CONNECT_PHP }}
+{{? it.CONNECT_PHP }}
     # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
     location ~ \.php$ {
         fastcgi_pass   php:9000;
@@ -27,10 +27,6 @@ server {
     }
 {{?}}
 
-    # deny access to .htaccess files, if Apache's document root
-    # concurs with nginx's one
-    #
-    #location ~ /\.ht {
-    #    deny  all;
-    #}
+{{# def.rules }}
+
 }

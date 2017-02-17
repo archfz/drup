@@ -177,11 +177,11 @@ class Environment {
     return new containers[containerType](this);
   }
 
-  addServiceConfigFiles() {
+  writeServiceConfigFiles() {
     let promises = [];
 
     this.services.each((service) => {
-      promises.push(service.addConfigFiles(this.root));
+      promises.push(service.writeConfigFiles(this.root));
     });
 
     return Promise.all(promises)

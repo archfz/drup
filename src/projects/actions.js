@@ -191,7 +191,7 @@ module.exports = {
   CreateServiceConfigFiles: class extends Action {
     complete(data) {
       this.loader = new Loader("Creating service configurations");
-      return  data.get("project").environment.then((env) => env.addServiceConfigFiles())
+      return data.get("project").environment.then((env) => env.writeServiceConfigFiles())
         .then(() => {
           this.loader.finish("Service configurations created");
         });
