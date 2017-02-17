@@ -35,7 +35,7 @@ class ActionRunner {
    */
   start(action, data, reference = "") {
     if (this._err) {
-      return Promise.reject(this._err);
+      return Promise.resolve();
     }
 
     if (!(action.prototype instanceof ActionBase)) {
@@ -45,7 +45,7 @@ class ActionRunner {
     let act = new action(data);
     this._running.push(act);
 
-    let promise = act._promise
+    act._promise = act._promise
       .catch((err) => {
         // If this action fails revert it right away and remove from running
         // so that it doesn't interfere with the other running tasks.
@@ -60,6 +60,7 @@ class ActionRunner {
         }
 
         this._fail(err);
+        throw err;
       })
       .then(() => {
         this._completed.push(act);
@@ -86,7 +87,7 @@ class ActionRunner {
       this._notifyReferenceAdded(reference, act);
     }
 
-    return promise;
+    return act._promise;
   }
 
   /**
@@ -451,12 +452,6 @@ class Task {
     // started by references. At the end return the data.
     return promise
       .then(() => this._awaitAll())
-      .then(() => {
-        // Check if there was an error and if yes forward it.
-        if (this._actionRunner._err) {
-          throw this._actionRunner._err;
-        }
-      })
       .then(() => this._data);
   }
 
@@ -541,11 +536,13 @@ class Task {
       // If all the required referenced actions started then we can queue the
       // sub-task for starting. We also add this promise to the final promises
       // to make sure this task await for the sub-task.
-      this._finalPromises.push(
-        Promise.all(subTask.promises).then(() => {
-          return subTask.task.start(this._data);
-        })
-      );
+      Promise.all(subTask.promises).then(() => {
+        this._finalPromises.push(subTask.task.start(this._data));
+      }).catch((err) => {});
+      // The final blank catch is important here. We are creating a promise
+      // from the combination of promises that are already handled. Without
+      // this we would get the same error twice thus resulting in an un-
+      // handled promise rejection.
     });
   }
 
