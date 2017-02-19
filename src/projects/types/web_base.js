@@ -25,13 +25,24 @@ class WebProject extends ProjectBase {
   start(getContainer = false) {
     let cont;
 
-    super.start(true)
+    return super.start(true)
       .then((container) => {
         cont = container;
         return container.getIp("web");
       })
-      .then((ip) => hostManager.addHost(this._config.host_alias, ip))
-      .then(() => getContainer ? cont : this);
+      .then((ip) => {
+        return hostManager.addHost(this._config.host_alias, ip)
+          .catch((err) => {
+            console.warn(`Failed to add host alias.\n${err}\n`);
+          })
+          .then(() => ip);
+      })
+      .then((ip) => {
+        console.log(this._config.name + " started.");
+        console.log(ip + " => " + this._config.host_alias);
+
+        return getContainer ? cont : this
+      });
   }
 
   stop(getContainer = false) {
