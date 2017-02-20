@@ -55,7 +55,7 @@ class WebProject extends ProjectBase {
 
   _onEnvironmentSet(env) {
     for (let [,webService] of Object.entries(env.services.ofGroup("web"))) {
-      webService.setDocumentRoot(this._docRoot);
+      webService.setRelativeRoot(this._docRoot);
       webService.addIndexFiles(this.ann("index_file"));
     }
   }

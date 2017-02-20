@@ -1,7 +1,7 @@
 server {
     listen       80;
     server_name  localhost;
-    root         /usr/share/nginx/html{{= it.DOC_ROOT }};
+    root         {{= it.DOC_ROOT }};
     index        {{= it.INDEXES.join(" ") }};
 
     #charset koi8-r;
