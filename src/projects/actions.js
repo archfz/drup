@@ -70,10 +70,10 @@ module.exports = {
 
   GetProjectConfig: class extends Action {
     complete(data) {
-      let env = data.get("environment");
+      let envConfig = data.get("env_config");
 
-      if (env) {
-        data.set("config", env.config);
+      if (envConfig) {
+        data.set("config", envConfig.config);
       }
 
       const dirName = path.basename(data.get("tmp_directory"));
@@ -136,7 +136,7 @@ module.exports = {
 
   CreateProject: class extends Action {
     complete(data) {
-      const env = data.get("environment");
+      const env = data.get("envConfig");
       let project;
 
       if (env) {
@@ -151,15 +151,10 @@ module.exports = {
           data.set("project", project);
 
           if (env) {
-            project.environment = env;
-            return Promise.resolve();
+            return project.getEnvironment();
           }
           else {
-            const configurator = data.get("project_type").getEnvConfigurator();
-            data.set("config.env_name", data.get("config.name").replace(/[^a-zA-Z]+/g, "").toLowerCase());
-
-            return Environment.create(configurator, data.get("config"), data.get("root"))
-              .then((env) => project.environment = env);
+            return project.createEnvironment();
           }
         });
     }
@@ -173,7 +168,7 @@ module.exports = {
         name: "include",
         default: true,
       }).then((values) => {
-        return data.get("project").environment.then((env) => env.save(values.include));
+        return data.get("project").getEnvironment().then((env) => env.save(values.include));
       });
     }
   },
@@ -181,7 +176,7 @@ module.exports = {
   ComposeEnvironment: class extends Action {
     complete(data) {
       this.loader = new Loader("Composing environment");
-      return data.get("project").environment.then((env) => env.composeContainer("*"))
+      return data.get("project").getEnvironment().then((env) => env.composeContainer("*"))
         .then(() => {
           this.loader.finish("Environment composed");
         });
@@ -191,7 +186,7 @@ module.exports = {
   CreateServiceConfigFiles: class extends Action {
     complete(data) {
       this.loader = new Loader("Creating service configurations");
-      return data.get("project").environment.then((env) => env.writeServiceConfigFiles())
+      return data.get("project").getEnvironment().then((env) => env.writeServiceConfigFiles())
         .then(() => {
           this.loader.finish("Service configurations created");
         });

@@ -1,8 +1,11 @@
 "use strict";
 
+const path = require("path");
+
 const utils = require("../utils");
 
 let serviceDiscovery;
+let servicePaths = [__dirname];
 
 module.exports = class ServiceCollection {
 
@@ -11,21 +14,31 @@ module.exports = class ServiceCollection {
     this.servicesById = {};
   }
 
+  static registerServices(path) {
+    if (servicePaths.indexOf(path) === -1) {
+      servicePaths.push(path);
+    }
+
+    return this;
+  }
+
   static collect() {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
       serviceDiscovery.frozen = true;
 
-      utils.collectAnnotated(__dirname + "/services", null, true).forEach((service) => {
-        ["id", "label", "group"].forEach((key) => {
-          if (!service.annotations[key]) {
-            throw new Error(`A service must define the '${key}' annotation.`);
-          }
+      servicePaths.forEach((pth) => {
+        utils.collectAnnotated(path.join(pth, "services"), null, true).forEach((service) => {
+          ["id", "label", "group"].forEach((key) => {
+            if (!service.annotations[key]) {
+              throw new Error(`A service must define the '${key}' annotation.`);
+            }
+          });
+
+          service.annotations.priority = Number(service.ann("priority") || 0);
+
+          serviceDiscovery.addService(service);
         });
-
-        service.annotations.priority = Number(service.ann("priority") || 0);
-
-        serviceDiscovery.addService(service);
       });
     }
 

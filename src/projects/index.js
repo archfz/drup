@@ -109,7 +109,7 @@ class Projects {
     return Environment.hasEnvironment(directory)
       .then((yes) => {
         if (yes) {
-          return Environment.load(directory);
+          return Environment.readConfig(directory);
         }
 
         return this.detectType(directory);
@@ -132,8 +132,8 @@ class Projects {
           params.config.type = type;
           console.log(`\n-- Detected ${params.project_type.name} project\n`);
         }
-        else if (type instanceof Environment) {
-          params.environment = type;
+        else if (typeof type === "object") {
+          params.env_config = type;
         }
 
         return new Task({gotRoot: act.AskProjectDirectory})

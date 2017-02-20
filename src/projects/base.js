@@ -7,6 +7,7 @@ const utils = require("../utils");
 
 const ProjectStorage = require("./storage");
 const Environment = require("../environment/environment");
+const ServiceCollection = require("../environment/service_collection");
 
 module.exports = class ProjectBase {
 
@@ -109,12 +110,12 @@ module.exports = class ProjectBase {
   }
 
   start(getContainer = false) {
-    return this.environment.then((env) => env.getContainer("docker").start())
+    return this.getEnvironment().then((env) => env.getContainer("docker").start())
       .then((container) => getContainer ? container : this);
   }
 
   stop(getContainer = false) {
-    return this.environment.then((env) => env.getContainer("docker").stop())
+    return this.getEnvironment().then((env) => env.getContainer("docker").stop())
       .then((container) => getContainer ? container : this);
   }
 
@@ -124,22 +125,31 @@ module.exports = class ProjectBase {
     };
   }
 
-  set environment(env) {
-    if (!(env instanceof Environment)) {
-      throw new Error(`Typeof '${Environment.name}' expected. Got '${typeof env}'.`);
-    }
+  createEnvironment() {
+    ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
+    const config = Object.assign({
+      env_name: this.name.replace(/[^a-zA-Z]+/g, "").toLowerCase(),
+    }, this._config);
 
-    this._environment = env;
-    this._onEnvironmentSet(env);
+    return Environment.create(this.constructor.getEnvConfigurator(), config, this.root)
+      .then((env) => {
+        this._environment = env;
+        this._onEnvironmentSet(env);
+
+        return env;
+      });
   }
 
   _onEnvironmentSet(env) {}
 
-  get environment() {
+  getEnvironment() {
     if (!this._environment) {
+      ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
+
       return Environment.load(this.root)
         .then((env) => {
           this._environment = env;
+          this._onEnvironmentSet(env);
           return env;
         })
         .catch((err) => {
