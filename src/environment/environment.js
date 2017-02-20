@@ -45,7 +45,7 @@ class Environment {
       }
 
       if (!validate(config[name])) {
-        throw Error(`'${name}' configuration value is invalid.`);
+        throw Error(`'${name}' configuration value is invalid: '${config[name]}'`);
       }
     }
 
@@ -58,24 +58,30 @@ class Environment {
   }
 
   static load(root) {
-    let configFile = path.join(root, Environment.FILENAME);
+    let configPath = root;
 
-    return yaml.read(configFile)
+    return this.readConfig(configPath)
       .catch((err) => {
-        configFile = path.join(root, Environment.DIRECTORIES.PROJECT, Environment.FILENAME);
-        return yaml.read(configFile);
-      })
-      .catch((err) => {
-        throw new Error(`Failed loading in environment config:\nPATH: ${configFile}\n` + err);
+        configPath = path.join(root, Environment.DIRECTORIES.PROJECT);
+        return this.readConfig(configPath);
       })
       .then((envConfig) => {
         let env = new Environment(envConfig, root);
-        env.configFile = configFile;
+        env.configFile = path.join(configPath, Environment.FILENAME);
 
         return env;
       })
       .catch((err) => {
         throw new Error(`Failed instantiating environment from config.\n` + err);
+      });
+  }
+
+  static readConfig(root) {
+    root = path.join(root, Environment.FILENAME);
+
+    return yaml.read(root)
+      .catch((err) => {
+        throw new Error(`Failed reading environment config:\nPATH: ${root}\n` + err);
       });
   }
 
