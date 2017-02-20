@@ -141,22 +141,14 @@ module.exports = {
 
       if (env) {
         project = new (data.get("project_types")[env.config.type])(data.get("root"), env.config);
+        data.set("project", project);
+        return project.getEnvironment();
       }
       else {
         project = new (data.get("project_type"))(data.get("root"), data.get("config"));
+        data.set("project", project);
+        return project.createEnvironment(data.get("tmp_directory"));
       }
-
-      return project.initialize(data.get("tmp_directory"))
-        .then(() => {
-          data.set("project", project);
-
-          if (env) {
-            return project.getEnvironment();
-          }
-          else {
-            return project.createEnvironment();
-          }
-        });
     }
   },
 

@@ -86,10 +86,6 @@ module.exports = class ProjectBase {
     utils.mustImplement(this, "download");
   }
 
-  initialize() {
-    return Promise.resolve();
-  }
-
   setup() {
     return Promise.resolve();
   }
@@ -125,7 +121,7 @@ module.exports = class ProjectBase {
     };
   }
 
-  createEnvironment() {
+  createEnvironment(tempDir) {
     ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
     const config = Object.assign({
       env_name: this.name.replace(/[^a-zA-Z]+/g, "").toLowerCase(),
@@ -137,10 +133,14 @@ module.exports = class ProjectBase {
         this._onEnvironmentSet(env);
 
         return env;
+      })
+      .then((env) => {
+        return this._onEnvironmentCreated(env, tempDir);
       });
   }
 
   _onEnvironmentSet(env) {}
+  _onEnvironmentCreated(env, tempDir) {}
 
   getEnvironment() {
     if (!this._environment) {

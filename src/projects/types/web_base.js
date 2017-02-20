@@ -53,20 +53,16 @@ class WebProject extends ProjectBase {
       .then(() => getContainer ? cont : this);
   }
 
-  _onEnvironmentSet(env) {
-    for (let [,webService] of Object.entries(env.services.ofGroup("web"))) {
-      webService.setRelativeRoot(this._docRoot);
-      webService.addIndexFiles(this.ann("index_file"));
-    }
-  }
-
-  initialize(tempDirectory) {
+  _onEnvironmentCreated(env, tempDirectory) {
     return this.findDocumentRoot(tempDirectory)
       .then((root) => {
-      console.log(root);
         root = path.normalize(root);
-        this._docRoot = root.substr(tempDirectory.length);
-        console.log(this._docRoot);
+        let docRoot = root.substr(tempDirectory.length);
+
+        for (let [,webService] of Object.entries(env.services.ofGroup("web"))) {
+          webService.setRelativeRoot(docRoot);
+          webService.addIndexFiles(this.ann("index_file"));
+        }
       });
   }
 
