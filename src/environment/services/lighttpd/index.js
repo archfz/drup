@@ -11,11 +11,24 @@ const WebService = require("../web_base");
 module.exports = class LightTpdService extends WebService {
 
   _composeDocker() {
-    let compose = {
+    return super._composeDocker({
       image: "sebp/lighttpd",
-    };
+      volumes: [
+        `./${this._dir("CONFIG")}/${this.ann("id")}/lighttpd.conf:/etc/lighttpd/lighttpd.conf`
+      ]
+    });
+  }
 
-    return compose;
+  _getConfigFileInfo() {
+    return [{
+      template: "lighttpd.conf.dot",
+      definitions: ["rules"],
+      data: {
+        DOC_ROOT: this.getDocumentRoot(),
+        CONNECT_PHP: this.env.services.has("php"),
+        INDEXES: this.config.index_files,
+      }
+    }];
   }
 
 };

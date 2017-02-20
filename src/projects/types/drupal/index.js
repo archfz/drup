@@ -23,7 +23,7 @@ class Drupal extends WebProject {
       },
       service: {
         required: ["php"],
-        restricted: ["mongodb"]
+        restricted: ["mongodb", "lighttpd"]
       }
     });
   }
