@@ -22,7 +22,7 @@ class Drupal extends WebProject {
         single: ["web", "database"]
       },
       service: {
-        required: ["php"],
+        required: ["php", "drush"],
         restricted: ["mongodb", "lighttpd"]
       }
     });
