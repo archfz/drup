@@ -11,7 +11,10 @@ module.exports = class PhpMyAdminService extends Service {
 
   _composeDocker() {
     let compose = {
-      image: "phpmyadmin/phpmyadmin:latest"
+      image: "phpmyadmin/phpmyadmin:latest",
+      environment: {
+        PMA_HOST: Object.keys(this.env.services.ofGroup("database"))[0]
+      }
     };
 
     return compose;
