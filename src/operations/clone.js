@@ -4,10 +4,10 @@ const Projects = require("../projects");
 const cmd = require("../cmd");
 
 module.exports = {
-  description : "Create new project.",
-  run : (type = null) => {
+  description : "Clone existing project from repository.",
+  run : (repository ) => {
 
-    Projects.create(type)
+    Projects.clone(repository)
       .then((project) => {
         console.log("\n" + project.name + " is ready.");
       })

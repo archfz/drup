@@ -4,10 +4,10 @@ const Projects = require("../projects");
 const cmd = require("../cmd");
 
 module.exports = {
-  description : "Create new project.",
-  run : (type = null) => {
+  description : "Register existing project from local drive.",
+  run : (directory = process.cwd()) => {
 
-    Projects.create(type)
+    Projects.register(directory)
       .then((project) => {
         console.log("\n" + project.name + " is ready.");
       })

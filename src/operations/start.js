@@ -1,27 +1,33 @@
 "use strict";
 
-const Environment = require("../environment/environment");
+const Projects = require("../projects");
+const Loader = require("../terminal-utils/async_loader");
 const cmd = require("../cmd");
-const hostsManager = require("../hosts_manager");
-const globals = require("../projects/globals");
 
 module.exports = {
-  description : "Start an environment.",
-  run : () => {
-    let environment;
-    let root = globals.PROJECTS_DIR + "/drupal/test/";
+  description : "Start project environment.",
+  run : (key = null) => {
+    let projectLoad;
+    let loader;
 
-    Environment.load(root + "project/" + globals.ENV_CONFIG_FILENAME)
-      .then((env) => {
-        environment = env;
-        return env.getContainer("docker", root).start();
-      })
-      .then((docker) => {
-        return docker.getIp("web");
-      })
-      .then((ip) => {
-        return hostsManager.addHost(environment.config.hostAlias, ip);
-       })
-      .catch(cmd.error);
+    if (key === null) {
+      projectLoad = Projects.loadDir(process.cwd());
+    }
+    else {
+      projectLoad = Projects.load(key);
+    }
+
+    projectLoad.then((project) => {
+      loader = new Loader("Starting " + project.name + " ...");
+
+      return project.start().then(() => project);
+    }).catch(cmd.error)
+      .then((project) => {
+      console.log(project.name + " started!");
+
+      if (loader) {
+        loader.destroy();
+      }
+    });
   }
 };

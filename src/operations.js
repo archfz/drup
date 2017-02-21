@@ -19,6 +19,6 @@ module.exports = (operation, args) => {
     return 0;
   }
 
-  operations[operation].run.apply(args);
+  operations[operation].run(...args);
 
 };

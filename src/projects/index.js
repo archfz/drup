@@ -124,7 +124,7 @@ class Projects {
         };
 
         if (type === false) {
-          throw new Error(`Cannot register project. Could not determine type from files.`);
+          throw new Error(`Cannot register project. Could not determine type from files.\nPATH: ${directory}`);
         }
 
         if (typeof type === "string") {
@@ -186,8 +186,19 @@ class Projects {
         if (data === null) {
           throw new Error(`Project not found by key '${key}'.`);
         }
-        return new (getProjectTypes()[data.type])(data.root, data.config);
 
+        return new (getProjectTypes()[data.type])(data.root, data.config);
+      });
+  }
+
+  static loadDir(dir) {
+    return Storage.getByDirectory(dir)
+      .then((data) => {
+        if (data === null) {
+          throw new Error(`Project not found in '${dir}'.`);
+        }
+
+        return new (getProjectTypes()[data.type])(data.root, data.config);
       });
   }
 

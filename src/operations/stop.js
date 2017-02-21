@@ -1,23 +1,33 @@
 "use strict";
 
-const Environment = require("../environment/environment");
+const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
+const cmd = require("../cmd");
 
 module.exports = {
-  description : "Stop an environment.",
-  run : () => {
+  description : "Stop project environment.",
+  run : (key = null) => {
+    let projectLoad;
     let loader;
-    Environment.load("/home/zoltan.fodor/Documents/Drupal/test2")
-      .then((env) => {
-        loader = new Loader("Stopping docker.");
-        return env.getContainer("docker").stop();
-      })
-      .then((docker) => {
-        loader.finish();
-        console.log(docker.config.projectName + " stopped.");
-      })
-      .catch((err) => {
-        console.log(err);
+
+    if (key === null) {
+      projectLoad = Projects.loadDir(process.cwd());
+    }
+    else {
+      projectLoad = Projects.load(key);
+    }
+
+    projectLoad.then((project) => {
+      loader = new Loader("Stopping " + project.name + " ...");
+
+      return project.stop().then(() => project);
+    }).catch(cmd.error)
+      .then((project) => {
+        console.log(project.name + " stopped!");
+
+        if (loader) {
+          loader.destroy();
+        }
       });
   }
 };
