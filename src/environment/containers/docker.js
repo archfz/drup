@@ -5,6 +5,8 @@ const path = require("path");
 const fs = require("fs-promise");
 const os = require("os");
 
+const aliasManager = require("../../hosts_manager");
+
 const Command = require('../../system/system_command');
 const ContainerBase = require('../container_base');
 const Template = require('../../template');
@@ -87,10 +89,27 @@ module.exports = class DockerContainer extends ContainerBase {
               ["mask", "255.255.0.0"],
               ["10.0.75.2"] // @ Hyper-V default IP
             ]).execute().catch((err) => {
-            new Error("Failed to expose container IPs to hosts on windows.\n" + err);
+            throw Error("Failed to expose container IPs to hosts on windows.\n" + err);
           });
         });
       }
+    }).then(() => {
+      return this.getIp();
+    }).then((serviceIps) => {
+      let aliases = [];
+      this.env.services.each((service, id) => {
+        if (service.ann("aliased")) {
+          aliases.push({
+            ip: serviceIps[id],
+            domain: this.env.config.host_alias + "." + id,
+          });
+        }
+      });
+
+      return aliasManager.addHosts(aliases).catch((err) => {
+        console.warn("Adding host aliases for the service IPs requires admin privileges.");
+        console.error(err);
+      });
     }).then(() => {return this;});
   }
 
@@ -101,7 +120,8 @@ module.exports = class DockerContainer extends ContainerBase {
       ["-p", this.env.config.env_name],
       "stop"
     ]).execute()
-      .then(() => {return this;}).catch((error) => {
+      .then(() => {return this;})
+      .catch((error) => {
         throw new Error("Failed to stop environment container:\n" + error);
       });
   }

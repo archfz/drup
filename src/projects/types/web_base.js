@@ -16,41 +16,13 @@ class WebProject extends ProjectBase {
       type: "input",
       name: "host_alias",
       message: "Project host alias",
-      default: (values) => values.name.toLowerCase().replace(/\s+/g, "-") + ".dev",
+      default: (values) => values.name.toLowerCase().replace(/\s+/g, "-"),
+      validate: (str) => {
+        return str.match(/^[a-z\-0-9]+$/) ? true : "Should only contain a domain name, without extension.";
+      }
     });
 
     return questions;
-  }
-
-  start(getContainer = false) {
-    let cont;
-
-    return super.start(true)
-      .then((container) => {
-        cont = container;
-        return container.getIp("web");
-      })
-      .then((ip) => {
-        return hostManager.addHost(this._config.host_alias, ip)
-          .catch((err) => {
-            console.warn(`Failed to add host alias.\n${err}\n`);
-          })
-          .then(() => ip);
-      })
-      .then((ip) => {
-        console.log(this._config.name + " started.");
-        console.log(ip + " => " + this._config.host_alias);
-
-        return getContainer ? cont : this
-      });
-  }
-
-  stop(getContainer = false) {
-    let cont;
-
-    super.stop(true)
-      .then(() => hostManager.removeHost(this._config.host_alias))
-      .then(() => getContainer ? cont : this);
   }
 
   _onEnvironmentCreated(env, tempDirectory) {

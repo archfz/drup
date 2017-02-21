@@ -7,6 +7,7 @@ const WebService = require("../web_base");
  * @group web
  * @label NGINX
  * @priority 20
+ * @aliased
  */
 module.exports = class NginxService extends WebService {
 

@@ -6,6 +6,7 @@ const Service = require("../../service_base");
  * @id pma
  * @group misc
  * @label PHPMyAdmin
+ * @aliased
  */
 module.exports = class PhpMyAdminService extends Service {
 

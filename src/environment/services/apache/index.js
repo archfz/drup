@@ -6,6 +6,7 @@ const WebService = require("../web_base");
  * @id apache
  * @group web
  * @label Apache
+ * @aliased
  * @priority 5
  */
 module.exports = class ApacheService extends WebService {

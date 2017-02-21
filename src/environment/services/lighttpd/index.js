@@ -7,6 +7,7 @@ const WebService = require("../web_base");
  * @group web
  * @label LightTPD
  * @priority 10
+ * @aliased
  */
 module.exports = class LightTpdService extends WebService {
 
