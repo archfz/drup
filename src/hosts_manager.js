@@ -66,14 +66,25 @@ module.exports = {
     return /^(\d|[1-9]\d|1\d\d|2([0-4]\d|5[0-5]))\.(\d|[1-9]\d|1\d\d|2([0-4]\d|5[0-5]))\.(\d|[1-9]\d|1\d\d|2([0-4]\d|5[0-5]))\.(\d|[1-9]\d|1\d\d|2([0-4]\d|5[0-5]))$/.test(ip);
   },
 
-  addHost(domain, ip, comment = "") {
-    if (!this.isDomainValid(domain)) {
-      throw new Error("Invalid domain provided: " + domain);
-    }
+  validateDomains(domains) {
+    domains.forEach((domain) => {
+      if (!this.isDomainValid(domain)) {
+        throw new Error("Invalid domain provided: " + domain);
+      }
+    });
+  },
 
-    if (!this.isIpValid(ip)) {
-      throw new Error("Invalid ip provided: " + ip);
-    }
+  validateIps(ips) {
+    ips.forEach((ip) => {
+      if (!this.isIpValid(ip)) {
+        throw new Error("Invalid ip provided: " + ip);
+      }
+    });
+  },
+
+  addHost(domain, ip, comment = "") {
+    this.validateDomains([domain]);
+    this.validateIps([ip]);
 
     if (comment !== "") {
       comment = "\t\t#" + comment;
@@ -90,6 +101,34 @@ module.exports = {
         let hosts = getHostsFromContent(content)
           .filter((host) => host.indexOf(domain) === -1);
         hosts.push(`${ip}\t${domain}${comment}`);
+
+        return fsp.writeFile(hostsPath, replaceHostsInContent(hosts, content));
+      });
+  },
+
+  addHosts(aliases, comment = "") {
+    const domains = aliases.map((alias) => alias.domain);
+    this.validateDomains(domains);
+    this.validateIps(aliases.map((alias) => alias.ip));
+
+    if (comment !== "") {
+      comment = "\t\t#" + comment;
+    }
+
+    return createHostsBackup().then(() => {
+        return fsp.readFile(hostsPath);
+      })
+      .then((content) => {
+        if (typeof content === "object") {
+          content = content.toString();
+        }
+
+        let hosts = getHostsFromContent(content)
+          .filter((host) => domains.indexOf(host.match(/^[^\s]+/)) !== -1);
+
+        aliases.forEach((alias) => {
+          hosts.push(`${alias.ip}\t${alias.domain}${comment}`);
+        });
 
         return fsp.writeFile(hostsPath, replaceHostsInContent(hosts, content));
       });
