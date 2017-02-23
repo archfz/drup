@@ -17,7 +17,6 @@
     "fs-promise": "^1.0.0",
     "inquirer": "^1.2.2",
     "is-git-url": "^0.2.3",
-    "node-storage": "0.0.7",
     "node-yaml": "^3.0.3",
     "process": "^0.11.9",
     "readdirp": "^2.1.0",
