@@ -25,6 +25,14 @@ class ServiceBase {
     return this._env;
   }
 
+  getOperations() {
+    return null;
+  }
+
+  runOperation(name, args) {
+    throw new Error(`Service '${this.ann("id")}' does not provide '${name}' operation.`);
+  }
+
   bindEnvironment(env) {
     this._env = env;
   }

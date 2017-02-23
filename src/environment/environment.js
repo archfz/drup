@@ -116,6 +116,24 @@ class Environment {
     return fs.exists(path.join(directory, Environment.FILENAME));
   }
 
+  getServiceOperations() {
+    let opNames = {};
+    let operations = [];
+
+    this.services.each((service) => {
+      service.getOperations().forEach((operation) => {
+        if (opNames.hasOwnProperty(operation.name)) {
+          throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`)
+        }
+
+        opNames[operation.name] = service.ann("id");
+        operation.push(operation);
+      })
+    });
+
+    return operations;
+  }
+
   save(includeInProject = true) {
     includeInProject = includeInProject ? Environment.DIRECTORIES.PROJECT : "";
     const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
