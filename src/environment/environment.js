@@ -127,11 +127,16 @@ class Environment {
         }
 
         opNames[operation.name] = service.ann("id");
+        operation.service = service.ann("id");
         operation.push(operation);
       })
     });
 
     return operations;
+  }
+
+  runServiceOperation(op, args) {
+    this.services.get(op.service).runOperation(op.name, args);
   }
 
   save(includeInProject = true) {
