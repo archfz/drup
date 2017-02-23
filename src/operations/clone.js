@@ -5,7 +5,17 @@ const cmd = require("../cmd");
 
 module.exports = {
   description : "Clone existing project from repository.",
-  run : (repository ) => {
+  aliases: ["clone", "cl"],
+  weight: 10,
+  arguments: [
+    {
+      name: "repository",
+      description: "The repository to pull from.",
+      optional: true,
+    }
+  ],
+
+  execute : (repository ) => {
 
     Projects.clone(repository)
       .then((project) => {

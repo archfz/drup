@@ -5,7 +5,17 @@ const cmd = require("../cmd");
 
 module.exports = {
   description : "Create new project.",
-  run : (type = null) => {
+  aliases: ["create", "cr"],
+  weight: 1,
+  arguments: [
+    {
+      name: "type",
+      description: "Type of project to create.",
+      optional: true,
+    }
+  ],
+
+  execute : (type = null) => {
 
     Projects.create(type)
       .then((project) => {

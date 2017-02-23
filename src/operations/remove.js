@@ -6,7 +6,18 @@ const cmd = require("../cmd");
 
 module.exports = {
   description : "Remove project and it's environment.",
-  run : (key = null) => {
+  aliases: ["remove", "rm"],
+  weight: 30,
+  arguments: [
+    {
+      name: "key",
+      description: "The key of the project.",
+      default: "Current directory project.",
+      optional: true,
+    }
+  ],
+
+  execute : (key = null) => {
     let projectLoad;
     let loader;
 

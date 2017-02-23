@@ -6,7 +6,18 @@ const cmd = require("../cmd");
 
 module.exports = {
   description : "Stop project environment.",
-  run : (key = null) => {
+  aliases: ["start", "sto"],
+  weight: 101,
+  arguments: [
+    {
+      name: "key",
+      description: "The key of the project.",
+      default: "Current directory project.",
+      optional: true,
+    }
+  ],
+
+  execute : (key = null) => {
     let projectLoad;
     let loader;
 

@@ -4,7 +4,7 @@
 // Make sure to initialize the smart terminal before any output.
 require("./src/terminal-utils/smart_term")();
 
-const runOperation = require("./src/operations");
+const runOperation = require("./src/run_operation");
 
 let args = process.argv.slice(2);
 runOperation(args.shift(), args);
