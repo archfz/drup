@@ -72,7 +72,8 @@ module.exports = (operation, args) => {
         let op = findOperation(args[0], projectOperations);
 
         if (op) {
-          env.runServiceOperation(op, ...args);
+          args.shift();
+          env.runServiceOperation(op, args);
           return true;
         }
 
@@ -80,17 +81,22 @@ module.exports = (operation, args) => {
       })
       .then((found) => {
         if (!found) {
-          if (args) {
-            console.log(`Project '${proj.name}' doesn't have '${args[0]}' operation.\n`.red);
+          if (args && args[0]) {
+            console.log(`Project '${project.name}' doesn't have '${args[0]}' operation.\n`.red);
           }
 
-          helpOperation.specificOperationsHelp(projectOperations);
+          if (projectOperations.length) {
+            helpOperation.specificOperationsHelp(projectOperations);
+          }
+          else {
+            console.warn(`There are no operations for the '${project.name}' project.`);
+          }
         }
       })
-      .catch(() => {
+      .catch((err) => {console.log(err);
         console.log(`Undefined operation '${operation}'\n`.red);
         helpOperation.execute(operations);
-      })
+      });
   }
 
 };

@@ -6,7 +6,7 @@ const cmd = require("../cmd");
 
 module.exports = {
   description : "Stop project environment.",
-  aliases: ["start", "sto"],
+  aliases: ["stop", "sto"],
   weight: 101,
   arguments: [
     {
