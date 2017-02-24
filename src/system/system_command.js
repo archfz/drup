@@ -31,8 +31,17 @@ class SystemCommand {
     }
 
     this._dataCallbacks = [];
+    this._inherit = false;
     this.command = command;
     this.arguments = args;
+  }
+
+  /**
+   * Enables interactive command.
+   */
+  inheritStdio() {
+    this._inherit = true;
+    return this;
   }
 
   /**
@@ -112,6 +121,31 @@ class SystemCommand {
   }
 
   /**
+   * Callback to process data of command.
+   *
+   * @param d
+   *    The data.
+   * @private
+   */
+  _processStdout(d) {
+    d = d.toString();
+    this.data += d;
+    this._dataCallbacks.forEach((callback) => callback(d));
+  }
+
+  /**
+   * Callback to process error data of command.
+   *
+   * @param d
+   *    The data.
+   * @private
+   */
+  _processStderr(d) {
+    d = d.toString();
+    this.errorData += d;
+  }
+
+  /**
    * Executes the command.
    *
    * @param {string|null} inDir
@@ -121,8 +155,8 @@ class SystemCommand {
    *    Promise that will resolve with data or reject with error.
    */
   execute(inDir = null) {
-    let data = "";
-    let errorData = "";
+    this.data = "";
+    this.errorData = "";
 
     let options = {
       cwd: inDir,
@@ -135,26 +169,24 @@ class SystemCommand {
       this._rejectPromise = rej;
     });
 
+    if (this._inherit) {
+      options.stdio = "inherit";
+    }
+
     this._process = spawn(this.command, this.getArgumentArray(), options);
 
-    this._process.stdout.on("data", (d) => {
-      d = d.toString();
-      data += d;
-      this._dataCallbacks.forEach((callback) => callback(d));
-    });
-
-    this._process.stderr.on("data", (d) => {
-      d = d.toString();
-      errorData += d;
-    });
+    if (!this._inherit) {
+      this._process.stdout.on("data", this._processStdout.bind(this));
+      this._process.stderr.on("data", this._processStderr.bind(this));
+    }
 
     this._process.on("error", (err) => this._reject(err));
-    this._process.on("close", () => {
-      if (this._process.exitCode !== 0) {
-        this._reject(new Error(errorData + "\n" + this._process.exitCode));
+    this._process.on("exit", (code) => {
+      if (code !== 0) {
+        this._reject(new Error(this.errorData + "\n" + code));
       }
-
-      this._resolve(data + errorData);
+      
+      this._resolve(this.data + this.errorData);
     });
 
     return promise;
