@@ -126,7 +126,7 @@ module.exports = class DockerContainer extends ContainerBase {
       });
   }
 
-  command(command, execOptions = [], execInService = "web") {
+  command(command, execOptions = ["exec"], execInService = "web") {
     this.directoryToPath();
 
     if (execInService == "web") {
@@ -134,11 +134,11 @@ module.exports = class DockerContainer extends ContainerBase {
     }
 
     let cmd = new Command("docker-compose", [
-      "exec", execOptions, execInService, ["bash", "-ci", `"${command}"`],
-    ]);
+      execOptions, execInService, command,
+    ]).inheritStdio();
 
     return cmd.execute().then(() => {return this;}).catch((error) => {
-      throw new Error(`Failed to run docker exec:\n${cmd.toString()}:\n${error}`);
+      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
   }
 
