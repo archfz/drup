@@ -26,7 +26,7 @@ class ServiceBase {
   }
 
   getOperations() {
-    return null;
+    return [];
   }
 
   runOperation(name, args) {

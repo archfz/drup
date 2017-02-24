@@ -121,22 +121,28 @@ class Environment {
     let operations = [];
 
     this.services.each((service) => {
-      service.getOperations().forEach((operation) => {
+      const serviceOps = service.getOperations();
+
+      if (!Array.isArray(serviceOps)) {
+        throw new Error(`Service getOperations() must return array. Service '${service.ann("id")}' did not.`);
+      }
+
+      serviceOps.forEach((operation) => {
         if (opNames.hasOwnProperty(operation.name)) {
-          throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`)
+          throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`);
         }
 
         opNames[operation.name] = service.ann("id");
         operation.service = service.ann("id");
-        operation.push(operation);
-      })
+        operations.push(operation);
+      });
     });
 
     return operations;
   }
 
-  runServiceOperation(op, args) {
-    this.services.get(op.service).runOperation(op.name, args);
+  runServiceOperation(op, args = []) {
+    this.services.get(op.service).runOperation(op.baseName, args);
   }
 
   save(includeInProject = true) {
