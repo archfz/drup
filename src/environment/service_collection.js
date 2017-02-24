@@ -83,6 +83,16 @@ module.exports = class ServiceCollection {
     return this.servicesByGroup[group] || false;
   }
 
+  firstOfGroup(group) {
+    let ofGroup = this.ofGroup(group);
+
+    if (!ofGroup) {
+      return false;
+    }
+
+    return ofGroup[Object.keys(ofGroup)[0]];
+  }
+
   notOfGroup(groups) {
     if (!Array.isArray(groups)) {
       groups = [groups];
