@@ -154,6 +154,7 @@ module.exports = {
 
   SaveEnvironment: class extends Action {
     complete(data) {
+      console.log();
       return inquirer.prompt({
         type: "question",
         message: "Include environment config in repository?",

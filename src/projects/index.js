@@ -56,7 +56,7 @@ class Projects {
     }
 
     return promise.then(() => {
-      console.log(`\n-- Creating ${projectType.name} project\n`);
+      console.log(`-- Creating ${projectType.name} project`);
 
       const methods = projectType.getCreationMethods();
       const options = Object.keys(methods);
