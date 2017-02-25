@@ -1,6 +1,12 @@
 "use strict";
 
-const cmd = require("../cmd");
+const formatter = require("../terminal-utils/formatter");
+
+const STR_DRUP = "drup ";
+const STR_OPERATION = "<".gray + "operation".green + "> ".gray;
+const STR_ENV_OPERATION = "<".gray + "env-operation".green + "> ".gray;
+const STR_ARGS = "[<".gray + "arguments".yellow + ">] ".gray;
+const STR_PROJECT = "<".gray + "project-key".red + "> ".gray;
 
 module.exports = {
   aliases: [undefined, "help", "-h", "--help", "?", "-?", "/?"],
@@ -13,62 +19,71 @@ module.exports = {
       return this.operationHelp(operations);
     }
 
-    cmd.info("Usage: \ndrup <operation> [<arguments>]\ndrup <project-key> <operation> [<arguments>]");
+    this.usageHelp();
 
     if (specificOperations) {
       this.specificOperationsHelp(specificOperations);
     }
 
-    cmd.heading("Available operations");
+    formatter.heading("Main operations");
+    this.listOperations(operations.filter((op) => {
+      return this.skipHelp.indexOf(op.baseName) === - 1;
+    }));
+  },
 
+  usageHelp() {
+    formatter.heading("Usage");
+    console.log("$ " + STR_DRUP + STR_OPERATION + STR_ARGS);
+    console.log("$ " + STR_DRUP + STR_PROJECT + STR_ENV_OPERATION + STR_ARGS);
+  },
+
+  listOperations(operations) {
+    let opHelp = {};
     operations.forEach((op) => {
-      if (this.skipHelp.indexOf(op.baseName) !== - 1) {
-        return;
-      }
-
-      cmd.info(`${op.baseName} : ${op.description}`);
+      opHelp[op.baseName] = op.description;
     });
+    formatter.list(opHelp);
   },
 
   specificOperationsHelp: function (operations) {
-    cmd.heading("Environment specific operations");
-
-    operations.forEach((op) => {
-      if (this.skipHelp.indexOf(op.baseName) !== - 1) {
-        return;
-      }
-
-      cmd.info(`${op.baseName} : ${op.description}`);
-    });
+    formatter.heading("Environment specific operations");
+    this.listOperations(operations);
   },
 
   operationHelp: function (op) {
-    let args = "";
+    formatter.heading("OPERATION: " + op.baseName);
 
-    if (op.arguments) {
-      args = "-arguments:";
-
-      op.arguments.forEach((arg) => {
-        args += "\n   ";
-
-        if (arg.optional) {
-          args += "[" + arg.name + "]";
-
-          if (arg.default) {
-            args += " (default: " + arg.default + ")";
-          }
-        }
-        else {
-          args += arg.name;
-        }
-
-        if (arg.description) {
-          args += " : " + arg.description;
-        }
-      });
+    if (op.description) {
+      console.log(op.description);
     }
 
-    let aliases = "\n-aliases: " + op.aliases.join(", ");
-    cmd.info(`${op.baseName} : ${op.description}\n${args}${aliases}`);
+    console.log("$ " + STR_DRUP + op.baseName.green + " " + STR_ARGS);
+
+    if (op.arguments) {
+      formatter.heading("Arguments");
+      let args = {};
+
+      op.arguments.forEach((arg) => {
+        args[arg.name] = "";
+
+        if (arg.description) {
+          args[arg.name] = arg.description;
+        }
+
+        if (arg.optional) {
+          args[arg.name] += "\n- optional";
+
+          if (arg.default) {
+            args[arg.name] += "; default: " + arg.default;
+          }
+        }
+      });
+
+      formatter.list({"arguments:": args}, null, "yellow");
+    }
+
+    console.log();
+    formatter.list({"aliases:": op.aliases.join(", ")});
+
   }
 };

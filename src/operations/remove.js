@@ -2,7 +2,6 @@
 
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
-const cmd = require("../cmd");
 
 module.exports = {
   description : "Remove project and it's environment.",
@@ -29,9 +28,10 @@ module.exports = {
     }
 
     projectLoad.then((project) => {
-      loader = new Loader("Removing " + project.name + " ...");
-      return project.remove();
-    }).catch(cmd.error)
+        loader = new Loader("Removing " + project.name + " ...");
+        return project.remove();
+      })
+      .catch(console.error)
       .then(() => loader && loader.destroy());
   }
 };

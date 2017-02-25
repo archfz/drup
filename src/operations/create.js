@@ -1,7 +1,6 @@
 "use strict";
 
 const Projects = require("../projects");
-const cmd = require("../cmd");
 
 module.exports = {
   description : "Create new project.",
@@ -21,7 +20,7 @@ module.exports = {
       .then((project) => {
         console.log("\n" + project.name + " is ready.");
       })
-      .catch(cmd.error);
+      .catch(console.error);
 
   }
 };

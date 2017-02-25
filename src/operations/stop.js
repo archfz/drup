@@ -2,7 +2,6 @@
 
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
-const cmd = require("../cmd");
 
 module.exports = {
   description : "Stop project environment.",
@@ -32,7 +31,7 @@ module.exports = {
       loader = new Loader("Stopping " + project.name + " ...");
 
       return project.stop().then(() => project);
-    }).catch(cmd.error)
+    }).catch(console.error)
       .then((project) => {
         console.log(project.name + " stopped!");
 

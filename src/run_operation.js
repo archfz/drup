@@ -1,7 +1,5 @@
 "use strict";
 
-const cmd = require("./cmd");
-
 const Projects = require("./projects");
 
 let operations = [];
@@ -50,7 +48,7 @@ module.exports = (operation, args) => {
       .then(() => {
         helpOperation.execute(operations, specificOperations);
       })
-      .catch(cmd.error);
+      .catch(console.error);
   }
   else if(operation) {
     let project;

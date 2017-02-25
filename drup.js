@@ -3,6 +3,7 @@
 
 // Make sure to initialize the smart terminal before any output.
 require("./src/terminal-utils/smart_term")();
+require("./src/terminal-utils/formatter").infect();
 
 const runOperation = require("./src/run_operation");
 
