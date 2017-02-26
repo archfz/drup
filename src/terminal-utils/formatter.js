@@ -83,6 +83,8 @@ const Formatter = module.exports = {
 
   infect() {
     console.log = function(str, ...args) {
+      str = str || "";
+
       if (typeof str === "string" && args) {
         str = util.format(str, ...args);
       }
@@ -97,6 +99,8 @@ const Formatter = module.exports = {
     };
 
     console.error = function(str, ...args) {
+      str = str || "";
+
       if (typeof str === "string" && args) {
         str = util.format(str, ...args);
       }
@@ -105,6 +109,8 @@ const Formatter = module.exports = {
     };
 
     console.warn = function(str, ...args) {
+      str = str || "";
+
       if (typeof str === "string" && args) {
         str = util.format(str, ...args);
       }
