@@ -65,6 +65,11 @@ module.exports = {
     revert() {
       this.cmd && this.cmd.kill();
       this.loader && this.loader.destroy();
+      return this.removeTempDirectory();
+    }
+
+    removeTempDirectory() {
+      return fs.rmdir(this.data.get("tmp_directory"));
     }
   },
 
@@ -121,14 +126,9 @@ module.exports = {
       this.dest = path.join(data.get("root"), Environment.DIRECTORIES.PROJECT);
 
       return fs.ensureDir(this.dest)
-        .then(() => {
-          return fs.copy(data.get("tmp_directory"), this.dest)
-        })
-        .then(() => {
-          this.loader.finish("Project moved to new location");
-        });
+        .then(() => fs.copy(data.get("tmp_directory"), this.dest))
+        .then(() => this.loader.finish("Project moved to new location"));
     }
-
     revert() {
       this.loader.destroy();
     }
@@ -136,7 +136,7 @@ module.exports = {
 
   CreateProject: class extends Action {
     complete(data) {
-      const env = data.get("envConfig");
+      const env = data.get("env_config");
       let project;
 
       if (env) {
@@ -150,17 +150,29 @@ module.exports = {
         return project.createEnvironment(data.get("tmp_directory"));
       }
     }
+    revert() {
+      return fs.rmdir(this.data.get("root"));
+    }
   },
 
   SaveEnvironment: class extends Action {
     complete(data) {
-      console.log();
-      return inquirer.prompt({
-        type: "question",
-        message: "Include environment config in repository?",
-        name: "include",
-        default: true,
-      }).then((values) => {
+      let promise;
+
+      if (data.get("env_config")) {
+        promise = Promise.resolve({include: true});
+      }
+      else {
+        console.log();
+        promise = inquirer.prompt({
+          type: "question",
+          message: "Include environment config in repository?",
+          name: "include",
+          default: true,
+        });
+      }
+
+      return promise.then((values) => {
         return data.get("project").getEnvironment().then((env) => env.save(values.include));
       });
     }

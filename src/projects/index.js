@@ -130,23 +130,36 @@ class Projects {
         if (typeof type === "string") {
           params.project_type = getProjectTypes()[type];
           params.config.type = type;
-          console.log(`\n-- Detected ${params.project_type.name} project\n`);
+          console.log(`\n-- Detected ${params.project_type.name} project`);
+
+          return new Task({gotRoot: act.AskProjectDirectory})
+            .then({gotConfig: act.GetProjectConfig, projectInPlace: act.MoveProject})
+            .after("gotConfig", (task) => {
+              task.then({projectCreated: act.CreateProject})
+                .then(act.SaveEnvironment)
+                .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+                .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
+                .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
+            })
+            .start(params)
+            .then((data) => data.get("project"));
         }
         else if (typeof type === "object") {
           params.env_config = type;
-        }
+          params.project_type = getProjectTypes()[type.config.type];
+          params.config.type = type.config.type;
+          console.log("-- Environment detected");
 
-        return new Task({gotRoot: act.AskProjectDirectory})
-          .then({gotConfig: act.GetProjectConfig, projectInPlace: act.MoveProject})
-          .after("gotConfig", (task) => {
-            task.then({projectCreated: act.CreateProject})
-              .then(act.SaveEnvironment)
-              .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
-              .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
-              .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
-          })
-          .start(params)
-          .then((data) => data.get("project"));
+          return new Task(act.AskProjectDirectory)
+            .then({projectInPlace: act.MoveProject})
+            .then({projectCreated: act.CreateProject})
+            .then(act.SaveEnvironment)
+            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+            .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
+            .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject)
+            .start(params)
+            .then((data) => data.get("project"));
+        }
       });
   }
 
