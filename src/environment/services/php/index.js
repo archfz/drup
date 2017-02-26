@@ -44,6 +44,9 @@ module.exports = class PhpService extends Service {
         PHP_XDEBUG: this.config.xdebug,
         PHP_EXTENSIONS: this.config.additional_extensions,
       },
+      volumes: [
+        `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`
+      ]
     };
 
     return compose;
@@ -58,11 +61,23 @@ module.exports = class PhpService extends Service {
       .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) == i);
   }
 
+  _getConfigFileInfo() {
+    return [{
+      template: "custom.ini.dot",
+      definitions: ["rules"],
+      data: {
+        XDEBUG: this.config.xdebug,
+        INI_SETTINGS: this.config.ini_settings
+      }
+    }];
+  }
+
   static defaults() {
     return {
       version: "7.1",
       xdebug: 1,
       additional_extensions: ["opcache"],
+      ini_settings: [],
     };
   }
 
