@@ -109,12 +109,37 @@ module.exports = {
       const urlSafeName = baseName.toLowerCase().replace(/\s+/g, "-");
       const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
-      return inquirer.prompt({
-        type: "input",
-        name: "root",
-        message: "Project directory",
-        default: defaultPath,
-      }).then((values) => {
+      const askDir = function (defaultDir) {
+        return inquirer.prompt({
+          type: "input",
+          name: "root",
+          message: "Project directory",
+          default: defaultDir,
+        }).then((values) => {
+          return fs.readdir(values.root).then((files) => {
+            if (!files.length) {
+              return values;
+            }
+
+            console.warn("The provided directory is not empty!\nProceeding with this directory could result in file loss. Are you sure you want to continue?");
+
+            return inquirer.prompt({
+              type: "question",
+              name: "overwrite",
+              message: "Overwrite existing files?",
+              default: false,
+            }).then((v) => {
+              if (v === true) {
+                return values;
+              }
+
+              return askDir(values.root);
+            });
+          }).catch(() => values);
+        });
+      };
+
+      return askDir(defaultPath).then((values) => {
         data.set("root", path.normalize(values.root));
       });
     }
