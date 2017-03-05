@@ -85,13 +85,15 @@ const Formatter = module.exports = {
     console.log = function(str, ...args) {
       str = str || "";
 
-      if (typeof str === "string" && args) {
-        str = util.format(str, ...args);
-      }
+      if (typeof str === "string") {
+        if (args) {
+          str = util.format(str, ...args);
+        }
 
-      const headingMatch = str.match(/.{2}/);
-      if (str.length > 2 && headingMatch[0] === "--") {
-        Formatter.heading(str.substr(headingMatch.index + 2));
+        const headingMatch = str.match(/.{2}/);
+        if (str.length > 2 && headingMatch[0] === "--") {
+          Formatter.heading(str.substr(headingMatch.index + 2));
+        }
       }
       else {
         consoleLog(str);
