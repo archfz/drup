@@ -69,7 +69,7 @@ module.exports = {
     }
 
     removeTempDirectory() {
-      return fs.rmdir(this.data.get("tmp_directory"));
+      return fs.remove(this._data.get("tmp_directory"));
     }
   },
 
@@ -115,6 +115,12 @@ module.exports = {
           name: "root",
           message: "Project directory",
           default: defaultDir,
+          validate: (str) => {
+            if (str.charAt(0) !== "/") {
+              return "The path must be absolute.";
+            }
+            return true;
+          }
         }).then((values) => {
           return fs.readdir(values.root).then((files) => {
             if (!files.length) {
@@ -147,8 +153,14 @@ module.exports = {
 
   MoveProject: class extends Action {
     complete(data) {
+      let root = data.get("root");
+
+      if (!root) {
+        throw new Error("Attempted to move project without root.");
+      }
+
       this.loader = new Loader("Moving project");
-      this.dest = path.join(data.get("root"), Environment.DIRECTORIES.PROJECT);
+      this.dest = path.join(root, Environment.DIRECTORIES.PROJECT);
 
       return fs.ensureDir(this.dest)
         .then(() => fs.copy(data.get("tmp_directory"), this.dest))
@@ -175,8 +187,8 @@ module.exports = {
         return project.createEnvironment(data.get("tmp_directory"));
       }
     }
-    revert() {
-      return fs.rmdir(this.data.get("root"));
+    revert(data) {
+      return fs.remove(data.get("root"));
     }
   },
 
