@@ -13,20 +13,20 @@ module.exports = class ProjectBase {
 
   constructor(root, config) {
     this._root = root;
-    this._key = config.name.replace(/[^a-zA-Z0-9\-_]+/g, "").toLowerCase();
+    this._key = config.key;
     this._config = config;
   }
 
   /**
-   * Gets questions for the project configuration.
+   * Gathers configuration for a project.
    *
    * @param suggestions
    *    Current config values to build suggestions.
    *
-   * @returns {[*]}
-   *    Array of inquirer questions.
+   * @returns {Promise}
+   *    Promise that will result in the config.
    */
-  static getConfigureQuestions(suggestions = {}) {
+  static configure(suggestions = {}) {
     let name = null;
 
     if (suggestions.name) {
@@ -34,13 +34,88 @@ module.exports = class ProjectBase {
       name = name.charAt(0).toUpperCase() + name.substr(1).toLowerCase();
     }
 
-    return [{
+    return inquirer.prompt({
       type: "input",
       name: "name",
       message: "Project name",
       default: name,
       validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
-    }];
+      filter: (value) => value.trim()
+    }).then((values) => {
+      return ProjectBase.generateUniqueKey(values.name)
+        .then((key) => {
+          values.key = key;
+          return values;
+        });
+    }).then((values) => {
+      const askKey = function (defaultKey) {
+        return inquirer.prompt({
+          type: "input",
+          name: "key",
+          message: "Project key",
+          description: "Unique identifier for the project.",
+          default: defaultKey,
+          validate: (key) => {
+            if (!key) {
+              return "Project key is required.";
+            }
+
+            if (!key.match(/^[a-zA-Z0-9\-_]+$/)) {
+              return "Key may only container letters, numbers and _ or -";
+            }
+
+            return true;
+          },
+          filter: (value) => value.toLowerCase(),
+        }).then((values) => {
+          return ProjectBase.isKeyUnique(values.key)
+            .then((unique) => {
+              if (unique) {
+                return values.key;
+              }
+
+              console.warn("A project already has this key.");
+
+              return askKey(values.key);
+            });
+        });
+      };
+
+      return ProjectBase.generateUniqueKey(values.name)
+        .then((key) => askKey(key))
+        .then((key) => {
+          values.key = key;
+          return values;
+        });
+    });
+  }
+
+  static generateUniqueKey(suggestion) {
+    let words = suggestion.split(/[ ]+/);
+    if (words.length > 2) {
+      suggestion = words.map((word) => word.charAt(0)).join("").toLowerCase();
+    }
+    else {
+      suggestion = suggestion.replace(" ", "_");
+    }
+
+    const generateKey = (count = "") => {
+      return ProjectBase.isKeyUnique(suggestion + count)
+        .then((unique) => {
+          if (unique) {
+            return suggestion + count;
+          }
+
+          return generateKey(count === "" ? 2 : count + 1);
+        });
+    };
+
+    return generateKey();
+  }
+
+  static isKeyUnique(key) {
+    return ProjectStorage.get(key)
+      .then((config) => config === null);
   }
 
   /**

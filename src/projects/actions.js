@@ -88,7 +88,7 @@ module.exports = {
         suggestions.name = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
       }
 
-      return inquirer.prompt(data.get("project_type").getConfigureQuestions(suggestions))
+      return data.get("project_type").configure(suggestions)
         .then((values) => Object.assign(data.get("config"), values));
     }
   },
@@ -130,12 +130,12 @@ module.exports = {
             console.warn("The provided directory is not empty!\nProceeding with this directory could result in file loss. Are you sure you want to continue?");
 
             return inquirer.prompt({
-              type: "question",
+              type: "confirm",
               name: "overwrite",
               message: "Overwrite existing files?",
               default: false,
             }).then((v) => {
-              if (v === true) {
+              if (v.overwrite) {
                 return values;
               }
 

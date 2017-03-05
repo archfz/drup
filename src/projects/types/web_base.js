@@ -2,6 +2,7 @@
 
 const readdir = require("readdirp");
 const path = require("path");
+const inquirer = require("inquirer");
 
 const hostManager = require("../../hosts_manager");
 
@@ -9,20 +10,21 @@ const ProjectBase = require("../base");
 
 class WebProject extends ProjectBase {
 
-  static getConfigureQuestions(suggestions) {
-    let questions = super.getConfigureQuestions(suggestions);
-
-    questions.push({
-      type: "input",
-      name: "host_alias",
-      message: "Project host alias",
-      default: (values) => values.name.toLowerCase().replace(/\s+/g, "-"),
-      validate: (str) => {
-        return str.match(/^[a-z\-0-9]+$/) ? true : "Should only contain a domain name, without extension.";
-      }
-    });
-
-    return questions;
+  static configure(suggestions) {
+    return super.configure(suggestions)
+      .then((values) => {
+        return inquirer.prompt({
+          type: "input",
+          name: "host_alias",
+          message: "Project host alias",
+          default: values.name.toLowerCase().replace(/\s+/g, "-"),
+          validate: (str) => {
+            return str.match(/^[a-z\-0-9]+$/) ? true : "Should only contain a domain name, without extension.";
+          }
+        }).then((val) => {
+          return Object.assign(values, val);
+        });
+      });
   }
 
   _onEnvironmentCreated(env, tempDirectory) {
