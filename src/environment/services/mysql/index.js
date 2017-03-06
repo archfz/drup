@@ -13,6 +13,19 @@ const Service = require("../../service_base");
  */
 module.exports = class MysqlService extends Service {
 
+  static defineConfiguration() {
+    return {
+      user: {
+        label: "User",
+        default: "admin",
+      },
+      password: {
+        label: "Password",
+        default: "admin",
+      },
+    };
+  }
+
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
@@ -60,13 +73,6 @@ module.exports = class MysqlService extends Service {
     }
 
     return compose;
-  }
-
-  static defaults() {
-    return {
-      user: "admin",
-      password: "admin",
-    };
   }
 
 };

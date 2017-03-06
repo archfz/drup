@@ -12,6 +12,27 @@ const versions = ["7.1", "7.0" , "5.6" ];
  */
 module.exports = class PhpService extends Service {
 
+  static defineConfiguration() {
+    return {
+      version: {
+        label: "Version",
+        default: "7.1",
+      },
+      xdebug: {
+        label: "XDebug enabled",
+        default: true,
+      },
+      additional_extensions: {
+        label: "Additional PHP extensions",
+        default: ["opcache"],
+      },
+      ini_settings: {
+        label: "Custom INI settings",
+        default: [],
+      },
+    };
+  }
+
   _configure() {
     let choices = [];
     versions.forEach((version) => {
@@ -70,15 +91,6 @@ module.exports = class PhpService extends Service {
         INI_SETTINGS: this.config.ini_settings
       }
     }];
-  }
-
-  static defaults() {
-    return {
-      version: "7.1",
-      xdebug: 1,
-      additional_extensions: ["opcache"],
-      ini_settings: [],
-    };
   }
 
 };

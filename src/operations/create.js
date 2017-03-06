@@ -19,6 +19,7 @@ module.exports = {
     Projects.create(type)
       .then((project) => {
         console.log("\n" + project.name + " is ready.");
+        console.log(`Start it by: drup start ${project.key}`);
       })
       .catch(console.error);
 

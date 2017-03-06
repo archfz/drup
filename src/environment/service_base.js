@@ -9,11 +9,21 @@ const Template = require("../template");
 class ServiceBase {
 
   constructor(config) {
-    this.config = config || this.constructor.defaults();
+    this.config = config || this.constructor.getDefaultConfig();
     this._config_extensions = {};
   }
 
-  static defaults() {
+  static getDefaultConfig() {
+    let config = {};
+
+    for (let [key, def] of Object.entries(this.defineConfiguration())) {
+      config[key] = def.default;
+    }
+
+    return config;
+  }
+
+  static defineConfiguration() {
     return {};
   }
 
@@ -29,8 +39,32 @@ class ServiceBase {
     return [];
   }
 
+  getDomainAlias() {
+    if (!this.ann("aliased")) {
+      return false;
+    }
+
+    return this.env.config.host_alias + "." + this.ann("id");
+  }
+
   runOperation(name, args) {
     throw new Error(`Service '${this.ann("id")}' does not provide '${name}' operation.`);
+  }
+
+  printInformation() {
+    if (!Object.keys(this.config).length) {
+      return;
+    }
+
+    console.log(`-- ${this.ann('label')} info`);
+
+    if (this.ann("aliased")) {
+      console.log("Reachable on: " + this.getDomainAlias());
+    }
+
+    for (let [key, def] of Object.entries(this.constructor.defineConfiguration())) {
+      console.log(`- ${def.label} : ${JSON.stringify(this.config[key], null, "\t")}`);
+    }
   }
 
   bindEnvironment(env) {

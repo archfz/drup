@@ -16,6 +16,15 @@ const images = {
  */
 module.exports = class NodeService extends Service {
 
+  static defineConfiguration() {
+    return {
+      version: {
+        label: "Version",
+        default: "7.5",
+      },
+    };
+  }
+
   _configure() {
     let choices = [];
     for (const [key] of Object.entries(images)) {
@@ -41,12 +50,6 @@ module.exports = class NodeService extends Service {
     };
 
     return compose;
-  }
-
-  static defaults() {
-    return {
-      version: "7.5",
-    };
   }
 
 };

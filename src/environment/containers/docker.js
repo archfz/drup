@@ -101,7 +101,7 @@ module.exports = class DockerContainer extends ContainerBase {
         if (service.ann("aliased")) {
           aliases.push({
             ip: serviceIps[id],
-            domain: this.env.config.host_alias + "." + id,
+            domain: service.getDomainAlias(),
           });
         }
       });

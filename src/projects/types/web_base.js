@@ -4,8 +4,6 @@ const readdir = require("readdirp");
 const path = require("path");
 const inquirer = require("inquirer");
 
-const hostManager = require("../../hosts_manager");
-
 const ProjectBase = require("../base");
 
 class WebProject extends ProjectBase {

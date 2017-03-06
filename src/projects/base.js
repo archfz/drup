@@ -190,10 +190,18 @@ module.exports = class ProjectBase {
       .then((container) => getContainer ? container : this);
   }
 
-  static get requiredData() {
-    return {
+  printInformation() {
+    console.log("-- Project information");
+    console.log("- Key : " + this._config.key);
+    console.log("- Name : " + this._config.name);
+    console.log("- Type : " + this._config.type);
+    console.log("- Creation method : " + this._config.creation);
 
-    };
+    return this.getEnvironment().then((env) => {
+      env.services.each((service) => {
+        service.printInformation();
+      });
+    }).then(() => this);
   }
 
   createEnvironment(tempDir) {
@@ -241,6 +249,10 @@ module.exports = class ProjectBase {
 
   get root() {
     return this._root;
+  }
+
+  get key() {
+    return this._key;
   }
 
 };

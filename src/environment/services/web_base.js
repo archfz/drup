@@ -6,6 +6,19 @@ const DOCKER_WWW_ROOT = "/var/www/html";
 
 class WebService extends ServiceBase {
 
+  static defineConfiguration() {
+    return {
+      relative_root: {
+        label: "Document relative root",
+        default: "/",
+      },
+      index_files: {
+        label: "Index files",
+        default: ["index.html", "index.htm"],
+      }
+    };
+  }
+
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
@@ -51,13 +64,6 @@ class WebService extends ServiceBase {
     }
 
     this.config.index_files = this.config.index_files.concat(index);
-  }
-
-  static defaults() {
-    return {
-      relative_root: "/",
-      index_files: ["index.html", "index.htm"],
-    };
   }
 
 }

@@ -11,6 +11,19 @@ const inquirer = require("inquirer");
  */
 module.exports = class MongodbService extends Service {
 
+  static defineConfiguration() {
+    return {
+      user: {
+        label: "User",
+        default: "admin",
+      },
+      password: {
+        label: "Password",
+        default: "admin",
+      },
+    };
+  }
+
   _configure() {
     return inquirer.prompt([{
       type: "input",
@@ -42,11 +55,5 @@ module.exports = class MongodbService extends Service {
     return compose;
   }
 
-  static defaults() {
-    return {
-      user: "admin",
-      password: "admin",
-    };
-  }
 
 };
