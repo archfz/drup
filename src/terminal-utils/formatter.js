@@ -93,11 +93,11 @@ const Formatter = module.exports = {
         const headingMatch = str.match(/.{2}/);
         if (str.length > 2 && headingMatch[0] === "--") {
           Formatter.heading(str.substr(headingMatch.index + 2));
+          return;
         }
       }
-      else {
-        consoleLog(str);
-      }
+
+      consoleLog(str);
     };
 
     console.error = function(str, ...args) {
