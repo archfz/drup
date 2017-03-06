@@ -31,6 +31,9 @@ module.exports = {
         loader = new Loader("Removing " + project.name + " ...");
         return project.remove();
       })
+      .then((project) => {
+        console.log(project.name + " removed.");
+      })
       .catch(console.error)
       .then(() => loader && loader.destroy());
   }

@@ -174,10 +174,11 @@ module.exports = class ProjectBase {
   }
 
   remove() {
-    return fs.rmdir(this.root)
+    return fs.remove(this.root)
       .then(() => {
         return ProjectStorage.remove(this._key);
-      });
+      })
+      .then(() => this);
   }
 
   start(getContainer = false) {
