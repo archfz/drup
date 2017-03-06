@@ -1,5 +1,7 @@
 "use strict";
 
+const formatter = require("../terminal-utils/formatter");
+
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
@@ -38,6 +40,17 @@ module.exports = {
       if (loader) {
         loader.destroy();
       }
-    });
+
+      return project.getEnvironment();
+    })
+      .then((env) => {
+        console.log("-- Aliased services");
+        env.services.each((service) => {
+          if (service.ann("aliased")) {
+            formatter.list([service.ann("id").green + " : " + service.getDomainAlias()]);
+          }
+        });
+      })
+      .catch(console.error);
   }
 };
