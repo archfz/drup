@@ -1,9 +1,11 @@
 # DRUP
-Drup is a command line utility that helps to kickstart development 
+Drup is a command line utility that helps to kick-start development 
 on your projects. It allows you to configure an environment and by 
 leveraging the power of [Docker](https://www.docker.com/) it builds
 it for you. All configuration get stored in a yaml file that if
 shared can be reused to build the same environment.
+
+Primary aim is to automate as much as possible.
 
 #### Services
 Services are at the base of the functionality. By combining and 
@@ -21,7 +23,12 @@ and default environment configuration. They also add custom services
 and installation methods to start anew. 
 
 *Supported project types*:
-- **Drupal**: provides Drush as a custom service.
+- **Drupal**: provides Drush as custom service.
+
+#### Platforms
+- **linux**: mainly targeted
+- **windows**: partially supported (problems with exposing Docker IPs to host)
+- **osx**: untested
 
 #### Features
 - creating new project with environment
@@ -32,7 +39,7 @@ and installation methods to start anew.
 
 ## Installation
 ```
-npm --global require drup
+npm --global install drup
 ```
 After you ran the above command 'drup' should be available in your PATH.
 Run 'drup ?' to get started. You can also get help for operations by
