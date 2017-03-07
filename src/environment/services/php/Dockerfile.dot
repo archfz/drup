@@ -1,0 +1,28 @@
+FROM php:{{= it.PHP_VERSION }}-fpm-alpine
+MAINTAINER zoltan.fodor@pitechnologies.ro
+
+RUN apk upgrade --update \
+    && NPROC=$(getconf _NPROCESSORS_ONLN) \
+
+{{/* Install any additional php extensions. */}}
+{{? it.PHP_EXTENSIONS.length }}
+    {{/* GD library dependencies */}}
+    {{? it.PHP_EXTENSIONS.indexOf("gd") !== -1 }}
+        && apk add \
+            coreutils \
+            freetype-dev \
+            libjpeg-turbo-dev \
+            libltdl \
+            libmcrypt-dev \
+            libpng-dev \
+    {{?}}
+    && docker-php-ext-install -j$NPROC {{= it.PHP_EXTENSIONS.join(" ") }} \
+{{?}}
+
+{{/* If so install xdebug and configure it. */}}
+{{? it.PHP_XDEBUG }}
+    && apk add autoconf make gcc g++ \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && apk del autoconf make gcc g++ \
+{{?}}

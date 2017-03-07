@@ -1,0 +1,15 @@
+{{? it.XDEBUG }}
+xdebug.auto_start=1
+xdebug.profiler_enable=0
+xdebug.remote_enable=1
+xdebug.remote_autostart=0
+xdebug.remote_port=9000
+; Try to connect to the origin of the request.
+; This makes it so we don't have to worry about the hosts IP
+xdebug.remote_connect_back=1
+xdebug.idekey=PHPSTORM
+{{?}}
+
+{{ for (let [key, set] of Object.entries(it.INI_SETTINGS)) { }}
+{{=key}}={{=set}}
+{{ } }}
