@@ -12,16 +12,17 @@ function getStorage() {
     return Promise.resolve(_storage);
   }
 
-  return fs.exists(ProjectStorage.FULLPATH)
-    .then((exists) => {
-      if (!exists) {
-        return Promise.resolve({});
+  // When first saving project the directory might not exist,
+  // so first ensure it does.
+  return fs.ensureDir(globals.GLOBAL_STORE_ROOT)
+    .then(() => yaml.read(ProjectStorage.FULLPATH))
+    .catch((err) => {
+      // If the store file doesn't exist return empty object.
+      if (err.code === "ENOENT") {
+        return {};
       }
 
-      return yaml.read(ProjectStorage.FULLPATH)
-        .catch((err) => {
-          throw new Error(`Failed loading in project storage file:\nFILE: ${ProjectStorage.FULLPATH}\n` + err);
-        });
+      throw new Error(`Failed loading in project storage file:\nFILE: ${ProjectStorage.FULLPATH}\n` + err);
     })
     .then((data) => {
       _storage = data;
