@@ -536,9 +536,11 @@ class Task {
       // If all the required referenced actions started then we can queue the
       // sub-task for starting. We also add this promise to the final promises
       // to make sure this task await for the sub-task.
-      Promise.all(subTask.promises).then(() => {
-        this._finalPromises.push(subTask.task.start(this._data));
-      }).catch((err) => {});
+      this._finalPromises.push(
+        Promise.all(subTask.promises).then(() => {
+          return subTask.task.start(this._data);
+        }).catch((err) => console.error(err))
+      );
       // The final blank catch is important here. We are creating a promise
       // from the combination of promises that are already handled. Without
       // this we would get the same error twice thus resulting in an un-
