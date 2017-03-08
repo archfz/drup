@@ -91,9 +91,10 @@ module.exports = class ProjectBase {
   }
 
   static generateUniqueKey(suggestion) {
+    suggestion = suggestion.toLowerCase();
     let words = suggestion.split(/[ ]+/);
     if (words.length > 2) {
-      suggestion = words.map((word) => word.charAt(0)).join("").toLowerCase();
+      suggestion = words.map((word) => word.charAt(0)).join("");
     }
     else {
       suggestion = suggestion.replace(" ", "_");
