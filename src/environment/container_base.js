@@ -35,6 +35,10 @@ module.exports = class ContainerBase {
     utils.mustImplement(this, "writeComposition");
   }
 
+  remove() {
+    utils.mustImplement(this, "remove");
+  }
+
   exists() {
     if (!this.path) {
       return false;
