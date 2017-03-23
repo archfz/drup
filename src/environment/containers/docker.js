@@ -191,4 +191,20 @@ module.exports = class DockerContainer extends ContainerBase {
       });
   }
 
+  remove() {
+    this.directoryToPath();
+
+    let cmd = new Command("docker-compose", [
+      "rm", "-vf",
+    ]).inheritStdio();
+
+    return this.stop().then(() => {
+        return cmd.execute();
+      })
+      .then(() => {return this;})
+      .catch((error) => {
+      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
+    });
+  }
+
 };

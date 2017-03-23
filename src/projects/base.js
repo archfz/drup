@@ -175,10 +175,10 @@ module.exports = class ProjectBase {
   }
 
   remove() {
-    return fs.remove(this.root)
-      .then(() => {
-        return ProjectStorage.remove(this._key);
-      })
+    return this.getEnvironment()
+      .then((env) => env.remove("docker"))
+      .then(() => fs.remove(this.root))
+      .then(() => ProjectStorage.remove(this._key))
       .then(() => this);
   }
 

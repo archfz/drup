@@ -225,6 +225,10 @@ class Environment {
       });
   }
 
+  remove(containerType) {
+    return this.getContainer(containerType).remove();
+  }
+
   _createStructure() {
     return fs.ensureDir(this.root).then(() => {
       return Promise.all(
