@@ -11,6 +11,8 @@ const Command = require("../system/system_command");
 const Environment = require("../environment/environment");
 const Loader = require("../terminal-utils/async_loader");
 
+const DirectoryInput = require("../form_input/directory_input");
+
 module.exports = {
 
   CloneProject: class extends Action {
@@ -109,45 +111,14 @@ module.exports = {
       const urlSafeName = baseName.toLowerCase().replace(/\s+/g, "-");
       const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
-      const askDir = function (defaultDir) {
-        return inquirer.prompt({
-          type: "input",
-          name: "root",
-          message: "Project directory",
-          default: defaultDir,
-          validate: (str) => {
-            if (str.charAt(0) !== "/") {
-              return "The path must be absolute.";
-            }
-            return true;
-          }
-        }).then((values) => {
-          return fs.readdir(values.root).then((files) => {
-            if (!files.length) {
-              return values;
-            }
-
-            console.warn("The provided directory is not empty!\nProceeding with this directory could result in file loss. Are you sure you want to continue?");
-
-            return inquirer.prompt({
-              type: "confirm",
-              name: "overwrite",
-              message: "Overwrite existing files?",
-              default: false,
-            }).then((v) => {
-              if (v.overwrite) {
-                return values;
-              }
-
-              return askDir(values.root);
-            });
-          }).catch(() => values);
+      return DirectoryInput.create("Project directory", "Choose the final location for the project files.")
+        .setDefault(defaultPath)
+        .warnNonEmpty()
+        .warnPathLengthLimitations(40)
+        .acquire()
+        .then((directory) => {
+          data.set("root", directory);
         });
-      };
-
-      return askDir(defaultPath).then((values) => {
-        data.set("root", path.normalize(values.root));
-      });
     }
   },
 
