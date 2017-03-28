@@ -81,17 +81,27 @@ module.exports = class DockerContainer extends ContainerBase {
       // the way to route those IPs to host.
       if (os.platform() === "win32") {
         return this.getIp().then((ips) => {
-          let promises = [];
-          let ip = ips[Object.keys(ips)[0]].replace(/(\d+.\d+.)\d+.\d+/, "$10.0");
-
-          new Command("route", [
+            return ips[Object.keys(ips)[0]].replace(/(\d+.\d+.)\d+.\d+/, "$10.0");
+          })
+        // Initially this first command was enough to make it work, but in the
+        // newer version docker changed things.
+          .then((ip) => new Command("route", [
               ["add", ip],
               ["mask", "255.255.0.0"],
               ["10.0.75.2"] // @ Hyper-V default IP
-            ]).execute().catch((err) => {
+            ]).execute()
+          )
+        // The new additional command needs to be run to make sure the upper
+        // one actually works.
+          .then(() => new Command("docker", [
+              "run", "--rm", "-t", "--privileged",
+              "--network=none", "--pid=host",
+              "justincormack/nsenter1",
+              "bin/sh", "-c", "\"iptables -A FORWARD -j ACCEPT\""
+            ]).execute()
+          ).catch((err) => {
             throw Error("Failed to expose container IPs to hosts on windows.\n" + err);
           });
-        });
       }
     }).then(() => {
       return this.getIp();
