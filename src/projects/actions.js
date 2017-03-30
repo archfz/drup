@@ -3,7 +3,7 @@
 const fs = require("fs-promise");
 const path = require("path");
 const inquirer = require("inquirer");
-const yaml = require("node-yaml");
+const yaml = require($SRC + "yaml");
 const globals = require("../globals");
 
 const Action = require("../task/action");
