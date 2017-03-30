@@ -206,19 +206,6 @@ module.exports = {
     }
   },
 
-  SetupProject: class extends Action {
-    complete(data) {
-      this.loader = new Loader("Setting up project");
-      return data.get("project").setup()
-        .then(() => {
-          this.loader.finish("Finished setup");
-        });
-    }
-    revert() {
-      this.loader && this.loader.destroy();
-    }
-  },
-
   SaveProject: class extends Action {
     complete(data) {
       return data.get("project").save();

@@ -9,7 +9,7 @@ const ProjectStorage = require("./storage");
 const Environment = require("../environment/environment");
 const ServiceCollection = require("../environment/service_collection");
 
-module.exports = class ProjectBase {
+class ProjectBase {
 
   constructor(root, config) {
     this._root = root;
@@ -163,7 +163,12 @@ module.exports = class ProjectBase {
   }
 
   setup() {
-    return Promise.resolve();
+    this._config.setup = true;
+    return this.save();
+  }
+
+  isSetUp() {
+    return this._config.setup;
   }
 
   save() {
@@ -257,4 +262,6 @@ module.exports = class ProjectBase {
     return this._key;
   }
 
-};
+}
+
+module.exports = ProjectBase;

@@ -89,7 +89,8 @@ class Drupal extends WebProject {
   setup() {
     const root = path.join(this.root, Environment.DIRECTORIES.PROJECT);
     return new ComposerCommand(["install"], root)
-      .execute();
+      .execute()
+      .then(() => super.setup());
   }
 
 }
