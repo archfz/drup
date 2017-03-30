@@ -1,7 +1,7 @@
 "use strict";
 
 const inquirer  = require("inquirer");
-const yaml = require("node-yaml");
+const yaml = require($SRC + "yaml");
 const utils = require("../utils");
 const fs = require("fs-promise");
 const path = require("path");

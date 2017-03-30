@@ -1,6 +1,6 @@
 "use strict";
 
-const yaml = require("node-yaml");
+const yaml = require($SRC + "yaml");
 const path = require("path");
 const fs = require("fs-promise");
 const os = require("os");
