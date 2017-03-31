@@ -59,7 +59,7 @@ You can use the following steps to learn the basic usage of drup.
 1. Start by creating a new project. This will download Drupal files
 and initiate a fresh website.
 ```bash
-drup create drupal 
+sudo drup create drupal 
 ```
 2. You will be asked to input some simple information, just follow
 along and read carefully the descriptions for each input.
