@@ -65,7 +65,7 @@ class Projects {
         throw new Error(`Cannot create project '${projectType.name}' as it doesn't provide any creation methods.`);
       }
       else if (options.length === 1) {
-        creationMethod = methods[0];
+        creationMethod = options.pop();
       }
       else {
         let choices = [];
