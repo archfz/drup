@@ -215,6 +215,7 @@ class Projects {
           throw new Error(`Project not found in '${dir}'.`);
         }
 
+        data = data.data;
         return new (getProjectTypes()[data.type])(data.root, data.config);
       });
   }
