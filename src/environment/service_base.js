@@ -62,6 +62,8 @@ class ServiceBase {
       console.log("Reachable on: " + this.getDomainAlias());
     }
 
+    console.log("- CONTAINER HOSTS ALIAS: \"" + this.ann("id") + "\"");
+
     for (let [key, def] of Object.entries(this.constructor.defineConfiguration())) {
       console.log(`- ${def.label} : ${JSON.stringify(this.config[key], null, "\t")}`);
     }

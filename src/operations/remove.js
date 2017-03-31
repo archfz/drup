@@ -1,5 +1,7 @@
 "use strict";
 
+const inquirer = require("inquirer");
+
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
@@ -28,13 +30,27 @@ module.exports = {
     }
 
     projectLoad.then((project) => {
+      console.log("You requested to remove: " + project.name.green);
+      console.log("This will " + "remove all".red + " your configurations and files.");
+      console.log();
+
+      return inquirer.prompt({
+        type: "confirm",
+        name: "remove",
+        message: "Are you sure you want to remove?",
+        default: false,
+      }).then((data) => {
+        if (!data.remove) {
+          return;
+        }
+
         loader = new Loader("Removing " + project.name + " ...");
-        return project.remove();
+        return project.remove().then((project) => {
+          console.log(project.name + " removed.");
+        });
       })
-      .then((project) => {
-        console.log(project.name + " removed.");
-      })
-      .catch(console.error)
-      .then(() => loader && loader.destroy());
+    })
+    .catch(console.error)
+    .then(() => loader && loader.destroy());
   }
 };

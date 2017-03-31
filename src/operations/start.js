@@ -18,9 +18,8 @@ module.exports = {
     }
   ],
 
-  execute : (key = null) => {
+  execute : function (key = null) {
     let projectLoad;
-    let loader;
 
     if (key === null) {
       projectLoad = Projects.loadDir(process.cwd());
@@ -30,27 +29,39 @@ module.exports = {
     }
 
     projectLoad.then((project) => {
-      loader = new Loader("Starting " + project.name + " ...");
+      let startLoader = new Loader("Starting " + project.name + " ...");
 
-      return project.start().then(() => project);
-    }).catch(console.error)
-      .then((project) => {
-      console.log(project.name + " started!");
+      let setupPromise = this.ensureProjectSetUp(project);
+      let startPromise = project.start().then(() => {
+        startLoader.finish();
+        return project;
+      });
 
-      if (loader) {
-        loader.destroy();
-      }
-
-      return project.getEnvironment();
+      return Promise.all([setupPromise, startPromise]);
     })
-      .then((env) => {
-        console.log("-- Aliased services");
-        env.services.each((service) => {
-          if (service.ann("aliased")) {
-            formatter.list([service.ann("id").green + " : " + service.getDomainAlias()]);
-          }
-        });
-      })
-      .catch(console.error);
+    .catch(console.error)
+    .then(([,project]) => {
+      console.log(project.name + " started!");
+      return project.getEnvironment()
+    })
+    .then((env) => {
+      console.log("-- Aliased services");
+      env.services.each((service) => {
+        if (service.ann("aliased")) {
+          formatter.list([service.ann("id").green + " : " + service.getDomainAlias()]);
+        }
+      });
+    })
+    .catch(console.error);
+  },
+
+  ensureProjectSetUp(project) {
+    if (project.isSetUp()) {
+      return Promise.resolve();
+    }
+
+    let setupLoader = new Loader("Setting up project");
+    return project.setup().then(() => setupLoader.finish());
   }
+
 };

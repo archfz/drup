@@ -18,8 +18,9 @@ module.exports = {
 
     Projects.create(type)
       .then((project) => {
-        console.log("\n" + project.name + " is ready.");
-        console.log(`Start it by: drup start ${project.key}`);
+        console.log("\n\"" + project.name.cyan + "\" project environment created.");
+        console.log(`Start it by: ` + `drup start ${project.key}`.yellow);
+        console.log("NOTE:".yellow + "You have to run this command with admin privileges.");
       })
       .catch(console.error);
 

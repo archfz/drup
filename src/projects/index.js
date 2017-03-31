@@ -1,6 +1,6 @@
 "use strict";
 
-const yaml = require("node-yaml");
+const yaml = require($SRC + "yaml");
 const path = require("path");
 const fs = require("fs-promise");
 const inquirer = require("inquirer");
@@ -65,7 +65,7 @@ class Projects {
         throw new Error(`Cannot create project '${projectType.name}' as it doesn't provide any creation methods.`);
       }
       else if (options.length === 1) {
-        creationMethod = methods[0];
+        creationMethod = options.pop();
       }
       else {
         let choices = [];
@@ -92,8 +92,7 @@ class Projects {
         .then(act.SaveEnvironment)
         .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
         .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
-        .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
-        .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject)
+        .after(["envComposed", "envConfigured"], act.SaveProject)
         .start({
           project_type: projectType,
           config: {
@@ -138,8 +137,7 @@ class Projects {
               task.then({projectCreated: act.CreateProject})
                 .then(act.SaveEnvironment)
                 .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
-                .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
-                .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject);
+                .after(["envComposed", "envConfigured"], act.SaveProject);
             })
             .start(params)
             .then((data) => data.get("project"));
@@ -155,8 +153,7 @@ class Projects {
             .then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
             .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
-            .after(["projectCreated", "projectInPlace"], {setupCompleted: act.SetupProject})
-            .after(["setupCompleted", "envComposed", "envConfigured"], act.SaveProject)
+            .after(["envComposed", "envConfigured"], act.SaveProject)
             .start(params)
             .then((data) => data.get("project"));
         }
@@ -167,10 +164,6 @@ class Projects {
     let promise;
 
     if (repository) {
-      if (!isGitUrl(repository)) {
-        throw new Error(`The provided repository is not a valid git URL:\n${repository}`);
-      }
-
       promise = Promise.resolve(repository);
     }
     else {
@@ -184,6 +177,17 @@ class Projects {
     
     return promise
       .then((repository) => {
+        // If the repository does not end in .git then we should assume that
+        // it was omitted as a copy past from URL bars. In this situation
+        // just append it at the end.
+        if (repository.substr(-4) !== ".git") {
+          repository += ".git";
+        }
+
+        if (!isGitUrl(repository)) {
+          throw new Error(`The provided repository is not a valid git URL:\n${repository}`);
+        }
+
         return new Task(act.CloneProject)
           .start({repository: repository});
       })
@@ -211,6 +215,7 @@ class Projects {
           throw new Error(`Project not found in '${dir}'.`);
         }
 
+        data = data.data;
         return new (getProjectTypes()[data.type])(data.root, data.config);
       });
   }

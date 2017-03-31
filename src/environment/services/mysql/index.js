@@ -75,4 +75,10 @@ module.exports = class MysqlService extends Service {
     return compose;
   }
 
+  printInformation() {
+    super.printInformation();
+
+    console.log("- Database name: \"" + this.env.config.env_name + "\"");
+  }
+
 };
