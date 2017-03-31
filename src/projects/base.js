@@ -34,10 +34,13 @@ class ProjectBase {
       name = name.charAt(0).toUpperCase() + name.substr(1).toLowerCase();
     }
 
+    console.log();
+    console.log("Insert a name for this project. This will be used to generate other required data defaults and as a general human readable identification for the project.".green);
+
     return inquirer.prompt({
       type: "input",
       name: "name",
-      message: "Project name",
+      message: "Project name:",
       default: name,
       validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
       filter: (value) => value.trim()
@@ -49,10 +52,13 @@ class ProjectBase {
         });
     }).then((values) => {
       const askKey = function (defaultKey) {
+        console.log();
+        console.log("Insert a unique ID for the project. This will be used to easily run operation on the project environment. For best usage add a short one.".green);
+
         return inquirer.prompt({
           type: "input",
           name: "key",
-          message: "Project key",
+          message: "Project unique key:",
           description: "Unique identifier for the project.",
           default: defaultKey,
           validate: (key) => {
