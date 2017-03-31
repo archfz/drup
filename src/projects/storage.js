@@ -83,7 +83,7 @@ class ProjectStorage {
     return getStorage()
       .then((storage) => {
         for (const [key, data] of Object.entries(storage)) {
-          if (data.root === dir) {
+          if (data.root === dir || dir.indexOf(data.root) === 0) {
             return {
               key: key,
               data: JSON.parse(JSON.stringify(storage[key])),
