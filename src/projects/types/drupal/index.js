@@ -50,7 +50,6 @@ class Drupal extends WebProject {
   static getCreationMethods() {
     return {
       standard: "Install new project with composer.",
-      issue: "Clone drupal dev to work on issues.",
     };
   }
 
