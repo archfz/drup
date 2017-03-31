@@ -164,10 +164,6 @@ class Projects {
     let promise;
 
     if (repository) {
-      if (!isGitUrl(repository)) {
-        throw new Error(`The provided repository is not a valid git URL:\n${repository}`);
-      }
-
       promise = Promise.resolve(repository);
     }
     else {
@@ -181,6 +177,17 @@ class Projects {
     
     return promise
       .then((repository) => {
+        // If the repository does not end in .git then we should assume that
+        // it was omitted as a copy past from URL bars. In this situation
+        // just append it at the end.
+        if (repository.substr(-4) !== ".git") {
+          repository += ".git";
+        }
+
+        if (!isGitUrl(repository)) {
+          throw new Error(`The provided repository is not a valid git URL:\n${repository}`);
+        }
+
         return new Task(act.CloneProject)
           .start({repository: repository});
       })
