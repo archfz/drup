@@ -111,7 +111,8 @@ module.exports = {
       const urlSafeName = baseName.toLowerCase().replace(/\s+/g, "-");
       const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
-      return DirectoryInput.create("Project directory", "Choose the final location for the project files.")
+      console.log();
+      return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
         .setDefault(defaultPath)
         .warnNonEmpty()
         .warnPathLengthLimitations(40)
@@ -172,9 +173,11 @@ module.exports = {
       }
       else {
         console.log();
+        console.log("Choose yes if you would like to share the drup configuration. This allows other people to recreate the same environment on other systems.".green);
+
         promise = inquirer.prompt({
-          type: "question",
-          message: "Include environment config in repository?",
+          type: "confirm",
+          message: "Add configuration to project root?",
           name: "include",
           default: true,
         });
