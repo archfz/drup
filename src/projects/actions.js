@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require("fs-promise");
+const fsu = require($SRC + "fs_utils.js");
 const path = require("path");
 const inquirer = require("inquirer");
 const yaml = require($SRC + "yaml");
@@ -112,14 +113,15 @@ module.exports = {
       const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
       console.log();
-      return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
-        .setDefault(defaultPath)
-        .warnNonEmpty()
-        .warnPathLengthLimitations(40)
-        .acquire()
-        .then((directory) => {
-          data.set("root", directory);
-        });
+      return fsu.suggestEmptyDirectory(defaultPath)
+        .then((path) => {
+          return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
+            .setDefault(path)
+            .warnNonEmpty()
+            .warnPathLengthLimitations(40)
+            .acquire();
+        })
+        .then((directory) => data.set("root", directory));
     }
   },
 
