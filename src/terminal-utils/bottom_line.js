@@ -5,6 +5,7 @@ const stripAnsi = require("strip-ansi");
 
 const BottomLines = {
   bottomLines : [],
+  allowRender : true,
 
   getLineIndex(bottomLine) {
     return this.bottomLines.indexOf(bottomLine);
@@ -17,14 +18,16 @@ const BottomLines = {
   register(bottomLine) {
     this.bottomLines.push(bottomLine);
 
-    if (this.count() == 1) {
+    if (this.count() === 1) {
       this.renderCall = this.renderAll.bind(this);
       this.removeCall = this.removeAll.bind(this);
       this.cleanCall = this.cleanUp.bind(this);
+      this.resizeCall = this.terminalResize.bind(this);
 
       Terminal.on("before_write", this.cleanCall);
       Terminal.on("after_write", this.renderCall);
       Terminal.on("exit", this.removeCall);
+      process.stdout.on("resize", this.resizeCall);
     }
   },
 
@@ -45,6 +48,10 @@ const BottomLines = {
   },
 
   renderAll() {
+    if (!this.allowRender) {
+      return;
+    }
+
     let lines = this.count();
 
     let visibilityStateChanged = Terminal.hideCursor();
@@ -82,7 +89,16 @@ const BottomLines = {
     Terminal.setCursorToLine(lines - 1);
     Terminal.charm("erase", "down");
     Terminal.charm("pop", 1);
+  },
+
+  terminalResize() {
+    clearTimeout(this._continueTimeout);
+
+    this.allowRender = false;
+    this.cleanUp();
+    this._continueTimeout = setTimeout(() => this.allowRender = true, 400);
   }
+
 };
 
 module.exports = class BottomLine {
@@ -119,6 +135,10 @@ module.exports = class BottomLine {
   }
 
   render() {
+    if (!BottomLines.allowRender) {
+      return;
+    }
+
     let visibilityStateChanged = Terminal.hideCursor();
     Terminal.charm("push", 1);
 
