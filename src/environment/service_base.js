@@ -125,6 +125,7 @@ class ServiceBase {
 
         let temp = Template.from(path.join(configPath, template)).define(definitions);
         (this._config_extensions[template] || []).forEach((ext) => temp.extend(ext));
+        temp.comment(true, configInfo.commentChar);
 
         promises.push(temp.compile(data, destPath));
       }
