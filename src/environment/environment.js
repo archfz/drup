@@ -3,6 +3,7 @@
 const inquirer  = require("inquirer");
 const yaml = require($SRC + "yaml");
 const utils = require("../utils");
+const annotatedLoader = require("../ann_loader");
 const fs = require("fs-promise");
 const path = require("path");
 
@@ -16,7 +17,7 @@ let containers;
 
 function getContainerTypes() {
   if (!containers) {
-    containers = utils.collectAnnotated(__dirname + "/containers", "id");
+    containers = annotatedLoader.collectDirectoryClasses(__dirname + "/containers", "id");
   }
 
   return containers;
