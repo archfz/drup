@@ -7,6 +7,7 @@ const inquirer = require("inquirer");
 const isGitUrl = require("is-git-url");
 
 const utils = require("../utils");
+const annotatedLoader = require("../ann_loader");
 const globals = require("../globals");
 
 const act = require("./actions");
@@ -18,7 +19,7 @@ const Environment = require("../environment/environment");
 let projectTypes;
 function getProjectTypes() {
   if (!projectTypes) {
-    projectTypes = utils.collectAnnotated(path.join(__dirname, "types"), "id", true);
+    projectTypes = annotatedLoader.collectDirectoryClasses(path.join(__dirname, "types"), "id");
   }
 
   return projectTypes;

@@ -2,7 +2,7 @@
 
 const path = require("path");
 
-const utils = require("../utils");
+const annotatedLoader = require("../ann_loader");
 
 let serviceDiscovery;
 let servicePaths = [__dirname];
@@ -28,7 +28,7 @@ module.exports = class ServiceCollection {
       serviceDiscovery.frozen = true;
 
       servicePaths.forEach((pth) => {
-        utils.collectAnnotated(path.join(pth, "services"), null, true).forEach((service) => {
+        annotatedLoader.collectDirectoryClasses(path.join(pth, "services")).forEach((service) => {
           ["id", "label", "group"].forEach((key) => {
             if (!service.annotations[key]) {
               throw new Error(`A service must define the '${key}' annotation.`);
