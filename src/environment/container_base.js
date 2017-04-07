@@ -19,6 +19,16 @@ module.exports = class ContainerBase {
     utils.mustImplement(this, "start");
   }
 
+  /**
+   * Determines whether the container is started.
+   *
+   * @return {Promise.<boolean>}
+   *    Is started.
+   */
+  isStarted() {
+    utils.mustImplement(this, "isStarted");
+  }
+
   stop() {
     utils.mustImplement(this, "stop");
   }

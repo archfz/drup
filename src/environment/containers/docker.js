@@ -123,6 +123,18 @@ module.exports = class DockerContainer extends ContainerBase {
     }).then(() => {return this;});
   }
 
+  /**
+   * @inheritDoc
+   */
+  isStarted() {
+    return this.getIp()
+      // If we get the IPs we have running containers.
+      .then(() => true)
+      // If it throws than it couldn't get the IPs becuase
+      // containers are not started.
+      .catch(() => false);
+  }
+
   stop() {
     this.directoryToPath();
 
