@@ -17,7 +17,7 @@ let containers;
 
 function getContainerTypes() {
   if (!containers) {
-    containers = annotatedLoader.collectDirectoryClasses(__dirname + "/containers", "id");
+    containers = annotatedLoader.collectClasses(__dirname + "/containers", "id");
   }
 
   return containers;
