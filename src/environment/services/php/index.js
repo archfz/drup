@@ -14,6 +14,9 @@ const versions = ["7.1", "7.0" , "5.6" ];
  */
 module.exports = class PhpService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   static defineConfiguration() {
     return {
       version: {
@@ -35,6 +38,9 @@ module.exports = class PhpService extends Service {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   _configure() {
     let choices = [];
     versions.forEach((version) => {
@@ -60,6 +66,9 @@ module.exports = class PhpService extends Service {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = {
       build: {
@@ -82,6 +91,12 @@ module.exports = class PhpService extends Service {
     return compose;
   }
 
+  /**
+   * Adds additional PHP extensions.
+   *
+   * @param {string|string[]} extension
+   *    Add PHP extension to be installed. (ex: gd, zip ..)
+   */
   addExtensions(extension) {
     if (typeof extension === "string") {
       extension = [extension];
@@ -91,6 +106,9 @@ module.exports = class PhpService extends Service {
       .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) == i);
   }
 
+  /**
+   * @inheritdoc
+   */
   _getConfigFileInfo() {
     return [{
       template: "custom.ini.dot",

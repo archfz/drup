@@ -11,6 +11,7 @@ const spawn = require('child_process').spawn;
 class SystemCommand {
 
   /**
+   * System command constructor.
    *
    * @param {string} command
    *    The command string.

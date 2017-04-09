@@ -25,8 +25,20 @@ function getProjectTypes() {
   return projectTypes;
 }
 
+/**
+ * Projects controller class.
+ */
 class Projects {
 
+  /**
+   * Creates new project.
+   *
+   * @param {string} type
+   *    Type of project to create.
+   *
+   * @returns {Promise}
+   * @resolve {ProjectBase}
+   */
   static create(type = null) {
     const typeChoices = Object.keys(getProjectTypes());
     let promise = Promise.resolve();
@@ -105,6 +117,15 @@ class Projects {
     });
   }
 
+  /**
+   * Registers and creates environment for existing project.
+   *
+   * @param {string} directory
+   *    Directory of the existing project.
+   *
+   * @returns {Task}
+   * @resolve {ProjectBase}
+   */
   static register(directory) {
     return Environment.hasEnvironment(directory)
       .then((yes) => {
@@ -161,6 +182,15 @@ class Projects {
       });
   }
 
+  /**
+   * Clones repository and creates the project from it.
+   *
+   * @param {string} repository
+   *    The repository address.
+   *
+   * @returns {Task}
+   * @resolve {ProjectBase}
+   */
   static clone(repository = null) {
     let promise;
 
@@ -198,6 +228,15 @@ class Projects {
       });
   }
 
+  /**
+   * Loads in project by key.
+   *
+   * @param {string} key
+   *    Project key.
+   *
+   * @returns {Promise}
+   * @resolve {ProjectBase}
+   */
   static load(key) {
     return Storage.get(key)
       .then((data) => {
@@ -209,6 +248,15 @@ class Projects {
       });
   }
 
+  /**
+   * Loads in project by directory.
+   *
+   * @param {string} dir
+   *    Project directory.
+   *
+   * @returns {Promise}
+   * @resolve {ProjectBase}
+   */
   static loadDir(dir) {
     return Storage.getByDirectory(dir)
       .then((data) => {
@@ -221,6 +269,16 @@ class Projects {
       });
   }
 
+  /**
+   * Detects type of project in directory from files.
+   *
+   * @param {string} directory
+   *    The directory of the project.
+   *
+   * @returns {Promise}
+   * @resolve {string|boolean}
+   *    The type of the project or false if it could not determine.
+   */
   static detectType(directory) {
     let promises = [];
 

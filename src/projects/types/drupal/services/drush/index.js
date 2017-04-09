@@ -10,6 +10,9 @@ const Command = require("../../../../../system/system_command");
  */
 class DrushService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     return {
       image: "drush/drush",
@@ -19,6 +22,9 @@ class DrushService extends Service {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   getOperations() {
     return [
       {
@@ -29,10 +35,20 @@ class DrushService extends Service {
     ];
   }
 
+  /**
+   * Gets the web service.
+   *
+   * @returns {Service}
+   *    The web service.
+   * @private
+   */
   _getWeb() {
     return this._env.services.firstOfGroup("web");
   }
 
+  /**
+   * @inheritdoc
+   */
   runOperation(op, args) {
     switch (op) {
       case "drush":

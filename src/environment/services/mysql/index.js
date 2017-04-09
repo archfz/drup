@@ -13,6 +13,9 @@ const Service = require("../../service_base");
  */
 module.exports = class MysqlService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   static defineConfiguration() {
     return {
       user: {
@@ -26,6 +29,9 @@ module.exports = class MysqlService extends Service {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
@@ -34,6 +40,9 @@ module.exports = class MysqlService extends Service {
     }
   }
 
+  /**
+   * @inheritdoc
+   */
   _configure() {
     return inquirer.prompt([{
       type: "input",
@@ -51,6 +60,9 @@ module.exports = class MysqlService extends Service {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = {
       image: "mysql/mysql-server:5.7",

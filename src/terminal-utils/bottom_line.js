@@ -3,17 +3,39 @@
 const Terminal = require("./smart_term")();
 const stripAnsi = require("strip-ansi");
 
+/**
+ * Bottom lines manager.
+ */
 const BottomLines = {
+  // Stores all registered bottom lines.
   bottomLines : [],
 
+  /**
+   * Get the index of a registered bottom line.
+   *
+   * @param {BottomLine} bottomLine
+   *    For which to get the index.
+   *
+   * @returns {number}
+   */
   getLineIndex(bottomLine) {
     return this.bottomLines.indexOf(bottomLine);
   },
 
+  /**
+   * Get the number of bottom lines.
+   *
+   * @returns {Number}
+   */
   count() {
     return this.bottomLines.length;
   },
 
+  /**
+   * Register a bottom line object.
+   *
+   * @param {BottomLine} bottomLine
+   */
   register(bottomLine) {
     this.bottomLines.push(bottomLine);
 
@@ -28,6 +50,11 @@ const BottomLines = {
     }
   },
 
+  /**
+   * Remove a bottom line.
+   *
+   * @param {BottomLine} bottomLine
+   */
   remove(bottomLine) {
     let i = this.getLineIndex(bottomLine);
     if (i === -1) {return;}
@@ -44,6 +71,9 @@ const BottomLines = {
     }
   },
 
+  /**
+   * Renders all bottom lines registered at the bottom of the terminal.
+   */
   renderAll() {
     let lines = this.count();
 
@@ -63,6 +93,9 @@ const BottomLines = {
     visibilityStateChanged && Terminal.showCursor();
   },
 
+  /**
+   * Removes all bottom lines.
+   */
   removeAll() {
     let lines = this.count();
 
@@ -75,6 +108,12 @@ const BottomLines = {
     this.bottomLines = [];
   },
 
+  /**
+   * Does a clean up of the rendered bottom lines.
+   *
+   * @param {number} lines
+   *    Count of lines to clear (optional).
+   */
   cleanUp(lines) {
     lines = lines || this.count();
 
@@ -83,9 +122,21 @@ const BottomLines = {
     Terminal.charm("erase", "down");
     Terminal.charm("pop", 1);
   }
+
 };
 
-module.exports = class BottomLine {
+
+/**
+ * Bottom line object handler.
+ */
+class BottomLine {
+
+  /**
+   * BottomLine constructor.
+   *
+   * @param {Function} outputCallback
+   *    The callback function from which the rendered text will be acquired.
+   */
   constructor(outputCallback) {
     this.setOutputCallback(outputCallback);
     BottomLines.register(this);
@@ -93,6 +144,14 @@ module.exports = class BottomLine {
     Terminal.ensureEmptyLines(BottomLines.count());
   }
 
+  /**
+   * Sets the output callback function.
+   *
+   * @param {Function} callback
+   *    The callback function from which the rendered text will be acquired.
+   *
+   * @returns {BottomLine}
+   */
   setOutputCallback(callback) {
     if (typeof callback !== "function") {
       throw new Error("You must provide a callback function that returns output.");
@@ -101,6 +160,11 @@ module.exports = class BottomLine {
     return this;
   }
 
+  /**
+   * Gets the output render.
+   *
+   * @returns {string}
+   */
   getOutput() {
     // In case of windows the cursor will jump to next line if full width
     // written, so subtract some.
@@ -118,6 +182,9 @@ module.exports = class BottomLine {
     return output;
   }
 
+  /**
+   * Renders the text to the terminal line.
+   */
   render() {
     let visibilityStateChanged = Terminal.hideCursor();
     Terminal.charm("push", 1);
@@ -130,7 +197,13 @@ module.exports = class BottomLine {
     visibilityStateChanged && Terminal.showCursor();
   }
 
+  /**
+   * Removes this line and stops rendering.
+   */
   destroy() {
     BottomLines.remove(this);
   }
-};
+
+}
+
+module.exports = BottomLine;

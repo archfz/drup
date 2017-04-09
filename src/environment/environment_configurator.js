@@ -3,12 +3,30 @@
 const inquirer = require("inquirer");
 
 const ServiceCollection = require("./service_collection");
-const Environment = require("./environment");
 
 let allServices;
 
-module.exports = class EnvironmentConfigurator {
+/**
+ * Environment configurator that defines how an environment can be built.
+ * It also provides the base form for the configuration.
+ */
+class EnvironmentConfigurator {
 
+  /**
+   * EnvironmentConfigurator constructor.
+   *
+   * @param {Object} configuratorOptions
+   *    Object defining what services can or cannot be used.
+   *    group: {
+   *      restricted: [], // restricted services group IDs
+   *      required: [], // required at least one of this group
+   *      single: [], // only one allowed of this group
+   *    },
+   *    services: {
+   *      restricted: [], // services IDs that are restricted
+   *      required: [], // services that are required
+   *    }
+   */
   constructor(configuratorOptions) {
     if (!allServices) {
       allServices = ServiceCollection.collect();
@@ -35,26 +53,79 @@ module.exports = class EnvironmentConfigurator {
     };
   }
 
-  setGroupsMultiple(groups, bool = true) {
-    this._setOptions("group", groups, "multiple", bool);
+  /**
+   * Set whether from a group can be multiple services.
+   *
+   * @param {string|Array.<string>} groups
+   *    Group ID or IDs.
+   * @param {boolean} multiple
+   *    Can be multiple or not.
+   */
+  setGroupsMultiple(groups, multiple = true) {
+    this._setOptions("group", groups, "multiple", multiple);
   }
 
-  setGroupsRequired(groups, bool = true) {
-    this._setOptions("group", groups, "required", bool);
+  /**
+   * Sets whether at least one service is required from the group.
+   *
+   * @param {string|Array.<string>} groups
+   *    Group ID or IDs.
+   * @param {boolean} required
+   *    Required or not.
+   */
+  setGroupsRequired(groups, required = true) {
+    this._setOptions("group", groups, "required", required);
   }
 
-  setGroupsRestricted(groups, bool = true) {
-    this._setOptions("group", groups, "restricted", bool);
+  /**
+   * Sets whether the group is restricted.
+   *
+   * @param {string|Array.<string>} groups
+   *    Group ID or IDs.
+   * @param {boolean} restricted
+   *    Restricted or not.
+   */
+  setGroupsRestricted(groups, restricted = true) {
+    this._setOptions("group", groups, "restricted", restricted);
   }
 
-  setServicesRequired(services, bool = true) {
-    this._setOptions("service", services, "required", bool);
+  /**
+   * Sets whether at a specific service is required.
+   *
+   * @param {string|Array.<string>} services
+   *    Service ID or IDs.
+   * @param {boolean} required
+   *    Required or not.
+   */
+  setServicesRequired(services, required = true) {
+    this._setOptions("service", services, "required", required);
   }
 
-  setServicesRestricted(services, bool = true) {
-    this._setOptions("service", services, "restricted", bool);
+  /**
+   * Sets whether at a specific service is restricted.
+   *
+   * @param {string|Array.<string>} services
+   *    Service ID or IDs.
+   * @param {boolean} restricted
+   *    Restricted or not.
+   */
+  setServicesRestricted(services, restricted = true) {
+    this._setOptions("service", services, "restricted", restricted);
   }
 
+  /**
+   * Sets an option of the services/groups possibilities.
+   *
+   * @param {string} type
+   *    "service" or "group".
+   * @param {string} ids
+   *    The IDs of the type.
+   * @param {string} property
+   *    The option property to set to.
+   * @param {boolean} bool
+   *    The value to set it to.
+   * @private
+   */
   _setOptions(type, ids, property, bool) {
     ids = Array.isArray(ids) ? ids : [ids];
 
@@ -68,6 +139,12 @@ module.exports = class EnvironmentConfigurator {
     }
   }
 
+  /**
+   * Builds service choices per group for inquirer.
+   *
+   * @returns {Object}
+   * @private
+   */
   _buildChoices() {
     let servicePool = ServiceCollection.collect().clone();
     let servicesSelected = new ServiceCollection();
@@ -146,6 +223,12 @@ module.exports = class EnvironmentConfigurator {
     return choices;
   }
 
+  /**
+   * Shows the configuration form and acquires the data from the user.
+   *
+   * @returns {Promise.<ServiceCollection>}
+   *    The services ready configured.
+   */
   configure() {
     console.log("\n-- Select services that you require");
 
@@ -166,6 +249,15 @@ module.exports = class EnvironmentConfigurator {
     });
   }
 
+  /**
+   * Shows the selected services config form and acquires user data.
+   *
+   * @param {Array.<string>} serviceIds
+   *    The selected service IDs.
+   *
+   * @returns {Promise.<ServiceCollection>}
+   * @private
+   */
   _configureServices(serviceIds) {
     let promise;
     let services = new ServiceCollection();
@@ -185,4 +277,6 @@ module.exports = class EnvironmentConfigurator {
     return promise.then(() => services);
   }
 
-};
+}
+
+module.exports = EnvironmentConfigurator;

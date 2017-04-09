@@ -6,8 +6,14 @@ const inquirer = require("inquirer");
 
 const ProjectBase = require("../base");
 
+/**
+ * Base class for web projects.
+ */
 class WebProject extends ProjectBase {
 
+  /**
+   * @inheritdoc
+   */
   static configure(suggestions) {
     return super.configure(suggestions)
       .then((values) => {
@@ -28,6 +34,9 @@ class WebProject extends ProjectBase {
       });
   }
 
+  /**
+   * @inheritdoc
+   */
   _onEnvironmentCreated(env, tempDirectory) {
     return this.findDocumentRoot(tempDirectory)
       .then((root) => {
@@ -41,6 +50,16 @@ class WebProject extends ProjectBase {
       });
   }
 
+  /**
+   * Gets the full path to document root of the project.
+   *
+   * @param {string} directory
+   *    Index file search directory.
+   *
+   * @returns {Promise}
+   * @resolve {string}
+   *    The directory of the index file.
+   */
   findDocumentRoot(directory = this.root) {
     return new Promise((res, rej) => {
       let stream = readdir({
