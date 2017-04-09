@@ -11,6 +11,9 @@ const WebService = require("../web_base");
  */
 module.exports = class ApacheService extends WebService {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     return super._composeDocker({
       image: "httpd:alpine",
@@ -20,6 +23,9 @@ module.exports = class ApacheService extends WebService {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _getConfigFileInfo() {
     return [{
       template: "httpd.conf.dot",

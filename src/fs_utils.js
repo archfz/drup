@@ -2,6 +2,7 @@
 
 const fs = require("fs-promise");
 
+// @TODO Remove this helper.
 module.exports = {
 
   copy(source, destintation) {

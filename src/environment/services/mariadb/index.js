@@ -11,6 +11,9 @@ const inquirer = require("inquirer");
  */
 module.exports = class MariadbService extends MysqlService {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = super._composeDocker();
     compose.image = "mariadb:latest";

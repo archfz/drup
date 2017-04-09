@@ -16,6 +16,9 @@ const images = {
  */
 module.exports = class NodeService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   static defineConfiguration() {
     return {
       version: {
@@ -25,6 +28,9 @@ module.exports = class NodeService extends Service {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   _configure() {
     let choices = [];
     for (const [key] of Object.entries(images)) {
@@ -44,6 +50,9 @@ module.exports = class NodeService extends Service {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = {
       image: images[this.config.version],

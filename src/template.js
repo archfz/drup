@@ -14,8 +14,17 @@ const EXT_COMMENT_TAG = {
 const DOT_SETTINGS = Object.assign({}, dot.templateSettings);
 DOT_SETTINGS.strip = false;
 
+/**
+ * Template class to compile DOT files.
+ */
 class Template {
 
+  /**
+   * Template constructor.
+   *
+   * @param {string} templateFile
+   *    Path to the template.
+   */
   constructor(templateFile) {
     this._templateFile = templateFile;
     this._definitions = [];
@@ -24,10 +33,28 @@ class Template {
     this._comment = true;
   }
 
+  /**
+   * Convenience constructor.
+   *
+   * @param {string} templateFile
+   *    Path to the template.
+   *
+   * @returns {Template}
+   */
   static from(templateFile) {
     return new Template(templateFile);
   }
 
+  /**
+   * Set whether to add the auto-generated comment.
+   *
+   * @param {boolean} yes
+   *    TRUE=add FALSE=don't add.
+   * @param {string} commentChar
+   *    Override for automatically detected comment character.
+   *
+   * @returns {Template}
+   */
   comment(yes, commentChar) {
     this._comment = yes;
 
@@ -38,11 +65,28 @@ class Template {
     return this;
   }
 
+  /**
+   * Registers definitions.
+   *
+   * @param {string[]} definitions
+   *
+   * @returns {Template}
+   */
   define(definitions) {
     this._definitions = this._definitions.concat(definitions);
     return this;
   }
 
+  /**
+   * Adds an extension template.
+   *
+   * @param {Object} data
+   *    Data to send to template.
+   * @param {string} template
+   *    The template file path.
+   *
+   * @returns {Template}
+   */
   extend({data = {}, template: template}) {
     if (!template) {
       throw new Error("Extension template path is required.");
@@ -52,11 +96,23 @@ class Template {
     return this;
   }
 
+  /**
+   * Compiles the template to given destination.
+   *
+   * @param {Object} data
+   *    Data to send to template.
+   * @param {string} destination
+   *    Where to place the compiled file.
+   *
+   * @returns {Promise}
+   */
   compile(data, destination = null) {
+    // Compile extensions and accumulate definition content.
     return this._compileExtensions(data)
       .then((def) => {
         def = Object.assign(this._getDefinitionsObject(), def);
 
+        // Read the main template and compile it.
         return fs.readFile(this._templateFile)
           .catch((err) => {
             throw new Error(`Failed to read template file:\n${this._templateFile}\n${err}`);
@@ -66,8 +122,10 @@ class Template {
           });
       })
       .then((content) => {
+        // Remove DOT template extension from filename.
         const filename = path.basename(this._templateFile).slice(0, -Template.EXT.length);
 
+        // Add auto-generated comment if enabled.
         if (this._comment) {
           const ext = filename.split(".").pop();
           let commentTag = "#";
@@ -93,6 +151,16 @@ class Template {
       });
   }
 
+  /**
+   * Compiles extensions for this template.
+   *
+   * @param {Object} data
+   *    Data to send to extension templates.
+   * @returns {Promise}
+   * @resolve {Object}
+   *    Object of the result definitions data.
+   * @private
+   */
   _compileExtensions(data) {
     if (!this._extensions.length) {
       return Promise.resolve({});
@@ -136,6 +204,13 @@ class Template {
       });
   }
 
+  /**
+   * Creates definition object.
+   *
+   * @returns {Object}
+   *    Empty definitions data.
+   * @private
+   */
   _getDefinitionsObject() {
     return this._definitions.reduce((res, item) => {
       res[item] = "";
@@ -143,6 +218,20 @@ class Template {
     }, {});
   }
 
+  /**
+   * Compiles a single template with given data.
+   *
+   * @param {string} template
+   *    Template data.
+   * @param data
+   *    Data to send to compilation.
+   * @param {Object} def
+   *    Definitions data.
+   *
+   * @returns {string}
+   *    Compiled template.
+   * @private
+   */
   _compileSingle(template, data = {}, def = {}) {
     return dot.template(template, DOT_SETTINGS, def)(data);
   }

@@ -10,6 +10,9 @@ const Service = require("../../service_base");
  */
 module.exports = class PhpMyAdminService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = {
       image: "phpmyadmin/phpmyadmin:latest",

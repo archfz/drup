@@ -9,12 +9,22 @@ const path = require("path");
 
 const ServiceCollection = require("./service_collection");
 
+// Required configuration keys with validation function.
 const requiredConfig = {
   env_name: (str) => str.match(/^[a-z]+$/),
 };
 
+/**
+ * Contains available container handlers.
+ * @type {ContainerBase[]}
+ */
 let containers;
 
+/**
+ * Collects and returns the available containers.
+ *
+ * @returns {ContainerBase[]}
+ */
 function getContainerTypes() {
   if (!containers) {
     containers = annotatedLoader.collectClasses(__dirname + "/containers", "id");
@@ -23,8 +33,19 @@ function getContainerTypes() {
   return containers;
 }
 
+/**
+ * Environment handler class.
+ */
 class Environment {
 
+  /**
+   * Environment constructor.
+   *
+   * @param {Object} envConfig
+   *    The environment configuration.
+   * @param {string} root
+   *    The root directory of the environment.
+   */
   constructor(envConfig, root) {
     if (!root) {
       throw new Error("Environment root parameter is required.");
@@ -39,7 +60,21 @@ class Environment {
     this._listeners = {};
   }
 
+  /**
+   * Create new environment configuration.
+   *
+   * @param {EnvironmentConfigurator} envConfigurator
+   *
+   * @param {Object} config
+   *    Additional config to be stored with environment.
+   * @param {string} root
+   *    The root directory for the environment.
+   *
+   * @returns {Promise}
+   * @resolve {Environment}
+   */
   static create(envConfigurator, config, root) {
+    // Validate required additional configuration.
     for (const [name, validate] of Object.entries(requiredConfig)) {
       if (!config.hasOwnProperty(name)) {
         throw Error(`'${name}' configuration value is required for environment.`);
@@ -50,6 +85,7 @@ class Environment {
       }
     }
 
+    // Configure and create the environment object.
     return envConfigurator.configure().then((services) => {
       return new Environment({
         config: config,
@@ -58,10 +94,22 @@ class Environment {
     });
   }
 
+  /**
+   * Load environment from configuration.
+   *
+   * @param root
+   *    Root directory of the environment.
+   *
+   * @returns {Promise}
+   * @resolve {Environment}
+   */
   static load(root) {
     let configPath = root;
 
+    // Try to read from root.
     return this.readConfig(configPath)
+    // If failed to read from root try to read from root/project as the user
+    // may choose to save in root or under the project to include in repo.
       .catch((err) => {
         configPath = path.join(root, Environment.DIRECTORIES.PROJECT);
         return this.readConfig(configPath);
@@ -77,6 +125,16 @@ class Environment {
       });
   }
 
+  /**
+   * Reads the environment configuration.
+   *
+   * @param root
+   *    Root directory of the environment.
+   *
+   * @returns {Promise}
+   * @resolve {Object}
+   *    Environment configuration object.
+   */
   static readConfig(root) {
     root = path.join(root, Environment.FILENAME);
 
@@ -86,7 +144,16 @@ class Environment {
       });
   }
 
+  /**
+   * Getter for the services.
+   *
+   * Provides lazy loading of the services classes.
+   *
+   * @returns {ServiceCollection}
+   *    All the configured services.
+   */
   get services() {
+    // If the services were already initialized we are done.
     if (this._servicesInitialized) {
       return this._services;
     }
@@ -94,6 +161,8 @@ class Environment {
       this._servicesInitialized = true;
     }
 
+    // Services might be instantiated if we just got them from the configurator.
+    // In that case prevent re-instantiation.
     if (!(this._services instanceof ServiceCollection)) {
       const availableServices = ServiceCollection.collect();
       const services = new ServiceCollection();
@@ -107,16 +176,29 @@ class Environment {
       this._services = services;
     }
 
+    // Bind this environment to the services.
     this._services.each((service) => service.bindEnvironment(this));
 
     this._fireEvent("servicesInitialized", this._services);
     return this._services;
   }
 
+  /**
+   * Check whether a directory has environment configuration.
+   *
+   * @param {string} directory
+   *    The directory to check in.
+   */
   static hasEnvironment(directory) {
     return fs.exists(path.join(directory, Environment.FILENAME));
   }
 
+  /**
+   * Gets the provided operations from the configured services.
+   *
+   * @returns {Array}
+   *    Array of objects representing operations. See ServiceBase::getOperations.
+   */
   getServiceOperations() {
     let opNames = {};
     let operations = [];
@@ -129,6 +211,7 @@ class Environment {
       }
 
       serviceOps.forEach((operation) => {
+        // Prevent duplicate service operation names.
         if (opNames.hasOwnProperty(operation.name)) {
           throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`);
         }
@@ -142,10 +225,27 @@ class Environment {
     return operations;
   }
 
+  /**
+   * Run a service operation.
+   *
+   * @param {Object} op
+   *    Object representing service operation.
+   * @param args
+   *    Arguments to pass to the operation.
+   */
   runServiceOperation(op, args = []) {
-    this.services.get(op.service).runOperation(op.baseName, args);
+    return this.services.get(op.service).runOperation(op.baseName, args);
   }
 
+  /**
+   * Save the environment configuration.
+   *
+   * @param includeInProject
+   *    Whether to include the configuration in the project directory.
+   *
+   * @returns {Promise}
+   * @resolve {self}
+   */
   save(includeInProject = true) {
     includeInProject = includeInProject ? Environment.DIRECTORIES.PROJECT : "";
     const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
@@ -160,27 +260,35 @@ class Environment {
     });
 
     let promise = Promise.resolve();
+    // Check if location of the configuration was just changed.
     if (this.configFile && this.configFile !== saveTo) {
       promise = fs.unlink(this.configFile)
         .catch((err) => {
           throw new Error("Failed removing old environment config file:\n" + err);
         });
     }
+    // If this is a new environment first create the directory structure.
     else if(!this.configFile) {
       promise = this._createStructure();
     }
 
-    return promise.then(() => {
-        return yaml.write(saveTo, environment);
-      })
-      .then(() => {
-        return this;
-      })
+    return promise.then(() => yaml.write(saveTo, environment))
       .catch((err) => {
         throw new Error("Failed to save environment configuration.\n" + err);
-      });
+      })
+      .then(() => this);
   }
 
+  /**
+   * Compose all or one container.
+   *
+   * @param {string} containerType
+   *    Container handler ID. "*" will compose all containers.
+   *
+   * @returns {Promise}
+   * @resolve {ContainerBase|ContainerBase[]}
+   *    Container handler.
+   */
   composeContainer(containerType) {
     if (containerType == "*") {
       let promises = [];
@@ -203,6 +311,14 @@ class Environment {
       });
   }
 
+  /**
+   * Get container handler for this environment.
+   *
+   * @param containerType
+   *    Container handler ID.
+   *
+   * @returns {ContainerBase}
+   */
   getContainer(containerType) {
     let containers = getContainerTypes();
 
@@ -213,6 +329,11 @@ class Environment {
     return new containers[containerType](this);
   }
 
+  /**
+   * Writes service configuration files.
+   *
+   * @returns {Promise}
+   */
   writeServiceConfigFiles() {
     let promises = [];
 
@@ -230,6 +351,12 @@ class Environment {
     return this.getContainer(containerType).remove();
   }
 
+  /**
+   * Creates environment directory structure under root.
+   *
+   * @returns {Promise}
+   * @private
+   */
   _createStructure() {
     return fs.ensureDir(this.root).then(() => {
       return Promise.all(
@@ -240,6 +367,16 @@ class Environment {
     });
   }
 
+  /**
+   * Fires an environment event.
+   *
+   * @param {string} eventType
+   *    Event identifier.
+   * @param {Array} args
+   *
+   * @returns {self}
+   * @private
+   */
   _fireEvent(eventType, ...args) {
     if (this._listeners[eventType]) {
       this._listeners[eventType].forEach((callback) => callback(...args));
@@ -248,6 +385,16 @@ class Environment {
     return this;
   }
 
+  /**
+   * Register event listener.
+   *
+   * @param {string} eventType
+   *    Event identifier.
+   * @param {Function} callback
+   *    Callback function.
+   *
+   * @returns {self}
+   */
   on(eventType, callback) {
     if (typeof callback !== "function") {
       throw new Error("Callback must be a function.");
@@ -263,7 +410,9 @@ class Environment {
 
 }
 
+// Environment configuration filename.
 Environment.FILENAME = ".drup-env.yml";
+// Directory names for the main structure.
 Environment.DIRECTORIES = {
   CONFIG: "config",
   DATA: "data",
