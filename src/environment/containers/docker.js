@@ -172,6 +172,11 @@ class DockerContainer extends ContainerBase {
       execInService = this.services.ofGroup("web")[0];
     }
 
+    // Make sure the right project name is used with compose
+    // as otherwise it will use the directory name which can
+    // be customized by the user.
+    execOptions.push('--name', this.env.config.env_name);
+
     let cmd = new Command("docker-compose", [
       execOptions, execInService, command,
     ]).inheritStdio();
