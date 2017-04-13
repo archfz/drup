@@ -11,8 +11,22 @@ function padd(str, length = process.stdout.columns) {
   return str + " ".repeat(length - str.length % length);
 }
 
+/**
+ * Terminal output formatter that makes output colorful and organized.
+ */
 const Formatter = module.exports = {
 
+  /**
+   * Adds tabs to the given text.
+   *
+   * @param {string} str
+   *    The text to tab.
+   * @param {number} x
+   *    Amount of tabs to add.
+   *
+   * @returns {string}
+   *    Tabbed text.
+   */
   tab(str = "", x = 1) {
     let tab = "  ".repeat(x);
     let cols = process.stdout.columns - tab.length;
@@ -23,12 +37,32 @@ const Formatter = module.exports = {
     return tab + str;
   },
 
+  /**
+   * Formats given text into a heading.
+   *
+   * @param {string} str
+   *    The heading text.
+   * @param {string} marker
+   *    Heading character.
+   * @param {string} color2
+   *    The color of the heading.
+   */
   heading(str, marker = "»".blue, color2 = "cyan") {
     consoleLog();
     consoleLog(marker + " " + str.toUpperCase()[color2]);
     consoleLog("  " + "¨".repeat(process.stdout.columns - 3)[color2]);
   },
 
+  /**
+   * Prints given items in list format.
+   *
+   * @param {Array|Object|string} items
+   *    The items to print.
+   * @param {number} inset
+   *    The tabbing.
+   * @param {string} color
+   *    Color of the item text.
+   */
   list(items, inset = 0, color = "green") {
     const insetTab = "  ".repeat(inset) + "• "[color];
 
@@ -54,6 +88,12 @@ const Formatter = module.exports = {
     }
   },
 
+  /**
+   * Prints formatted errors.
+   *
+   * @param {Error|string} error
+   *    The error to print.
+   */
   error(error) {
     consoleLog();
     Formatter.heading("ERROR", "!!".red, "red");
@@ -76,11 +116,20 @@ const Formatter = module.exports = {
     consoleError(error.stack.substr(error.stack.indexOf("    at ")).replace(/    /g, "  • ".yellow));
   },
 
+  /**
+   * Prints formatted warning.
+   *
+   * @param {string} str
+   *    Warning text.
+   */
   warn(str) {
     Formatter.heading("WARNING", "!".yellow, "yellow");
     consoleWarn(str);
   },
 
+  /**
+   * Registers listeners for formatting text from recognized tags.
+   */
   infect() {
     console.log = function(str, ...args) {
       str = str || "";
@@ -120,4 +169,5 @@ const Formatter = module.exports = {
       Formatter.warn(str);
     };
   },
+
 };

@@ -2,8 +2,19 @@
 
 const SystemCommand = require('./system_command');
 
-module.exports = class DependencyCheck extends SystemCommand {
+/**
+ * Dependency check extension for system command.
+ */
+class DependencyCheck extends SystemCommand {
 
+  /**
+   * DependencyCheck constructor.
+   *
+   * @param {string} command
+   *    The command to check for.
+   * @param {number} version
+   *    The minimum required version.
+   */
   constructor([command, version]) {
     let args = [];
     if (version) {
@@ -16,6 +27,12 @@ module.exports = class DependencyCheck extends SystemCommand {
     this.version = version;
   }
 
+  /**
+   * Resolves the promise with data.
+   *
+   * @param {int} status
+   *    Status code.
+   */
   finalResolve(status) {
     let result = {
       dependency : this.dependency,
@@ -32,6 +49,9 @@ module.exports = class DependencyCheck extends SystemCommand {
     this._resolvePromise(result);
   }
 
+  /**
+   * @inheritdoc
+   */
   _resolve(output) {
     if (this.version) {
       let gotVersion = (output.match(/ ([\d+].[\d+](.[\d+])?)/) || [])[0];
@@ -69,13 +89,18 @@ module.exports = class DependencyCheck extends SystemCommand {
     return this.finalResolve(DependencyCheck.MET);
   }
 
+  /**
+   * @inheritdoc
+   */
   _reject(error) {
     return this.finalResolve(DependencyCheck.NOT_MET);
   }
 
-};
+}
 
 DependencyCheck.NOT_MET = -1;
 DependencyCheck.OUTDATED = 0;
 DependencyCheck.MET = 10;
 DependencyCheck.AMBIGUOUS = 5;
+
+module.exports = DependencyCheck;

@@ -7,6 +7,14 @@ const fs = require("fs-promise");
 const globals = require("../globals");
 
 let _storage;
+
+/**
+ * Gets the storage.
+ *
+ * @returns {Promise}
+ * @resolve {Object}
+ *    The storage object.
+ */
 function getStorage() {
   if (_storage) {
     return Promise.resolve(_storage);
@@ -30,8 +38,21 @@ function getStorage() {
     });
 }
 
+/**
+ * Project storage handler.
+ */
 class ProjectStorage {
 
+  /**
+   * Gets storage data for project by key.
+   *
+   * @param {string} key
+   *    Project key
+   *
+   * @returns {Promise}
+   * @resolve {Object}
+   *    Project storage data.
+   */
   static get(key) {
     return getStorage()
       .then((storage) => {
@@ -43,6 +64,13 @@ class ProjectStorage {
       });
   }
 
+  /**
+   * Gets all storage data.
+   *
+   * @returns {Promise}
+   * @resolve {Object}
+   *    All storage data.
+   */
   static getAll() {
     return getStorage()
       .then((storage) => {
@@ -50,6 +78,16 @@ class ProjectStorage {
       });
   }
 
+  /**
+   * Sets storage data for project.
+   *
+   * @param {string} key
+   *    Project key.
+   * @param data
+   *    Data to save.
+   *
+   * @returns {Promise}
+   */
   static set(key, data) {
     return getStorage()
       .then((storage) => {
@@ -62,6 +100,14 @@ class ProjectStorage {
       });
   }
 
+  /**
+   * Removes project data.
+   *
+   * @param {string} key
+   *    Project key.
+   *
+   * @returns {Promise}
+   */
   static remove(key) {
     return getStorage()
       .then((storage) => {
@@ -77,6 +123,14 @@ class ProjectStorage {
       });
   }
 
+  /**
+   * Gets project by directory.
+   *
+   * @param {string} dir
+   *    Directory to search for.
+   *
+   * @returns {Promise}
+   */
   static getByDirectory(dir) {
     dir = path.normalize(dir);
 

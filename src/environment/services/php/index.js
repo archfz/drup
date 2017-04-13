@@ -1,7 +1,9 @@
 "use strict";
 
-const Service = require("../../service_base");
 const inquirer = require("inquirer");
+const os = require("os");
+
+const Service = require("../../service_base");
 
 const versions = ["7.1", "7.0" , "5.6" ];
 
@@ -12,6 +14,9 @@ const versions = ["7.1", "7.0" , "5.6" ];
  */
 module.exports = class PhpService extends Service {
 
+  /**
+   * @inheritdoc
+   */
   static defineConfiguration() {
     return {
       version: {
@@ -33,6 +38,9 @@ module.exports = class PhpService extends Service {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   _configure() {
     let choices = [];
     versions.forEach((version) => {
@@ -58,6 +66,9 @@ module.exports = class PhpService extends Service {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     let compose = {
       build: {
@@ -66,13 +77,26 @@ module.exports = class PhpService extends Service {
         PHP_EXTENSIONS: this.config.additional_extensions,
       },
       volumes: [
-        `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`
+        `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`,
+        `./config/${this.ann("id")}/www.conf:/usr/local/etc/php-fpm.d/www.conf`
       ]
     };
+
+    // Allow running php-fpm as root user on windows. See at config files for
+    // explanation.
+    if (os.platform() === "win32") {
+      compose.entrypoint = ["php-fpm", "--allow-to-run-as-root"];
+    }
 
     return compose;
   }
 
+  /**
+   * Adds additional PHP extensions.
+   *
+   * @param {string|string[]} extension
+   *    Add PHP extension to be installed. (ex: gd, zip ..)
+   */
   addExtensions(extension) {
     if (typeof extension === "string") {
       extension = [extension];
@@ -82,6 +106,9 @@ module.exports = class PhpService extends Service {
       .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) == i);
   }
 
+  /**
+   * @inheritdoc
+   */
   _getConfigFileInfo() {
     return [{
       template: "custom.ini.dot",
@@ -89,6 +116,15 @@ module.exports = class PhpService extends Service {
       data: {
         XDEBUG: this.config.xdebug,
         INI_SETTINGS: this.config.ini_settings
+      }
+    }, {
+      template: "www.conf.dot",
+      commentChar: ";",
+      data: {
+        // In case of windows we need to make sure the php-fpm is run as the
+        // root user, because otherwise we can't upload files.
+        USER: os.platform() === "win32" ? "root" : "www-data",
+        GROUP: os.platform() === "win32" ? "root" : "www-data",
       }
     }];
   }

@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require("fs-promise");
+const fsu = require($SRC + "fs_utils.js");
 const path = require("path");
 const inquirer = require("inquirer");
 const yaml = require($SRC + "yaml");
@@ -15,6 +16,9 @@ const DirectoryInput = require("../form_input/directory_input");
 
 module.exports = {
 
+  /**
+   * Action to clone a repository.
+   */
   CloneProject: class extends Action {
     complete(data) {
       let promise = Promise.resolve();
@@ -45,6 +49,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to download new project files.
+   */
   DownloadProject: class extends Action {
     complete(data) {
       const method = data.get("config.creation");
@@ -75,6 +82,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to gather project configuration.
+   */
   GetProjectConfig: class extends Action {
     complete(data) {
       let envConfig = data.get("env_config");
@@ -95,6 +105,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to get the destination directory of the project.
+   */
   AskProjectDirectory: class extends Action {
     complete(data) {
       let type = data.get("config.type");
@@ -112,17 +125,21 @@ module.exports = {
       const defaultPath = path.join(globals.PROJECTS_DIR, type, urlSafeName);
 
       console.log();
-      return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
-        .setDefault(defaultPath)
-        .warnNonEmpty()
-        .warnPathLengthLimitations(40)
-        .acquire()
-        .then((directory) => {
-          data.set("root", directory);
-        });
+      return fsu.suggestEmptyDirectory(defaultPath)
+        .then((path) => {
+          return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
+            .setDefault(path)
+            .warnNonEmpty()
+            .warnPathLengthLimitations(40)
+            .acquire();
+        })
+        .then((directory) => data.set("root", directory));
     }
   },
 
+  /**
+   * Action to move the project from temporary directory to final.
+   */
   MoveProject: class extends Action {
     complete(data) {
       let root = data.get("root");
@@ -143,6 +160,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to create the project with environment.
+   */
   CreateProject: class extends Action {
     complete(data) {
       const env = data.get("env_config");
@@ -164,6 +184,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to save the environment.
+   */
   SaveEnvironment: class extends Action {
     complete(data) {
       let promise;
@@ -189,6 +212,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to compose the environment.
+   */
   ComposeEnvironment: class extends Action {
     complete(data) {
       this.loader = new Loader("Composing environment");
@@ -199,6 +225,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to create environment service configuration files.
+   */
   CreateServiceConfigFiles: class extends Action {
     complete(data) {
       this.loader = new Loader("Creating service configurations");
@@ -209,6 +238,9 @@ module.exports = {
     }
   },
 
+  /**
+   * Action to save the project.
+   */
   SaveProject: class extends Action {
     complete(data) {
       return data.get("project").save();

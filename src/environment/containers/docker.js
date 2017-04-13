@@ -14,12 +14,18 @@ const Template = require('../../template');
 const DOCKER_FILES_DIRNAME = ".docker-files";
 
 /**
+ * Container handler for Docker.
+ *
  * @id docker
  * @filename docker-compose.yml
  */
-module.exports = class DockerContainer extends ContainerBase {
+class DockerContainer extends ContainerBase {
 
+  /**
+   * @inheritdoc
+   */
   getIp(serviceOrGroupName = "") {
+    // Generate the container name for the service or the first from group.
     if (serviceOrGroupName === "") {
       this.env.services.each((service) => {
         serviceOrGroupName += `${this.env.config.env_name}_${service.ann("id")}_1 `;
@@ -66,6 +72,9 @@ module.exports = class DockerContainer extends ContainerBase {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   start() {
     this.directoryToPath();
 
@@ -107,6 +116,7 @@ module.exports = class DockerContainer extends ContainerBase {
       return this.getIp();
     }).then((serviceIps) => {
       let aliases = [];
+      // Get the aliases of the services that should be exposed.
       this.env.services.each((service, id) => {
         if (service.ann("aliased")) {
           aliases.push({
@@ -116,6 +126,7 @@ module.exports = class DockerContainer extends ContainerBase {
         }
       });
 
+      // Add aliases to the hosts file.
       return aliasManager.addHosts(aliases).catch((err) => {
         console.warn("Adding host aliases for the service IPs requires admin privileges.");
         console.error(err);
@@ -123,6 +134,21 @@ module.exports = class DockerContainer extends ContainerBase {
     }).then(() => {return this;});
   }
 
+  /**
+   * @inheritDoc
+   */
+  isStarted() {
+    return this.getIp()
+      // If we get the IPs we have running containers.
+      .then(() => true)
+      // If it throws then it couldn't get the IPs because containers are
+      // not started.
+      .catch(() => false);
+  }
+
+  /**
+   * @inheritdoc
+   */
   stop() {
     this.directoryToPath();
 
@@ -136,6 +162,9 @@ module.exports = class DockerContainer extends ContainerBase {
       });
   }
 
+  /**
+   * @inheritdoc
+   */
   command(command, execOptions = ["exec"], execInService = "web") {
     this.directoryToPath();
 
@@ -143,15 +172,23 @@ module.exports = class DockerContainer extends ContainerBase {
       execInService = this.services.ofGroup("web")[0];
     }
 
+    // Make sure the right project name is used with compose
+    // as otherwise it will use the directory name which can
+    // be customized by the user.
+    execOptions.push('--name', this.env.config.env_name);
+
     let cmd = new Command("docker-compose", [
       execOptions, execInService, command,
     ]).inheritStdio();
 
-    return cmd.execute().then(() => {return this;}).catch((error) => {
+    return cmd.execute().then(() => this).catch((error) => {
       throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   compose() {
     let composition = {
       version: "2",
@@ -159,20 +196,25 @@ module.exports = class DockerContainer extends ContainerBase {
     };
 
     this.env.services.each((Service, id) => {
-      composition.services[id] =
-        Service.compose(this.ann("id"));
+      composition.services[id] = Service.compose(this.ann("id"));
     });
 
+    // Allow services to post react to composition.
     this.env._fireEvent("composedDocker", composition.services);
 
     return composition;
   }
 
+  /**
+   * @inheritdoc
+   */
   writeComposition() {
     return new Promise((resolve, reject) => {
       let composition = this.compose();
       let promises = [];
 
+      // Services may provide custom Docker files that are templates. Compile
+      // and save these first.
       for (let [serviceId, compost] of Object.entries(composition.services)) {
         if (compost.hasOwnProperty("build")) {
           promises.push(this._compileDockerfile(serviceId, compost.build));
@@ -188,6 +230,17 @@ module.exports = class DockerContainer extends ContainerBase {
     });
   }
 
+  /**
+   * Compiles a docker file template.
+   *
+   * @param {string} serviceId
+   *    Service ID.
+   * @param args
+   *    Data to send to template engine.
+   *
+   * @returns {Promise}
+   * @private
+   */
   _compileDockerfile(serviceId, args) {
     const templatePath = path.join(__dirname, "..", "services", serviceId, "Dockerfile.dot");
     const destPath = path.join(this.path, DOCKER_FILES_DIRNAME, serviceId);
@@ -201,6 +254,9 @@ module.exports = class DockerContainer extends ContainerBase {
       });
   }
 
+  /**
+   * @inheritdoc
+   */
   remove() {
     this.directoryToPath();
 
@@ -217,4 +273,6 @@ module.exports = class DockerContainer extends ContainerBase {
     });
   }
 
-};
+}
+
+module.exports = DockerContainer;

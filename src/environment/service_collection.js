@@ -2,18 +2,35 @@
 
 const path = require("path");
 
-const utils = require("../utils");
+const annotatedLoader = require("../ann_loader");
 
 let serviceDiscovery;
 let servicePaths = [__dirname];
 
-module.exports = class ServiceCollection {
+/**
+ * ServiceCollection class.
+ *
+ * Collects implemented services and acts as an 'Array' of services. Groups
+ * the services in categories.
+ */
+class ServiceCollection {
 
+  /**
+   * ServiceCollection constructor.
+   */
   constructor() {
     this.servicesByGroup = {};
     this.servicesById = {};
   }
 
+  /**
+   * Register services from additional directory.
+   *
+   * @param {string} path
+   *    Directory of services.
+   *
+   * @returns {ServiceCollection}
+   */
   static registerServices(path) {
     if (servicePaths.indexOf(path) === -1) {
       servicePaths.push(path);
@@ -22,13 +39,18 @@ module.exports = class ServiceCollection {
     return this;
   }
 
+  /**
+   * Gets a collection of the implemented services.
+   *
+   * @returns {ServiceCollection}
+   */
   static collect() {
     if (!serviceDiscovery) {
       serviceDiscovery = new ServiceCollection();
       serviceDiscovery.frozen = true;
 
       servicePaths.forEach((pth) => {
-        utils.collectAnnotated(path.join(pth, "services"), null, true).forEach((service) => {
+        annotatedLoader.collectDirectoryClasses(path.join(pth, "services")).forEach((service) => {
           ["id", "label", "group"].forEach((key) => {
             if (!service.annotations[key]) {
               throw new Error(`A service must define the '${key}' annotation.`);
@@ -45,6 +67,11 @@ module.exports = class ServiceCollection {
     return serviceDiscovery;
   }
 
+  /**
+   * Adds services to the collection.
+   *
+   * @param {Service} Service
+   */
   addService(Service) {
     let [serviceGroup, serviceId] = [Service.ann("group"), Service.ann("id")];
 
@@ -61,16 +88,38 @@ module.exports = class ServiceCollection {
     this.servicesByGroup[serviceGroup][serviceId] = Service;
   }
 
+  /**
+   * Execute given function for each service.
+   *
+   * @param {Function} fn
+   *    Function that will get a service as parameter.
+   */
   each(fn) {
     for (let [id, service] of Object.entries(this.servicesById)) {
       fn(service, id);
     }
   }
 
+  /**
+   * Determines whether service is in the collection.
+   *
+   * @param {string} id
+   *    ID of the service.
+   *
+   * @returns {boolean}
+   */
   has(id) {
     return this.servicesById.hasOwnProperty(id);
   }
 
+  /**
+   * Gets a service by ID.
+   *
+   * @param {string} id
+   *    ID of the service.
+   *
+   * @returns {Service}
+   */
   get(id) {
     if (!this.has(id)) {
       throw new Error("Tried to get un-existent service by ID: " + id);
@@ -79,10 +128,28 @@ module.exports = class ServiceCollection {
     return this.servicesById[id];
   }
 
+  /**
+   * Gets all services from a group.
+   *
+   * @param {string} group
+   *    Group name.
+   *
+   * @returns {Object|boolean}
+   *    FALSE if none in group, otherwise Object with services keyed by ID.
+   */
   ofGroup(group) {
     return this.servicesByGroup[group] || false;
   }
 
+  /**
+   * Gets first service from a group.
+   *
+   * @param {string} group
+   *    Group name.
+   *
+   * @returns {Service|boolean}
+   *    FALSE if none, otherwise the first service.
+   */
   firstOfGroup(group) {
     let ofGroup = this.ofGroup(group);
 
@@ -93,14 +160,25 @@ module.exports = class ServiceCollection {
     return ofGroup[Object.keys(ofGroup)[0]];
   }
 
+  /**
+   * Gets all services not in the given group(s).
+   *
+   * @param {string|string[]} groups
+   *    Group name or array of group names.
+   *
+   * @returns {Object}
+   *    Object with services keyed by ID.
+   */
   notOfGroup(groups) {
     if (!Array.isArray(groups)) {
       groups = [groups];
     }
 
     let services = {};
+    // Clone the internal storage.
     Object.assign(services, this.servicesByGroup);
 
+    // Remove all services that are in the provided groups.
     groups.forEach((group) => {
       if (services[group]) {
         delete services[group];
@@ -114,7 +192,15 @@ module.exports = class ServiceCollection {
     return services;
   }
 
+  /**
+   * Remove a service from the collection.
+   *
+   * @param {string} id
+   *    The service ID.
+   */
   remove(id) {
+    // Prevent removal on frozen collection. This is used for discovery of
+    // service classes that shouldn't be removed.
     if (this.frozen) {
       throw new Error("Remove not allowed on frozen service collection.");
     }
@@ -128,6 +214,12 @@ module.exports = class ServiceCollection {
     delete this.servicesByGroup[group][id];
   }
 
+  /**
+   * Remove all services of a group.
+   *
+   * @param {string} group
+   *    Group name.
+   */
   removeGroup(group) {
     if (this.frozen) {
       throw new Error("Remove not allowed on frozen service collection.");
@@ -144,6 +236,18 @@ module.exports = class ServiceCollection {
     delete this.servicesByGroup[group];
   }
 
+  /**
+   * Gets an array of choices for services of a group.
+   *
+   * @param {string} group
+   *    Group name.
+   *
+   * @returns {Array.<Object>}
+   *    Object containing:
+   *      - name: Label of the service.
+   *      - value: The ID of the service.
+   *      - priority: Priority among of the same group.
+   */
   groupToChoices(group) {
     let services = this.ofGroup(group);
 
@@ -161,6 +265,11 @@ module.exports = class ServiceCollection {
     return choices;
   }
 
+  /**
+   * Clones this collection.
+   *
+   * @returns {ServiceCollection}
+   */
   clone() {
     let collection = new ServiceCollection();
 
@@ -172,4 +281,6 @@ module.exports = class ServiceCollection {
     return collection;
   }
 
-};
+}
+
+module.exports = ServiceCollection;

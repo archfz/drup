@@ -11,6 +11,9 @@ const WebService = require("../web_base");
  */
 module.exports = class NginxService extends WebService {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     return super._composeDocker({
       image: "nginx:stable-alpine",
@@ -21,6 +24,9 @@ module.exports = class NginxService extends WebService {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _getConfigFileInfo() {
     return [{
       template: "default.conf.dot",

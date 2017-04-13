@@ -11,6 +11,9 @@ const WebService = require("../web_base");
  */
 module.exports = class LightTpdService extends WebService {
 
+  /**
+   * @inheritdoc
+   */
   _composeDocker() {
     return super._composeDocker({
       image: "sebp/lighttpd",
@@ -20,6 +23,9 @@ module.exports = class LightTpdService extends WebService {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   _getConfigFileInfo() {
     return [{
       template: "lighttpd.conf.dot",

@@ -15,6 +15,9 @@ const ComposerCommand = require("../../../system/commands/composer");
  */
 class Drupal extends WebProject {
 
+  /**
+   * @inheritdoc
+   */
   static getEnvConfigurator() {
     return new EnvConfigurator({
       group: {
@@ -28,6 +31,9 @@ class Drupal extends WebProject {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   static isInDirectory(dir, resolveOnPositive = true) {
     return new Promise((res, rej) => {
       if (!resolveOnPositive) {
@@ -47,12 +53,18 @@ class Drupal extends WebProject {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   static getCreationMethods() {
     return {
       standard: "Install new project with composer.",
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   static download(method, dir) {
     let cmd;
 
@@ -73,6 +85,9 @@ class Drupal extends WebProject {
     return cmd;
   }
 
+  /**
+   * @inheritdoc
+   */
   _onEnvironmentSet(env) {
     super._onEnvironmentSet(env);
 
@@ -85,6 +100,9 @@ class Drupal extends WebProject {
     }
   }
 
+  /**
+   * @inheritdoc
+   */
   setup() {
     const root = path.join(this.root, Environment.DIRECTORIES.PROJECT);
     return new ComposerCommand(["install"], root)
