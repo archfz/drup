@@ -10,6 +10,7 @@ const Service = require("../../service_base");
  * @group database
  * @label MySQL
  * @priority 15
+ * @aliased
  */
 module.exports = class MysqlService extends Service {
 
