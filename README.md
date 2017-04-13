@@ -18,7 +18,7 @@ shared can be reused to build the same environment.
 | | |
 |------------------|--------------------------|
 |[**GIT**](https://git-scm.com/downloads) | GIT is required to clone projects with drup.
-|[**NodeJS**](https://nodejs.org/en/) | Drup is built upon Node. It also requires ES6 capable interpreter. **Version >= 6.4** is required. **Version 7 recommended**.
+|[**NodeJS**](https://nodejs.org/en/download/current/) | Drup is built upon Node. **Version >= 7.5** is required.
 |[**Docker**](https://docs.docker.com/engine/installation/) | Drup uses docker to create virtual systems.
 |[**DockerCompose**](https://docs.docker.com/compose/install/) | Drup heavily makes use of the docker extended functionality.
 
