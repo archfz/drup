@@ -76,10 +76,6 @@ module.exports = class PhpService extends Service {
         PHP_XDEBUG: this.config.xdebug,
         PHP_EXTENSIONS: this.config.additional_extensions,
       },
-      volumes: [
-        `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`,
-        `./config/${this.ann("id")}/www.conf:/usr/local/etc/php-fpm.d/www.conf`
-      ]
     };
 
     // Allow running php-fpm as root user on windows. See at config files for
@@ -89,6 +85,19 @@ module.exports = class PhpService extends Service {
     }
 
     return compose;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./config/${this.ann("id")}/custom.ini`,
+      container: "/usr/local/etc/php/conf.d/custom.ini",
+    }, {
+      host: `./config/${this.ann("id")}/www.conf`,
+      container:  "/usr/local/etc/php-fpm.d/www.conf",
+    }]);
   }
 
   /**

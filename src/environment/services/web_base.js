@@ -31,40 +31,35 @@ class WebService extends ServiceBase {
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
-    env.on("composedDocker", this._onComposedDocker.bind(this));
-  }
-
-  /**
-   * Alters services after composition.
-   *
-   * @param {Object} services
-   *    Service composition.
-   * @private
-   */
-  _onComposedDocker(services) {
-    // If the environment has PHP than add the project volume to it as-well so
-    // PHP-FPM can access the files.
-    if (this.env.services.has("php")) {
-      if (!services.php.volumes) {
-        services.php.volumes = [];
+    env.on("composedDocker", (servicesComposition) => {
+      // Make sure the php
+      if (this.env.services.has("php")) {
+        servicesComposition[this.ann("id")].depends_on = ["php"];
       }
+    });
 
-      services.php.volumes.push(`./${this._dir("PROJECT")}:${DOCKER_WWW_ROOT}`);
-      services[this.ann("id")].depends_on = ["php"];
-    }
+    env.on("getServiceVolumes", (service, volumes) => {
+      if (service.ann("id") === "php") {
+        // If the environment has PHP than add the project volume to it
+        // as-well so PHP-FPM can access the files.
+        volumes.push({
+          host: `./${this._dir("PROJECT")}`,
+          container: DOCKER_WWW_ROOT,
+        });
+      }
+    });
   }
 
   /**
    * @inheritdoc
    */
-  _composeDocker(composition) {
-    if (!composition.volumes) {
-      composition.volumes = [];
-    }
+  getVolumes(volumes = []) {
+    volumes.push({
+      host: `./${this._dir("PROJECT")}`,
+      container: DOCKER_WWW_ROOT,
+    })
 
-    composition.volumes.push(`./${this._dir("PROJECT")}:${DOCKER_WWW_ROOT}`);
-
-    return composition;
+    return super.getVolumes(volumes);
   }
 
   /**

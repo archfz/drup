@@ -73,19 +73,30 @@ module.exports = class MysqlService extends Service {
         MYSQL_USER: this.config.user,
         MYSQL_PASSWORD: this.config.password,
       },
-      volumes: []
     };
+
+    return compose;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    let volumes = [];
 
     // Workaround for windows as mysql won't be able to read from the volume
     // and container won't start. Let docker create volume manually.
     if (os.platform() === "win32") {
-      compose.volumes.push(`/var/lib/mysql`);
+      volumes.push({container: `/var/lib/mysql`});
     }
     else {
-      compose.volumes.push(`./data/${this.ann("id")}:/var/lib/mysql`)
+      volumes.push({
+        host: `./data/${this.ann("id")}`,
+        container: "/var/lib/mysql",
+      });
     }
 
-    return compose;
+    return super.getVolumes(volumes);
   }
 
   printInformation() {

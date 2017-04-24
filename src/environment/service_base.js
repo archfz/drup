@@ -78,6 +78,21 @@ class ServiceBase {
   }
 
   /**
+   * Gets the mount volumes for this service.
+   *
+   * @param {Array.<Object>} volumes
+   *    Volumes to start with.
+   *
+   * @returns {Array.<Object>}
+   *    Objects that have the keys 'container' and optionally 'host', each
+   *    being a directory.
+   */
+  getVolumes(volumes = []) {
+    this.env._fireEvent("getServiceVolumes", this, volumes);
+    return volumes;
+  }
+
+  /**
    * Gets the domain alias for this service.
    *
    * @returns {string}

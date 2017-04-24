@@ -197,6 +197,14 @@ class DockerContainer extends ContainerBase {
 
     this.env.services.each((Service, id) => {
       composition.services[id] = Service.compose(this.ann("id"));
+
+      if (composition.services[id].volumes) {
+        throw new Error(`Services must provide volumes from 'getVolumes()' method. Service '${Service.ann("id")}' added from composition.`);
+      }
+
+      composition.services[id].volumes = Service.getVolumes().map((volume) => {
+        return (volume.host ? volume.host + ":" : "") + volume.container;
+      });
     });
 
     // Allow services to post react to composition.

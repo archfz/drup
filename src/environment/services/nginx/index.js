@@ -15,13 +15,22 @@ module.exports = class NginxService extends WebService {
    * @inheritdoc
    */
   _composeDocker() {
-    return super._composeDocker({
+    return {
       image: "nginx:stable-alpine",
-      volumes: [
-        `./${this._dir("LOG")}/${this.ann("id")}:/var/log/nginx`,
-        `./${this._dir("CONFIG")}/${this.ann("id")}:/etc/nginx/conf.d`,
-      ]
-    });
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./${this._dir("LOG")}/${this.ann("id")}`,
+      container: "/var/log/nginx",
+    }, {
+      host: `./${this._dir("CONFIG")}/${this.ann("id")}`,
+      container: `/etc/nginx/conf.d`,
+    }]);
   }
 
   /**

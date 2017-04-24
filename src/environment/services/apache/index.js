@@ -15,12 +15,19 @@ module.exports = class ApacheService extends WebService {
    * @inheritdoc
    */
   _composeDocker() {
-    return super._composeDocker({
+    return {
       image: "httpd:alpine",
-      volumes: [
-        `./${this._dir("CONFIG")}/${this.ann("id")}/httpd.conf:/usr/local/apache2/conf/httpd.conf`
-      ]
-    });
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./${this._dir("CONFIG")}/${this.ann("id")}/httpd.conf`,
+      container: "/usr/local/apache2/conf/httpd.conf",
+    }]);
   }
 
   /**
