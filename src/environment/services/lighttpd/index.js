@@ -15,12 +15,19 @@ module.exports = class LightTpdService extends WebService {
    * @inheritdoc
    */
   _composeDocker() {
-    return super._composeDocker({
+    return {
       image: "sebp/lighttpd",
-      volumes: [
-        `./${this._dir("CONFIG")}/${this.ann("id")}/lighttpd.conf:/etc/lighttpd/lighttpd.conf`
-      ]
-    });
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./${this._dir("CONFIG")}/${this.ann("id")}/lighttpd.conf`,
+      container: "/etc/lighttpd/lighttpd.conf",
+    }]);
   }
 
   /**
