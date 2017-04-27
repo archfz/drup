@@ -3,11 +3,13 @@
 const WebService = require("../web_base");
 
 /**
- * @id lighttpd
- * @group web
- * @label LightTPD
- * @priority 10
- * @aliased
+ * @Service {
+ *  @id "lighttpd",
+ *  @group "web",
+ *  @label "LightTPD",
+ *  @priority 10,
+ *  @aliased true,
+ * }
  */
 module.exports = class LightTpdService extends WebService {
 

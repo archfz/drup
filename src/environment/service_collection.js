@@ -50,7 +50,7 @@ class ServiceCollection {
       serviceDiscovery.frozen = true;
 
       servicePaths.forEach((pth) => {
-        annotatedLoader.collectDirectoryClasses(path.join(pth, "services")).forEach((service) => {
+        annotatedLoader.collectDirectoryClasses(path.join(pth, "services"), "Service").forEach((service) => {
           ["id", "label", "group"].forEach((key) => {
             if (!service.annotations[key]) {
               throw new Error(`A service must define the '${key}' annotation.`);

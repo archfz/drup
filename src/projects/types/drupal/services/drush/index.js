@@ -4,9 +4,11 @@ const Service = require("../../../../../environment/service_base");
 const Command = require("../../../../../system/system_command");
 
 /**
- * @id drush
- * @group misc
- * @label Drush
+ * @Service {
+ *  @id "drush",
+ *  @group "misc",
+ *  @label "Drush",
+ * }
  */
 class DrushService extends Service {
 

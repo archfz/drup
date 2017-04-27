@@ -6,11 +6,13 @@ const os = require("os");
 const Service = require("../../service_base");
 
 /**
- * @id mysql
- * @group database
- * @label MySQL
- * @priority 15
- * @aliased
+ * @Service {
+ *  @id "mysql",
+ *  @group "database",
+ *  @label "MySQL",
+ *  @priority 15,
+ *  @aliased true,
+ * }
  */
 module.exports = class MysqlService extends Service {
 

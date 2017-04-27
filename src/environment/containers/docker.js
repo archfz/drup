@@ -16,8 +16,10 @@ const DOCKER_FILES_DIRNAME = ".docker-files";
 /**
  * Container handler for Docker.
  *
- * @id docker
- * @filename docker-compose.yml
+ * @Container {
+ *  @id "docker",
+ *  @filename "docker-compose.yml",
+ * }
  */
 class DockerContainer extends ContainerBase {
 

@@ -3,11 +3,13 @@
 const WebService = require("../web_base");
 
 /**
- * @id nginx
- * @group web
- * @label NGINX
- * @priority 20
- * @aliased
+ * @Service {
+ *  @id "nginx",
+ *  @group "web",
+ *  @label "NGINX",
+ *  @priority 20,
+ *  @aliased true,
+ * }
  */
 module.exports = class NginxService extends WebService {
 
