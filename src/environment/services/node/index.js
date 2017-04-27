@@ -10,9 +10,11 @@ const images = {
 };
 
 /**
- * @id node
- * @group engine
- * @label Node
+ * @Service {
+ *  @id "node",
+ *  @group "engine",
+ *  @label "Node",
+ * }
  */
 module.exports = class NodeService extends Service {
 

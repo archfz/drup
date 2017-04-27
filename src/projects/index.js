@@ -19,7 +19,7 @@ const Environment = require("../environment/environment");
 let projectTypes;
 function getProjectTypes() {
   if (!projectTypes) {
-    projectTypes = annotatedLoader.collectDirectoryClasses(path.join(__dirname, "types"), "id");
+    projectTypes = annotatedLoader.collectDirectoryClasses(path.join(__dirname, "types"), "ProjectType", "id");
   }
 
   return projectTypes;

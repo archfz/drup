@@ -8,9 +8,11 @@ const Service = require("../../service_base");
 const versions = ["7.1", "7.0" , "5.6" ];
 
 /**
- * @id php
- * @group engine
- * @label PHP
+ * @Service {
+ *  @id "php",
+ *  @group "engine",
+ *  @label "PHP",
+ * }
  */
 module.exports = class PhpService extends Service {
 

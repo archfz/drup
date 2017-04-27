@@ -10,8 +10,10 @@ const Environment = require("../../../environment/environment");
 const ComposerCommand = require("../../../system/commands/composer");
 
 /**
- * @id drupal
- * @index_file index.php
+ * @ProjectType {
+ *  @id "drupal",
+ *  @index_file "index.php",
+ * }
  */
 class Drupal extends WebProject {
 
