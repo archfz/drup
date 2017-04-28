@@ -5,31 +5,36 @@ const inquirer = require("inquirer");
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
-module.exports = {
-  description : "Remove project and it's environment.",
-  aliases: ["remove", "rm"],
-  weight: 30,
-  arguments: [
-    {
-      name: "key",
-      description: "The key of the project.",
-      default: "Current directory project.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "remove",
+ *  @label "Remove project",
+ *  @description "Remove project and it's environment.",
+ *  @aliases "rm",
+ *  @weight 30,
+ *  @arguments {
+ *    "key": {
+ *      "description": "The project key.",
+ *      "default": "Current working directory projects key, if exists."
+ *    }
+ *  }
+ * }
+ */
+class RemoveOperation {
 
-  execute : (key = null) => {
+  execute(args, workDir) {
     let projectLoad;
     let loader;
+    const key = args.shift();
 
     if (key === null) {
-      projectLoad = Projects.loadDir(process.cwd());
+      projectLoad = Projects.loadDir(workDir);
     }
     else {
       projectLoad = Projects.load(key);
     }
 
-    projectLoad.then((project) => {
+    return projectLoad.then((project) => {
       console.log("You requested to remove: " + project.name.green);
       console.log("This will " + "remove all".red + " your configurations and files.");
       console.log();
@@ -53,4 +58,7 @@ module.exports = {
     .catch(console.error)
     .then(() => loader && loader.destroy());
   }
-};
+
+}
+
+module.exports = RemoveOperation;

@@ -5,30 +5,35 @@ const formatter = require("../terminal-utils/formatter");
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
-module.exports = {
-  description : "Start project environment.",
-  aliases: ["start", "sta"],
-  weight: 100,
-  arguments: [
-    {
-      name: "key",
-      description: "The key of the project.",
-      default: "Current directory project.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "start",
+ *  @label "Start project",
+ *  @description "Start project environment.",
+ *  @weight 100,
+ *  @aliases "sta",
+ *  @arguments {
+ *    "key": {
+ *      "description": "Root directory of the project to register.",
+ *      "default": "Current working directory."
+ *    }
+ *  }
+ * }
+ */
+class StartOperation {
 
-  execute : function (key = null) {
+  execute(args, workDir) {
     let projectLoad;
+    const key = args.shift();
 
     if (key === null) {
-      projectLoad = Projects.loadDir(process.cwd());
+      projectLoad = Projects.loadDir(workDir);
     }
     else {
       projectLoad = Projects.load(key);
     }
 
-    projectLoad.then((project) => {
+    return projectLoad.then((project) => {
       let startLoader = new Loader("Starting " + project.name + " ...");
 
       let setupPromise = this.ensureProjectSetUp(project);
@@ -53,7 +58,7 @@ module.exports = {
       });
     })
     .catch(console.error);
-  },
+  }
 
   ensureProjectSetUp(project) {
     if (project.isSetUp()) {
@@ -64,4 +69,6 @@ module.exports = {
     return project.setup().then(() => setupLoader.finish());
   }
 
-};
+}
+
+module.exports = StartOperation;
