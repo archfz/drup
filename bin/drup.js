@@ -8,8 +8,5 @@ global.$SRC = __dirname + '/../src/';
 require("../src/terminal-utils/smart_term")();
 require("../src/terminal-utils/formatter").infect();
 
-const runOperation = require("../src/run_operation");
-
 // Parse the arguments and run the operation.
-const args = process.argv.slice(2);
-runOperation(args.shift(), args);
+require("../src/run_operation")(process.argv.slice(2));

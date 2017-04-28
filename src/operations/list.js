@@ -4,21 +4,25 @@ const formatter = require("../terminal-utils/formatter");
 
 const ProjectStorage = require("../projects/storage");
 
-module.exports = {
-  description : "List all environments and their state.",
-  aliases: ["list", "ls"],
-  weight: 50,
-  arguments: [
-    {
-      name: "type",
-      description: "Types of projects to list.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "list",
+ *  @label "List projects",
+ *  @description "Lists all installed projects.",
+ *  @weight 50,
+ *  @aliases "ls",
+ *  @arguments {
+ *    "type": {
+ *      "description": "List only the provided type of projects.",
+ *      "default": "Defaults to all types of projects."
+ *    }
+ *  }
+ * }
+ */
+class ListOperation {
 
-  execute : () => {
-
-    ProjectStorage.getAll()
+  execute(args) {
+    return ProjectStorage.getAll()
       .then((projects) => {
         let listByType = {};
 
@@ -30,14 +34,30 @@ module.exports = {
           listByType[data.type].push(key.green + " : " + data.config.name);
         }
 
-        console.log("-- List of installed projects");
-        for (let [type, list] of Object.entries(listByType)) {
-          console.log("> " + type.toUpperCase().cyan + " projects");
-          formatter.list(list);
-          console.log();
+        if (args[0]) {
+          this.listProjects(listByType, args.shift());
         }
-
+        else {
+          this.listAllProjects(listByType);
+        }
       });
-
   }
-};
+
+  listAllProjects(projectsByType) {
+    console.log("-- List of all projects");
+    for (let [type, list] of Object.entries(projectsByType)) {
+      console.log("> " + type.toUpperCase().cyan + " projects");
+      formatter.list(list);
+      console.log();
+    }
+  }
+
+  listProjects(projectsByType, type) {
+    console.log("-- List of " + type.toUpperCase() + " projects");
+    formatter.list(projectsByType[type]);
+    console.log();
+  }
+
+}
+
+module.exports = ListOperation;
