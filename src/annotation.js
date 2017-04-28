@@ -59,13 +59,15 @@ function extractAnnotationData(str, startPosition) {
 
   // Replace first level syntax of the associative array.
   // * @variableName "value" => "variableName": "value".
-  let json = str.substr(0, iChar + 1).replace(/\s*\*\s*@([^0-9]\w+)\s/g, "\"$1\":")
+  let json = str.substr(0, iChar - 1).replace(/\s*\*\s*@([^0-9]\w+)\s/g, "\"$1\":")
+  // Remove non first level line asterisks.
+    .replace(/(\r?\n|\r)\s*\*/g, "")
   // Remove new line characters.
     .replace(/\r?\n|\r/g, "");
 
   // Remove from the end the asterisk, whitespace and possible comma.
   let cutIndex = json.length - 1;
-  while (json.charAt(cutIndex).match(/}|\s|,|\*/)) --cutIndex;
+  while (json.charAt(cutIndex).match(/\s|,|\*/)) --cutIndex;
   json = "{" + json.substr(0, cutIndex + 1) + "}";
 
   try {
