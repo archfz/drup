@@ -10,6 +10,9 @@ xdebug.remote_connect_back=1
 xdebug.idekey=PHPSTORM
 {{?}}
 
+; Use ssmtp as sendmail.
+sendmail_path=/usr/sbin/ssmtp -t
+
 {{ for (let [key, set] of Object.entries(it.INI_SETTINGS)) { }}
 {{=key}}={{=set}}
 {{ } }}
