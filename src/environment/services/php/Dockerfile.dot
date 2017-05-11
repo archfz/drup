@@ -27,3 +27,7 @@ RUN apk upgrade --update \
     && docker-php-ext-enable xdebug \
     && apk del autoconf make gcc g++ \
 {{?}}
+
+{{/* Add SSMTP for mail sending support */}}
+    && apk fix \
+    && apk add ssmtp

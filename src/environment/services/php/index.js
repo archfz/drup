@@ -78,7 +78,8 @@ module.exports = class PhpService extends Service {
       },
       volumes: [
         `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`,
-        `./config/${this.ann("id")}/www.conf:/usr/local/etc/php-fpm.d/www.conf`
+        `./config/${this.ann("id")}/www.conf:/usr/local/etc/php-fpm.d/www.conf`,
+        `./config/${this.ann("id")}/ssmtp.conf:/etc/ssmtp/ssmtp.conf`
       ]
     };
 
@@ -110,6 +111,12 @@ module.exports = class PhpService extends Service {
    * @inheritdoc
    */
   _getConfigFileInfo() {
+    const mailService = this.env.services.firstOfGroup("mail");
+    let mailHub = "";
+    if (mailService) {
+      mailHub = mailService.ann("id");
+    }
+
     return [{
       template: "custom.ini.dot",
       definitions: ["rules"],
@@ -125,6 +132,12 @@ module.exports = class PhpService extends Service {
         // root user, because otherwise we can't upload files.
         USER: os.platform() === "win32" ? "root" : "www-data",
         GROUP: os.platform() === "win32" ? "root" : "www-data",
+      }
+    }, {
+      template: "ssmtp.conf.dot",
+      data: {
+        MAIL_HUB: mailHub,
+        SSMTP_REWRITE_DOMAIN: this.env.config.host_alias,
       }
     }];
   }
