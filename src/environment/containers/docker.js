@@ -175,7 +175,7 @@ class DockerContainer extends ContainerBase {
     // Make sure the right project name is used with compose
     // as otherwise it will use the directory name which can
     // be customized by the user.
-    execOptions.push('--name', this.env.config.env_name);
+    execOptions.unshift('-p', this.env.config.env_name);
 
     let cmd = new Command("docker-compose", [
       execOptions, execInService, command,
