@@ -9,6 +9,7 @@ const stripAnsi = require("strip-ansi");
 const BottomLines = {
   // Stores all registered bottom lines.
   bottomLines : [],
+  allowRender : true,
 
   /**
    * Get the index of a registered bottom line.
@@ -39,14 +40,16 @@ const BottomLines = {
   register(bottomLine) {
     this.bottomLines.push(bottomLine);
 
-    if (this.count() == 1) {
+    if (this.count() === 1) {
       this.renderCall = this.renderAll.bind(this);
       this.removeCall = this.removeAll.bind(this);
       this.cleanCall = this.cleanUp.bind(this);
+      this.resizeCall = this.terminalResize.bind(this);
 
       Terminal.on("before_write", this.cleanCall);
       Terminal.on("after_write", this.renderCall);
       Terminal.on("exit", this.removeCall);
+      process.stdout.on("resize", this.resizeCall);
     }
   },
 
@@ -75,6 +78,10 @@ const BottomLines = {
    * Renders all bottom lines registered at the bottom of the terminal.
    */
   renderAll() {
+    if (!this.allowRender) {
+      return;
+    }
+
     let lines = this.count();
 
     let visibilityStateChanged = Terminal.hideCursor();
@@ -121,6 +128,14 @@ const BottomLines = {
     Terminal.setCursorToLine(lines - 1);
     Terminal.charm("erase", "down");
     Terminal.charm("pop", 1);
+  },
+
+  terminalResize() {
+    clearTimeout(this._continueTimeout);
+
+    this.allowRender = false;
+    this.cleanUp();
+    this._continueTimeout = setTimeout(() => this.allowRender = true, 400);
   }
 
 };
@@ -186,6 +201,10 @@ class BottomLine {
    * Renders the text to the terminal line.
    */
   render() {
+    if (!BottomLines.allowRender) {
+      return;
+    }
+
     let visibilityStateChanged = Terminal.hideCursor();
     Terminal.charm("push", 1);
 
