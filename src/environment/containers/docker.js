@@ -28,7 +28,7 @@ class DockerContainer extends ContainerBase {
     // Generate the container name for the service or the first from group.
     if (serviceOrGroupName === "") {
       this.env.services.each((service) => {
-        serviceOrGroupName += `${this.env.config.env_name}_${service.ann("id")}_1 `;
+        serviceOrGroupName += `${this.env.getId()}_${service.ann("id")}_1 `;
       });
     }
     else {
@@ -42,7 +42,7 @@ class DockerContainer extends ContainerBase {
         serviceOrGroupName = group[Object.keys(group)[0]].ann("id");
       }
 
-      serviceOrGroupName = `${this.env.config.env_name}_${serviceOrGroupName}_1`;
+      serviceOrGroupName = `${this.env.getId()}_${serviceOrGroupName}_1`;
     }
 
     let cmd = new Command("docker", [
@@ -79,7 +79,7 @@ class DockerContainer extends ContainerBase {
     this.directoryToPath();
 
     return new Command("docker-compose", [
-      ["-p", this.env.config.env_name],
+      ["-p", this.env.getId()],
       ["up", "-d"],
     ]).execute().catch((error) => {
       throw new Error("Failed to start environment container:\n" + error);
@@ -153,7 +153,7 @@ class DockerContainer extends ContainerBase {
     this.directoryToPath();
 
     return new Command("docker-compose", [
-      ["-p", this.env.config.env_name],
+      ["-p", this.env.getId()],
       "stop"
     ]).execute()
       .then(() => {return this;})
@@ -175,7 +175,7 @@ class DockerContainer extends ContainerBase {
     // Make sure the right project name is used with compose
     // as otherwise it will use the directory name which can
     // be customized by the user.
-    execOptions.unshift('-p', this.env.config.env_name);
+    execOptions.unshift('-p', this.env.getId());
 
     let cmd = new Command("docker-compose", [
       execOptions, execInService, command,
