@@ -69,7 +69,7 @@ module.exports = class MysqlService extends Service {
       image: "mysql/mysql-server:5.7",
       environment: {
         MYSQL_RANDOM_ROOT_PASSWORD: 1,
-        MYSQL_DATABASE: this.env.config.env_name,
+        MYSQL_DATABASE: this.env.getId(),
         MYSQL_USER: this.config.user,
         MYSQL_PASSWORD: this.config.password,
       },
@@ -91,7 +91,7 @@ module.exports = class MysqlService extends Service {
   printInformation() {
     super.printInformation();
 
-    console.log("- Database name: \"" + this.env.config.env_name + "\"");
+    console.log("- Database name: \"" + this.env.getId() + "\"");
   }
 
 };

@@ -17,14 +17,16 @@ class ProjectBase {
   /**
    * ProjectBase constructor.
    *
+   * @param {string} id
+   *    ID of the project.
    * @param {string} root
    *    Root directory of the project.
    * @param {Object} config
    *    Configuration data.
    */
-  constructor(root, config) {
+  constructor(id, root, config) {
     this._root = root;
-    this._key = config.key;
+    this._key = id;
     this._config = config;
   }
 
@@ -55,102 +57,7 @@ class ProjectBase {
       default: name,
       validate: (value) => value.match(/^[a-zA-Z0-9 ]+$/) ? true : "Project name is required, and can only contain letters, numbers and space.",
       filter: (value) => value.trim()
-    }).then((values) => {
-      return ProjectBase.generateUniqueKey(values.name)
-        .then((key) => {
-          values.key = key;
-          return values;
-        });
-    }).then((values) => {
-      const askKey = function (defaultKey) {
-        console.log();
-        console.log("Insert a unique ID for the project. This will be used to easily run operation on the project environment. For best usage add a short one.".green);
-
-        return inquirer.prompt({
-          type: "input",
-          name: "key",
-          message: "Project unique key:",
-          description: "Unique identifier for the project.",
-          default: defaultKey,
-          validate: (key) => {
-            if (!key) {
-              return "Project key is required.";
-            }
-
-            if (!key.match(/^[a-zA-Z0-9\-_]+$/)) {
-              return "Key may only container letters, numbers and _ or -";
-            }
-
-            return true;
-          },
-          filter: (value) => value.toLowerCase(),
-        }).then((values) => {
-          return ProjectBase.isKeyUnique(values.key)
-            .then((unique) => {
-              if (unique) {
-                return values.key;
-              }
-
-              console.warn("A project already has this key.");
-
-              return askKey(values.key);
-            });
-        });
-      };
-
-      return ProjectBase.generateUniqueKey(values.name)
-        .then((key) => askKey(key))
-        .then((key) => {
-          values.key = key;
-          return values;
-        });
     });
-  }
-
-  /**
-   * Generates unique key for project.
-   *
-   * @param {string} suggestion
-   *    String from which to generate.
-   *
-   * @return {string}
-   *    Unique key.
-   */
-  static generateUniqueKey(suggestion) {
-    suggestion = suggestion.toLowerCase();
-    let words = suggestion.split(/[ ]+/);
-    if (words.length > 2) {
-      suggestion = words.map((word) => word.charAt(0)).join("");
-    }
-    else {
-      suggestion = suggestion.replace(" ", "_");
-    }
-
-    const generateKey = (count = "") => {
-      return ProjectBase.isKeyUnique(suggestion + count)
-        .then((unique) => {
-          if (unique) {
-            return suggestion + count;
-          }
-
-          return generateKey(count === "" ? 2 : count + 1);
-        });
-    };
-
-    return generateKey();
-  }
-
-  /**
-   * Determines whether a project key is unique.
-   *
-   * @param {string} key
-   *    The project key.
-   *
-   * @returns {Promise.<boolean>}
-   */
-  static isKeyUnique(key) {
-    return ProjectStorage.get(key)
-      .then((config) => config === null);
   }
 
   /**
@@ -296,11 +203,8 @@ class ProjectBase {
    */
   createEnvironment(tempDir) {
     ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
-    const config = Object.assign({
-      env_name: this.name.replace(/[^a-zA-Z]+/g, "").toLowerCase(),
-    }, this._config);
 
-    return Environment.create(this.constructor.getEnvConfigurator(), config, this.root)
+    return Environment.create(this.key, this.constructor.getEnvConfigurator(), this._config, this.root)
       .then((env) => {
         this._environment = env;
         this._onEnvironmentSet(env);
@@ -338,7 +242,7 @@ class ProjectBase {
     if (!this._environment) {
       ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
 
-      return Environment.load(this.root)
+      return Environment.load(this.key, this.root)
         .then((env) => {
           this._environment = env;
           this._onEnvironmentSet(env);

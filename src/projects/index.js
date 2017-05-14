@@ -100,10 +100,15 @@ class Projects {
       }
     }).then(() => {
       return new Task({projectFilesReady: act.DownloadProject, gotConfig: act.GetProjectConfig})
-        .then({gotRoot: act.AskProjectDirectory})
-        .then({projectCreated: act.CreateProject})
-        .then(act.SaveEnvironment)
-        .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+        .after("gotConfig", (task) => {
+          return task.then(act.GetProjectKey)
+            .then({gotRoot: act.AskProjectDirectory});
+        })
+        .after(["projectFilesReady", "gotRoot"], (task) => {
+          return task.then({projectCreated: act.CreateProject})
+            .then(act.SaveEnvironment)
+            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+        })
         .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
         .after(["envComposed", "envConfigured"], act.SaveProject)
         .start({
@@ -156,7 +161,8 @@ class Projects {
           return new Task({gotRoot: act.AskProjectDirectory})
             .then({gotConfig: act.GetProjectConfig, projectInPlace: act.MoveProject})
             .after("gotConfig", (task) => {
-              task.then({projectCreated: act.CreateProject})
+              task.then(act.GetProjectKey)
+                .then({projectCreated: act.CreateProject})
                 .then(act.SaveEnvironment)
                 .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
                 .after(["envComposed", "envConfigured"], act.SaveProject);
@@ -171,6 +177,7 @@ class Projects {
           console.log("-- Environment detected");
 
           return new Task(act.AskProjectDirectory)
+            .then(act.GetProjectKey)
             .then({projectInPlace: act.MoveProject})
             .then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
@@ -244,7 +251,7 @@ class Projects {
           throw new Error(`Project not found by key '${key}'.`);
         }
 
-        return new (getProjectTypes()[data.type])(data.root, data.config);
+        return new (getProjectTypes()[data.type])(key, data.root, data.config);
       });
   }
 
@@ -264,8 +271,9 @@ class Projects {
           throw new Error(`Project not found in '${dir}'.`);
         }
 
+        const key = data.key;
         data = data.data;
-        return new (getProjectTypes()[data.type])(data.root, data.config);
+        return new (getProjectTypes()[data.type])(key, data.root, data.config);
       });
   }
 

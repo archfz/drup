@@ -80,22 +80,8 @@ class DirectoryInput extends InputBase {
   }
 
   /**
-   * Initiate the input.
-   *
-   * @param {*} _default
-   *    Default value for the input.
-   *
-   * @returns {Task<string>}
-   *    The acquired directory from user.
+   * @inheritDoc
    */
-  acquire(_default = this._default) {
-    if (this._description) {
-      console.log(this._description);
-    }
-
-    return this._acquire(_default);
-  }
-
   _acquire(_default) {
     return inquirer.prompt(this.getSettings(_default, "directory"))
       .then((values) => this._doTransformRelative(values.directory))

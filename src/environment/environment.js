@@ -11,7 +11,7 @@ const ServiceCollection = require("./service_collection");
 
 // Required configuration keys with validation function.
 const requiredConfig = {
-  env_name: (str) => str.match(/^[a-z]+$/),
+
 };
 
 /**
@@ -41,19 +41,28 @@ class Environment {
   /**
    * Environment constructor.
    *
+   * @param {string} id
+   *    The environment unique ID.
    * @param {Object} envConfig
    *    The environment configuration.
    * @param {string} root
    *    The root directory of the environment.
    */
-  constructor(envConfig, root) {
+  constructor(id, envConfig, root) {
     if (!root) {
       throw new Error("Environment root parameter is required.");
+    }
+
+    // Make sure this ID is as simple as possible and it still
+    // complies to docker compose container prefix.
+    if (!id.match(/^[a-z][a-z0-9]*$/)) {
+      throw new Error(`Malformed environment ID: '${id}'`);
     }
 
     this._servicesInitialized = false;
 
     this._services = envConfig.services;
+    this._id = id;
     this.config = envConfig.config;
     this.root = root;
 
@@ -63,8 +72,10 @@ class Environment {
   /**
    * Create new environment configuration.
    *
+   * @param {string} id
+   *    ID of the environment.
    * @param {EnvironmentConfigurator} envConfigurator
-   *
+   *    Service configurator.
    * @param {Object} config
    *    Additional config to be stored with environment.
    * @param {string} root
@@ -73,7 +84,7 @@ class Environment {
    * @returns {Promise}
    * @resolve {Environment}
    */
-  static create(envConfigurator, config, root) {
+  static create(id, envConfigurator, config, root) {
     // Validate required additional configuration.
     for (const [name, validate] of Object.entries(requiredConfig)) {
       if (!config.hasOwnProperty(name)) {
@@ -87,7 +98,7 @@ class Environment {
 
     // Configure and create the environment object.
     return envConfigurator.configure().then((services) => {
-      return new Environment({
+      return new Environment(id, {
         config: config,
         services: services,
       }, root);
@@ -97,13 +108,15 @@ class Environment {
   /**
    * Load environment from configuration.
    *
-   * @param root
+   * @param {string} id
+   *    ID of the environment.
+   * @param {string} root
    *    Root directory of the environment.
    *
    * @returns {Promise}
    * @resolve {Environment}
    */
-  static load(root) {
+  static load(id, root) {
     let configPath = root;
 
     // Try to read from root.
@@ -115,7 +128,7 @@ class Environment {
         return this.readConfig(configPath);
       })
       .then((envConfig) => {
-        let env = new Environment(envConfig, root);
+        let env = new Environment(id, envConfig, root);
         env.configFile = path.join(configPath, Environment.FILENAME);
 
         return env;
@@ -191,6 +204,15 @@ class Environment {
    */
   static hasEnvironment(directory) {
     return fs.exists(path.join(directory, Environment.FILENAME));
+  }
+
+  /**
+   * Get the ID of the environment.
+   *
+   * @returns {string}
+   */
+  getId() {
+    return this._id;
   }
 
   /**

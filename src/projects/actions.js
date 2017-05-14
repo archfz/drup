@@ -13,6 +13,7 @@ const Environment = require("../environment/environment");
 const Loader = require("../terminal-utils/async_loader");
 
 const DirectoryInput = require("../form_input/directory_input");
+const KeyInput = require("./inputs/key_input");
 
 module.exports = {
 
@@ -138,6 +139,28 @@ module.exports = {
   },
 
   /**
+   * Get the unique project key from user.
+   */
+  GetProjectKey: class extends Action {
+    complete(data) {
+      let keySuggestion;
+      if (data.get("env_config")) {
+        keySuggestion = data.get("env_config").config.name;
+      }
+      else if (data.get("config")) {
+        keySuggestion = data.get("config").name;
+      }
+      else {
+        keySuggestion = path.basename(data.get("tmp_directory"));
+      }
+
+      console.log();
+      return KeyInput.create().acquire(keySuggestion)
+        .then((key) => data.set("project_key", key));
+    }
+  },
+
+  /**
    * Action to move the project from temporary directory to final.
    */
   MoveProject: class extends Action {
@@ -169,12 +192,12 @@ module.exports = {
       let project;
 
       if (env) {
-        project = new (data.get("project_types")[env.config.type])(data.get("root"), env.config);
+        project = new (data.get("project_types")[env.config.type])(data.get("project_key"), data.get("root"), env.config);
         data.set("project", project);
         return project.getEnvironment();
       }
       else {
-        project = new (data.get("project_type"))(data.get("root"), data.get("config"));
+        project = new (data.get("project_type"))(data.get("project_key"), data.get("root"), data.get("config"));
         data.set("project", project);
         return project.createEnvironment(data.get("tmp_directory"));
       }
