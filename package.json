@@ -1,6 +1,6 @@
 {
   "name": "drup",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Project and environment manager utility. ",
   "bin": {
     "drup": "./bin/drup.js"
