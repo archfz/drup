@@ -1,5 +1,6 @@
 "use strict";
 
+const utils = require("../utils");
 
 /**
  * Form input base class.
@@ -61,6 +62,10 @@ class InputBase {
       settings.validate = this._validateInput.bind(this);
     }
 
+    if (typeof this._filterValue === "function") {
+      settings.filter = this._filterValue.bind(this);
+    }
+
     return settings;
   }
 
@@ -74,6 +79,33 @@ class InputBase {
   setDefault(value) {
     this._default = value;
     return this;
+  }
+
+  /**
+   * Initiate the input.
+   *
+   * @param {*} _default
+   *    Default value for the input.
+   *
+   * @returns {Task<string>}
+   *    The acquired directory from user.
+   */
+  acquire(_default = this._default) {
+    if (this._description) {
+      console.log(this._description);
+    }
+
+    return this._acquire(_default);
+  }
+
+  /**
+   * Acquire the value.
+   *
+   * @param _default
+   * @private
+   */
+  _acquire(_default) {
+    utils.mustImplement(this, "_acquire");
   }
 
 }
