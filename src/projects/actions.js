@@ -88,17 +88,18 @@ module.exports = {
    */
   GetProjectConfig: class extends Action {
     complete(data) {
-      let envConfig = data.get("env_config");
-
-      if (envConfig) {
-        data.set("config", envConfig.config);
-      }
-
+      let defaultConfig = data.get("env_config_defaults");
       const dirName = path.basename(data.get("tmp_directory"));
       let suggestions = {};
 
       if (dirName.search("new_tmp") === -1) {
         suggestions.name = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+      }
+
+      // Add default configuration as suggestions for current registration
+      // configurations.
+      if (defaultConfig) {
+        Object.assign(suggestions, defaultConfig);
       }
 
       return data.get("project_type").configure(suggestions)
@@ -144,8 +145,8 @@ module.exports = {
   GetProjectKey: class extends Action {
     complete(data) {
       let keySuggestion;
-      if (data.get("env_config")) {
-        keySuggestion = data.get("env_config").config.name;
+      if (data.get("env_config_defaults")) {
+        keySuggestion = data.get("env_config_defaults").config.name;
       }
       else if (data.get("config")) {
         keySuggestion = data.get("config").name;
@@ -188,11 +189,11 @@ module.exports = {
    */
   CreateProject: class extends Action {
     complete(data) {
-      const env = data.get("env_config");
+      const env = data.get("env_config_defaults");
       let project;
 
       if (env) {
-        project = new (data.get("project_types")[env.config.type])(data.get("project_key"), data.get("root"), env.config);
+        project = new (data.get("project_types")[env.config.type])(data.get("project_key"), data.get("root"), data.get("config"));
         data.set("project", project);
         return project.getEnvironment();
       }
@@ -214,7 +215,7 @@ module.exports = {
     complete(data) {
       let promise;
 
-      if (data.get("env_config")) {
+      if (data.get("env_config_defaults")) {
         promise = Promise.resolve({include: true});
       }
       else {

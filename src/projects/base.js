@@ -242,7 +242,7 @@ class ProjectBase {
     if (!this._environment) {
       ServiceCollection.registerServices(__dirname + "/types/" + this.ann("id"));
 
-      return Environment.load(this.key, this.root)
+      return Environment.load(this.key, this._config, this.root)
         .then((env) => {
           this._environment = env;
           this._onEnvironmentSet(env);
