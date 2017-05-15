@@ -138,7 +138,7 @@ class ProjectStorage {
     return getStorage()
       .then((storage) => {
         for (const [key, data] of Object.entries(storage)) {
-          if (pathIsInside(data.root, dir)) {
+          if (pathIsInside(dir, data.root)) {
             return {
               key: key,
               data: JSON.parse(JSON.stringify(storage[key])),
