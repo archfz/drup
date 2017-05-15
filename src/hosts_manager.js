@@ -167,10 +167,12 @@ module.exports = {
           content = content.toString();
         }
 
+        console.log(getHostsFromContent(content));
         let hosts = getHostsFromContent(content)
         // Filter out duplicates.
           .filter((host) => host.indexOf(domain) === -1);
         hosts.push(`${ip}\t${domain}${comment}`);
+        console.log(hosts);
 
         return fsp.writeFile(hostsPath, replaceHostsInContent(hosts, content));
       });
@@ -204,7 +206,15 @@ module.exports = {
 
         let hosts = getHostsFromContent(content)
         // Filter out duplicates.
-          .filter((host) => domains.indexOf(host.match(/^[^\s]+/)) !== -1);
+          .filter((host) => {
+            for (let i = 0; i < domains.length; i++) {
+              if (host.indexOf(domains[i]) !== -1) {
+                return false;
+              }
+            }
+
+            return true;
+          });
 
         aliases.forEach((alias) => {
           hosts.push(`${alias.ip}\t${alias.domain}${comment}`);

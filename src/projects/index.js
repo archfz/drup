@@ -171,13 +171,14 @@ class Projects {
             .then((data) => data.get("project"));
         }
         else if (typeof type === "object") {
-          params.env_config = type;
+          params.env_config_defaults = type;
           params.project_type = getProjectTypes()[type.config.type];
           params.config.type = type.config.type;
           console.log("-- Environment detected");
 
           return new Task(act.AskProjectDirectory)
             .then(act.GetProjectKey)
+            .then(act.GetProjectConfig)
             .then({projectInPlace: act.MoveProject})
             .then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
