@@ -50,8 +50,8 @@ class KeyInput extends InputBase {
    * Validates the project key.
    *
    * @param {string} key
-   * @returns {boolean}
-   *    Valid or not.
+   * @returns {boolean|string}
+   *    TRUE or error message.
    * @private
    */
   _validateInput(key) {
@@ -92,9 +92,8 @@ class KeyInput extends InputBase {
     if (words.length > 2) {
       suggestion = words.map((word) => word.charAt(0)).join("");
     }
-    else {
-      suggestion = suggestion.replace(" ", "_");
-    }
+
+    suggestion = suggestion.replace(/[^a-z0-9]/g, "");
 
     const generateKey = (count = "") => {
       return this._isKeyUnique(suggestion + count)

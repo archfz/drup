@@ -6,6 +6,8 @@ const inquirer = require("inquirer");
 
 const ProjectBase = require("../base");
 
+const AliasInput = require("../inputs/alias_input");
+
 /**
  * Base class for web projects.
  */
@@ -18,19 +20,12 @@ class WebProject extends ProjectBase {
     return super.configure(suggestions)
       .then((values) => {
         console.log();
-        console.log("Insert a domain alias base name. This should not contain an extension, as extensions will be the service ID name. So if you enter for example \"example\" one of your generated aliases might be \"example.nginx\".".green);
 
-        return inquirer.prompt({
-          type: "input",
-          name: "host_alias",
-          message: "Project domain alias:",
-          default: values.name.toLowerCase().replace(/\s+/g, "-"),
-          validate: (str) => {
-            return str.match(/^[a-z\-0-9]+$/) ? true : "Should only contain a domain name, without extension.";
-          }
-        }).then((val) => {
-          return Object.assign(values, val);
-        });
+        return AliasInput.create()
+          .acquire(values.name.toLowerCase().replace(/\s+/g, "-"))
+          .then((alias) => {
+            return Object.assign(values, {host_alias: alias});
+          });
       });
   }
 

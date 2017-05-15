@@ -43,12 +43,15 @@ class Environment {
    *
    * @param {string} id
    *    The environment unique ID.
-   * @param {Object} envConfig
-   *    The environment configuration.
+   * @param {Object} servicesConfig
+   *    Available services with their configurations.
+   * @param {Object} config
+   *    Configuration like 'host_alias' and other that will
+   *    be added to the env file.
    * @param {string} root
    *    The root directory of the environment.
    */
-  constructor(id, envConfig, root) {
+  constructor(id, servicesConfig, config, root) {
     if (!root) {
       throw new Error("Environment root parameter is required.");
     }
@@ -61,9 +64,9 @@ class Environment {
 
     this._servicesInitialized = false;
 
-    this._services = envConfig.services;
+    this._services = servicesConfig;
     this._id = id;
-    this.config = envConfig.config;
+    this.config = config;
     this.root = root;
 
     this._listeners = {};
@@ -98,10 +101,7 @@ class Environment {
 
     // Configure and create the environment object.
     return envConfigurator.configure().then((services) => {
-      return new Environment(id, {
-        config: config,
-        services: services,
-      }, root);
+      return new Environment(id, services, config, root);
     });
   }
 
@@ -116,7 +116,7 @@ class Environment {
    * @returns {Promise}
    * @resolve {Environment}
    */
-  static load(id, root) {
+  static load(id, config, root) {
     let configPath = root;
 
     // Try to read from root.
@@ -128,8 +128,12 @@ class Environment {
         return this.readConfig(configPath);
       })
       .then((envConfig) => {
-        let env = new Environment(id, envConfig, root);
+        let env = new Environment(id, envConfig.services, config, root);
         env.configFile = path.join(configPath, Environment.FILENAME);
+        // In case we load in an environment we should never override it's
+        // default configurations. To do so save the default config and
+        // when saving check for these.
+        env.configDefault = envConfig.config;
 
         return env;
       })
@@ -273,7 +277,10 @@ class Environment {
     const saveTo = path.join(this.root, includeInProject, Environment.FILENAME);
 
     let environment = {
-      config: this.config,
+      // Set the default configuration. If no default is available this
+      // is a new environment, in that case the defaults will be the
+      // current ones.
+      config: this.configDefault || this.config,
       services: {},
     };
 
