@@ -2,6 +2,7 @@
 
 const yaml = require($SRC + "yaml");
 const path = require("path");
+const pathIsInside = require("path-is-inside");
 const fs = require("fs-promise");
 
 const globals = require("../globals");
@@ -137,7 +138,7 @@ class ProjectStorage {
     return getStorage()
       .then((storage) => {
         for (const [key, data] of Object.entries(storage)) {
-          if (data.root === dir || dir.indexOf(data.root) === 0) {
+          if (pathIsInside(data.root, dir)) {
             return {
               key: key,
               data: JSON.parse(JSON.stringify(storage[key])),
