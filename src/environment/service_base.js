@@ -65,19 +65,6 @@ class ServiceBase {
   }
 
   /**
-   * Gets the operations that this service provides.
-   *
-   * @returns {Array}
-   *    Array of objects that contain:
-   *      - baseName: The unique identifier for the operation.
-   *      - description: Description of the operation.
-   *      - aliases: Aliases that can be used to trigger the operation.
-   */
-  getOperations() {
-    return [];
-  }
-
-  /**
    * Gets the mount volumes for this service.
    *
    * @param {Array.<Object>} volumes
@@ -93,6 +80,26 @@ class ServiceBase {
   }
 
   /**
+   * Gets the service container name.
+   *
+   * @return {string}
+   *    The container name.
+   */
+  getContainerName() {
+    return this.env.config.env_name + "_" + this.ann("id") + "_1";
+  }
+
+  /**
+   * Gets the primary mount of the service.
+   *
+   * @returns {string|boolean}\
+   *   Path to primary directory mount location or false if none.
+   */
+  getProjectMountDirectory() {
+    return false;
+  }
+
+  /**
    * Gets the domain alias for this service.
    *
    * @returns {string}
@@ -104,20 +111,6 @@ class ServiceBase {
     }
 
     return this.env.config.host_alias + "." + this.ann("id");
-  }
-
-  /**
-   * Runs operation on this service.
-   *
-   * @param name
-   *    The base name of the operation.
-   * @param args
-   *    Arguments for the operation.
-   *
-   * @return {Promise}
-   */
-  runOperation(name, args) {
-    throw new Error(`Service '${this.ann("id")}' does not provide '${name}' operation.`);
   }
 
   /**

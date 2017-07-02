@@ -37,6 +37,16 @@ class ContainerBase {
   }
 
   /**
+   * Gets the network name of the environment.
+   *
+   * @return {string}
+   *    The network name.
+   */
+  getNetworkName() {
+    utils.mustImplement(this, "getNetworkName");
+  }
+
+  /**
    * Start the container.
    *
    * @return {Promise}

@@ -3,6 +3,8 @@
 const formatter = require("./terminal-utils/formatter");
 const annotationLoader = require("./ann_loader");
 
+const EError = require("./eerror");
+
 const STR_DRUP = "$".gray + " drup";
 
 const STR_ARGUMENT_START = "<".gray;
@@ -10,27 +12,6 @@ const STR_ARGUMENT_END = ">".gray;
 const STR_OPTIONAL_START = "[".gray;
 const STR_OPTIONAL_END = "]".gray;
 
-/**
- * Create colored format of an argument.
- *
- * @param {string} argumentName
- * @param {string} color
- * @returns {string}
- */
-function formatOptionalStr(argumentName, color = "yellow") {
-  return STR_OPTIONAL_START + argumentName[color] + STR_OPTIONAL_END;
-}
-
-/**
- * Create colored format of an optional argument.
- *
- * @param {string} argumentName
- * @param {string} color
- * @returns {string}
- */
-function formatArgumentStr(argumentName, color = "yellow") {
-  return STR_ARGUMENT_START + argumentName[color] + STR_ARGUMENT_END;
-}
 
 /**
  * Loop over the arguments of an operation.
@@ -53,10 +34,10 @@ function formatOperationArguments(operation) {
   let args = [];
   eachArgument(operation, (arg, name) => {
     if (arg.optional || arg.default) {
-      return args.push(formatOptionalStr(name));
+      return args.push(OperationCollection.formatOptionalStr(name));
     }
 
-    return args.push(formatArgumentStr(name));
+    return args.push(OperationCollection.formatArgumentStr(name));
   });
 
   return args.join(" ");
@@ -205,6 +186,17 @@ class OperationCollection {
   }
 
   /**
+   * Sets help text that shows on usage help print.
+   *
+   * @param text {string}
+   *   The help text.
+   */
+  setHelpText(text) {
+    this._helpText = text;
+    return this;
+  }
+
+  /**
    * Prints to the terminal the usage of the operation.
    *
    * @param {String|Object} operation
@@ -225,11 +217,16 @@ class OperationCollection {
         + " " + formatOperationArguments(operation);
     }
     else {
-      usage = usage.replace("{OP_ID}", formatArgumentStr("operation", "green"))
-       + " " + formatArgumentStr("arguments..");
+      usage = usage.replace("{OP_ID}", OperationCollection.formatArgumentStr("operation", "green"))
+       + " " + OperationCollection.formatArgumentStr("arguments..");
     }
 
     console.log(STR_DRUP + " " + usage);
+
+    if (this._helpText) {
+      console.log(this._helpText);
+    }
+
     return this;
   }
 
@@ -323,7 +320,7 @@ class OperationCollection {
    */
   get(operation, ensure = false) {
     if (ensure && !this._aliases[operation]) {
-      throw new Error(`Operation '${operation}' not found`, this.constructor.OP_NOT_FOUND);
+      throw new EError(`Operation '${operation}' not found`, this.constructor.OP_NOT_FOUND_ERR);
     }
 
     return this._operations[this._aliases[operation]];
@@ -340,7 +337,7 @@ class OperationCollection {
    * @returns {OperationCollection}
    */
   execute(operation, args = []) {
-    const operation = new (this.get(operation, true))();
+    operation = new (this.get(operation, true))();
 
     if (!operation.ann("prevent_help") && OperationCollection.HELP_REGEX.test(args[0])) {
       return this.printHelp(operation);
@@ -351,7 +348,29 @@ class OperationCollection {
 
 }
 
-OperationCollection.OP_NOT_FOUND = -1;
+/**
+ * Create colored format of an argument.
+ *
+ * @param {string} argumentName
+ * @param {string} color
+ * @returns {string}
+ */
+OperationCollection.formatOptionalStr = (argumentName, color = "yellow") => {
+  return STR_OPTIONAL_START + argumentName[color] + STR_OPTIONAL_END;
+};
+
+/**
+ * Create colored format of an optional argument.
+ *
+ * @param {string} argumentName
+ * @param {string} color
+ * @returns {string}
+ */
+OperationCollection.formatArgumentStr = (argumentName, color = "yellow") => {
+  return STR_ARGUMENT_START + argumentName[color] + STR_ARGUMENT_END;
+};
+
+OperationCollection.OP_NOT_FOUND_ERR = "OP_NOT_FOUND_ERR";
 
 OperationCollection.HELP_REGEX = /^\?|--help|-h$/;
 

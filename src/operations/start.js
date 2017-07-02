@@ -46,7 +46,7 @@ class StartOperation {
     })
     .catch(console.error)
     .then(([,project]) => {
-      console.log(project.name + " started!");
+      console.log(project.name.red + " project started!");
       return project.getEnvironment()
     })
     .then((env) => {

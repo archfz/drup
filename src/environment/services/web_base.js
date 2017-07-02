@@ -57,7 +57,7 @@ class WebService extends ServiceBase {
     volumes.push({
       host: `./${this._dir("PROJECT")}`,
       container: DOCKER_WWW_ROOT,
-    })
+    });
 
     return super.getVolumes(volumes);
   }
@@ -84,6 +84,13 @@ class WebService extends ServiceBase {
    */
   getDocumentRoot() {
     return DOCKER_WWW_ROOT + this.config.relative_root;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  getProjectMountDirectory() {
+    return DOCKER_WWW_ROOT;
   }
 
   /**

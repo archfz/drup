@@ -8,6 +8,7 @@ const fs = require("fs-promise");
 const path = require("path");
 
 const ServiceCollection = require("./service_collection");
+const OperationCollection = require("../operation_collection");
 
 // Required configuration keys with validation function.
 const requiredConfig = {
@@ -220,47 +221,46 @@ class Environment {
   }
 
   /**
-   * Gets the provided operations from the configured services.
+   * Gets service operations and detached operations.
    *
-   * @returns {Array}
-   *    Array of objects representing operations. See ServiceBase::getOperations.
+   * @param {string} projectType
+   *    The type of project for which to get the operations.
+   *
+   * @return {OperationCollection}
    */
-  getServiceOperations() {
-    let opNames = {};
-    let operations = [];
+  getOperations(projectType) {
+    // Get detached environment operations.
+    const operations = new OperationCollection("Environment specific operations", __dirname + "/operations")
+      .addPredefinedArgument(this);
 
-    this.services.each((service) => {
-      const serviceOps = service.getOperations();
+    // Add all service operations.
+    this.services.each((service, id) => {
+      let dir = __dirname + "/services/" + id + "/operations";
 
-      if (!Array.isArray(serviceOps)) {
-        throw new Error(`Service getOperations() must return array. Service '${service.ann("id")}' did not.`);
+      if (fs.existsSync(dir)) {
+        operations.addFrom(dir);
       }
-
-      serviceOps.forEach((operation) => {
-        // Prevent duplicate service operation names.
-        if (opNames.hasOwnProperty(operation.name)) {
-          throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`);
-        }
-
-        opNames[operation.name] = service.ann("id");
-        operation.service = service.ann("id");
-        operations.push(operation);
-      });
     });
 
-    return operations;
+    // Filter out project specific operations.
+    return operations.filter((operation) => {
+      return !operation.ann("types") || operation.ann("types").split(/[,.;\s]+/).includes(projectType);
+    });
   }
 
   /**
-   * Run a service operation.
+   * Gets the primary mount directory of the project.
    *
-   * @param {Object} op
-   *    Object representing service operation.
-   * @param args
-   *    Arguments to pass to the operation.
+   * @return {string|boolean}
+   *   The path to the primary mount in containers otherwise false if none.
    */
-  runServiceOperation(op, args = []) {
-    return this.services.get(op.service).runOperation(op.baseName, args);
+  getProjectMountDirectory() {
+    const web = this.services.firstOfGroup("web");
+    if (web) {
+      return web.getProjectMountDirectory();
+    }
+
+    return false;
   }
 
   /**

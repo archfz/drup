@@ -8,6 +8,7 @@ const utils = require("../utils");
 const ProjectStorage = require("./storage");
 const Environment = require("../environment/environment");
 const ServiceCollection = require("../environment/service_collection");
+const OperationCollection = require("../operation_collection");
 
 /**
  * Project base class.
@@ -172,6 +173,19 @@ class ProjectBase {
   stop(getContainer = false) {
     return this.getEnvironment().then((env) => env.getContainer("docker").stop())
       .then((container) => getContainer ? container : this);
+  }
+
+  /**
+   * Get environment operations for this specific project.
+   *
+   * @returns {Promise.<OperationCollection>}
+   */
+  getOperations() {
+    return this.getEnvironment()
+      .then((env) => {
+        return env.getOperations(this._config.type)
+          .setUsageFormat(OperationCollection.formatOptionalStr("project-key", "red") + " {OP_ID}");
+      });
   }
 
   /**
