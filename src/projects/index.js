@@ -12,6 +12,7 @@ const globals = require("../globals");
 
 const act = require("./actions");
 
+const EError = require("../eerror");
 const Storage = require("./storage");
 const Task = require("../task");
 const Environment = require("../environment/environment");
@@ -249,7 +250,7 @@ class Projects {
     return Storage.get(key)
       .then((data) => {
         if (data === null) {
-          throw new Error(`Project not found by key '${key}'.`);
+          throw new EError(`Project not found by key '${key}'.`, Projects.NOT_FOUND_ERR);
         }
 
         return new (getProjectTypes()[data.type])(key, data.root, data.config);
@@ -269,7 +270,7 @@ class Projects {
     return Storage.getByDirectory(dir)
       .then((data) => {
         if (data === null) {
-          throw new Error(`Project not found in '${dir}'.`);
+          throw new EError(`Project not found in '${dir}'.`, Projects.NOT_FOUND_ERR);
         }
 
         const key = data.key;
@@ -301,5 +302,7 @@ class Projects {
 }
 
 Projects.STORAGE_FILE = path.join(globals.GLOBAL_STORE_ROOT, "projects.yml");
+
+Projects.NOT_FOUND_ERR = "PROJECT_NOT_FOUND";
 
 module.exports = Projects;

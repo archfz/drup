@@ -184,7 +184,7 @@ class SystemCommand {
     this._process.on("error", (err) => this._reject(err));
     this._process.on("exit", (code) => {
       if (code !== 0) {
-        this._reject(new Error(this.errorData + "\n" + code));
+        this._reject(new Error(`${this.errorData}\nCommand: ${this.toString()}\nExit code: ${code}`));
       }
       
       this._resolve(this.data + this.errorData);

@@ -24,7 +24,7 @@ class RegisterOperation {
 
     return Projects.register(directory)
       .then((project) => {
-        console.log("\n" + project.name + " is ready.");
+        console.log("\n" + project.name.red + " is ready.");
       })
       .catch(console.error);
   }

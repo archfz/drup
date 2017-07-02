@@ -75,6 +75,13 @@ class DockerContainer extends ContainerBase {
   }
 
   /**
+   * @inheritDoc
+   */
+  getNetworkName() {
+    return this.env.config.env_name + "_default";
+  }
+
+  /**
    * @inheritdoc
    */
   start() {
@@ -86,7 +93,7 @@ class DockerContainer extends ContainerBase {
     ]).execute().catch((error) => {
       throw new Error("Failed to start environment container:\n" + error);
     }).then(() => {
-      // This provides workaround for windows. By default on linux container
+      // This provides workaround for windows. By default on linux.sh container
       // IPs get exposed to hosts. On windows tough docker creates a Hyper-V
       // VM in which it puts the containers, and this VM is private. This is
       // the way to route those IPs to host.

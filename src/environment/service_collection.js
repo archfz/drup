@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs-promise");
 
 const annotatedLoader = require("../ann_loader");
 
@@ -50,7 +51,14 @@ class ServiceCollection {
       serviceDiscovery.frozen = true;
 
       servicePaths.forEach((pth) => {
-        annotatedLoader.collectDirectoryClasses(path.join(pth, "services"), "Service").forEach((service) => {
+        const servicePath = path.join(pth, "services");
+
+        // Only try to load services from existing directories.
+        if (!fs.existsSync(servicePath)) {
+          return;
+        }
+
+        annotatedLoader.collectDirectoryClasses(servicePath, "Service").forEach((service) => {
           ["id", "label", "group"].forEach((key) => {
             if (!service.annotations[key]) {
               throw new Error(`A service must define the '${key}' annotation.`);

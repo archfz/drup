@@ -7,7 +7,7 @@ const path = require("path");
 const WebProject = require("../web_base");
 const EnvConfigurator = require("../../../environment/environment_configurator");
 const Environment = require("../../../environment/environment");
-const ComposerCommand = require("../../../system/commands/composer");
+const ComposerCommand = require("../../../environment/commands/composer");
 
 /**
  * @ProjectType {
@@ -27,7 +27,7 @@ class Drupal extends WebProject {
         single: ["web", "database"]
       },
       service: {
-        required: ["php", "drush"],
+        required: ["php"],
         restricted: ["mongodb", "lighttpd"]
       }
     });
