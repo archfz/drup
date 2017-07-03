@@ -9,4 +9,5 @@ require("../src/terminal-utils/smart_term")();
 require("../src/terminal-utils/formatter").infect();
 
 // Parse the arguments and run the operation.
-require("../src/run_operation")(process.argv.slice(2));
+require("../src/run_operation")(process.argv.slice(2))
+  .then((code) => process.exit(code));

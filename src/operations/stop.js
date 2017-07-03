@@ -45,7 +45,7 @@ class StopOperation {
       projectLoad = Projects.load(key);
     }
 
-    projectLoad.then((project) => {
+    return projectLoad.then((project) => {
       loader = new Loader("Stopping " + project.name + " ...");
 
       return project.stop().then(() => project);

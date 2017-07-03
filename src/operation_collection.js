@@ -337,6 +337,10 @@ class OperationCollection {
    * @returns {OperationCollection}
    */
   execute(operation, args = []) {
+    if (!operation) {
+      throw new EError("No operation specified.", OperationCollection.NO_OP_ERR);
+    }
+
     operation = new (this.get(operation, true))();
 
     if (!operation.ann("prevent_help") && OperationCollection.HELP_REGEX.test(args[0])) {
@@ -371,6 +375,7 @@ OperationCollection.formatArgumentStr = (argumentName, color = "yellow") => {
 };
 
 OperationCollection.OP_NOT_FOUND_ERR = "OP_NOT_FOUND_ERR";
+OperationCollection.NO_OP_ERR = "NO_OP_ERR";
 
 OperationCollection.HELP_REGEX = /^\?|--help|-h$/;
 

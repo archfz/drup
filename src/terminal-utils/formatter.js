@@ -157,6 +157,8 @@ const Formatter = module.exports = {
       }
 
       Formatter.error(str);
+      // Used for exit codes.
+      return 1;
     };
 
     console.warn = function(str, ...args) {
