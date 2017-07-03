@@ -20,15 +20,8 @@ const Projects = require("../projects");
 class InfoOperation {
 
   execute(args, workDir) {
-    let projectLoad;
     const key = args.shift();
-
-    if (key === null) {
-      projectLoad = Projects.loadDir(workDir);
-    }
-    else {
-      projectLoad = Projects.load(key);
-    }
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
 
     return projectLoad.then((project) => project.printInformation())
       .catch(console.error);

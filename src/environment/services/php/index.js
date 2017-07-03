@@ -48,7 +48,7 @@ module.exports = class PhpService extends Service {
     versions.forEach((version) => {
       choices.push({
         name: version,
-        checked: version == this.config.version,
+        checked: version === this.config.version,
       });
     });
 
@@ -78,11 +78,6 @@ module.exports = class PhpService extends Service {
         PHP_XDEBUG: this.config.xdebug,
         PHP_EXTENSIONS: this.config.additional_extensions,
       },
-      volumes: [
-        `./config/${this.ann("id")}/custom.ini:/usr/local/etc/php/conf.d/custom.ini`,
-        `./config/${this.ann("id")}/www.conf:/usr/local/etc/php-fpm.d/www.conf`,
-        `./config/${this.ann("id")}/ssmtp.conf:/etc/ssmtp/ssmtp.conf`
-      ]
     };
 
     // Allow running php-fpm as root user on windows. See at config files for
@@ -100,10 +95,13 @@ module.exports = class PhpService extends Service {
   getVolumes() {
     return super.getVolumes([{
       host: `./config/${this.ann("id")}/custom.ini`,
-      container: "/usr/local/etc/php/conf.d/custom.ini",
+      container: `/usr/local/etc/php/conf.d/custom.ini`,
     }, {
       host: `./config/${this.ann("id")}/www.conf`,
-      container:  "/usr/local/etc/php-fpm.d/www.conf",
+      container: `/usr/local/etc/php-fpm.d/www.conf`,
+    }, {
+      host: `./config/${this.ann("id")}/ssmtp.conf`,
+      container: `/etc/ssmtp/ssmtp.conf`,
     }]);
   }
 
@@ -119,7 +117,7 @@ module.exports = class PhpService extends Service {
     }
 
     this.config.additional_extensions = this.config.additional_extensions
-      .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) == i);
+      .concat(extension).filter((ext, i, arr) => arr.indexOf(ext) === i);
   }
 
   /**

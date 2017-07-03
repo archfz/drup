@@ -12,22 +12,22 @@ let projectInCwd = false;
 let projectOperations;
 
 function showHelp() {
-  if (project && !projectInCwd) {
-    // If operation was not given but project was loaded by key
-    // show help for the project specific operations.
-    if (!operation) {
-      projectOperations.printList();
-    }
-    // Otherwise the operation was not found for the project.
-    else {
+  // If operation was not given but project was loaded by key
+  // show help for the project specific operations.
+  if (project && !projectInCwd && !OperationCollection.HELP_REGEX.exec(operation)) {
+    if (operation) {
       // Print not found if the operation is not a help request.
-      if (!OperationCollection.HELP_REGEX.exec(operation)) {
-        console.log("NOT FOUND: ".red + "Project " + project.name.red + " does not have operation " + operation.green + "\n");
-      }
-      projectOperations.printList();
+      console.log("NOT FOUND: ".red + "Project " + project.name.red + " does not have operation " + operation.green + "\n");
     }
 
+    projectOperations.printList();
     return;
+  }
+
+  // If no operation/key was given then show all help.
+  if (!operation || OperationCollection.HELP_REGEX.exec(operation)) {
+    primaryOperations.printList();
+    projectOperations && projectOperations.printList();
   }
 
   // If the project was loaded from directory it means that
@@ -38,18 +38,30 @@ function showHelp() {
     primaryOperations.printList();
     projectOperations.printList();
   }
+}
 
-  // If no operation/key was given then show all help.
-  if (!operation || OperationCollection.HELP_REGEX.test(operation)) {
-    primaryOperations.printList();
-    projectOperations && projectOperations.printList();
+function pipeHelp(err) {
+  if (
+    err.name !== OperationCollection.OP_NOT_FOUND_ERR &&
+    err.name !== OperationCollection.NO_OP_ERR
+  ) {
+    throw err;
   }
+
+  // At this point there was no primary operation and no
+  // project could be loaded neither way.
+  showHelp();
+  // If no project could be loaded it means that something
+  // was wrong.
+  return 1;
 }
 
 function runProjectOperations(projectLoad, args) {
-  operation = args.shift();
-
-  return projectLoad.then((project) => project.getOperations())
+  return projectLoad.then((proj) => {
+      project = proj;
+      operation = args.shift();
+      return proj.getOperations();
+    })
     // At this point we are assured that a project exists either
     // from current working directory or by first argument as key.
     .then((operations) => {
@@ -57,7 +69,7 @@ function runProjectOperations(projectLoad, args) {
 
       projectOperations = operations;
       return projectOperations.execute(operation, args)
-        // Exit code 0 if all went during the operation.
+        // Exit code 0 if all went good during the operation.
         .then(() => 0);
     })
     .catch((err) => {
@@ -69,7 +81,8 @@ function runProjectOperations(projectLoad, args) {
         throw err;
       }
 
-      throw OperationCollection.OP_NOT_FOUND_ERR;
+      err.name = OperationCollection.OP_NOT_FOUND_ERR;
+      throw err;
     });
 }
 
@@ -86,8 +99,9 @@ module.exports = (args = []) => {
   if (primaryOperations.has(args[0])) {
     operation = args.shift();
     return primaryOperations.execute(operation, args)
-    // Exit code 0.
-      .then(() => 0);
+      // Exit code 0.
+      .then(() => 0)
+      .catch(pipeHelp);
   }
 
   // At this point no primary operations was found for the key.
@@ -100,28 +114,20 @@ module.exports = (args = []) => {
   return runProjectOperations(Projects.load(args[0]), args.slice(1))
     .catch((err) => {
       // Send real errors till the end of chain.
-      if (err.name !== OperationCollection.OP_NOT_FOUND_ERR) {
+      if (
+        err.name !== OperationCollection.OP_NOT_FOUND_ERR ||
+        // In case the project is under current working directory
+        // but was called with key and failed, then there is no
+        // point in calling the project with it's key as operation.
+        (project && project.key === args[0])
+      ) {
         throw err;
       }
       // At this point either the project could not be loaded
       // or it was loaded but did not have operation.
       return runProjectOperations(Projects.loadDir(process.cwd()), args);
     })
-    .catch((err) => {
-      if (
-        err.name !== OperationCollection.OP_NOT_FOUND_ERR &&
-        err.name !== OperationCollection.NO_OP_ERR
-      ) {
-        throw err;
-      }
-
-      // At this point there was no primary operation and no
-      // project could be loaded neither way.
-      showHelp();
-      // If no project could be loaded it means that something
-      // was wrong.
-      return 1;
-    })
+    .catch(pipeHelp)
     .catch(console.error);
 
 };

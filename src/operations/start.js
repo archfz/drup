@@ -23,15 +23,9 @@ const Loader = require("../terminal-utils/async_loader");
 class StartOperation {
 
   execute(args, workDir) {
-    let projectLoad;
     const key = args.shift();
 
-    if (key === null) {
-      projectLoad = Projects.loadDir(workDir);
-    }
-    else {
-      projectLoad = Projects.load(key);
-    }
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
 
     return projectLoad.then((project) => {
       let startLoader = new Loader("Starting " + project.name + " ...");

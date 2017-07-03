@@ -34,16 +34,10 @@ const Loader = require("../terminal-utils/async_loader");
 class StopOperation {
 
   execute(args, workDir) {
-    let projectLoad;
     let loader;
     const key = args.shift();
 
-    if (key === null) {
-      projectLoad = Projects.loadDir(workDir);
-    }
-    else {
-      projectLoad = Projects.load(key);
-    }
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
 
     return projectLoad.then((project) => {
       loader = new Loader("Stopping " + project.name + " ...");
