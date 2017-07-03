@@ -116,6 +116,10 @@ class DirectoryInput extends InputBase {
       return "The path must be absolute.";
     }
 
+    if (directory.match(/\\+/)) {
+      return "Invalid directory path.";
+    }
+
     return true;
   }
 
@@ -258,6 +262,9 @@ class DirectoryInput extends InputBase {
   _doTransformRelative(directory) {
     if(["./", ".\\"].includes(directory.substr(0, 2))) {
       return path.normalize(process.cwd() + directory.substr(1));
+    }
+    else if (directory.substr(0, 2) === "~/") {
+      return path.normalize(os.homedir() + directory.substr(1));
     }
 
     return directory;
