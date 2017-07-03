@@ -4,9 +4,9 @@ const Service = require("../../service_base");
 
 /**
  * @Service {
- *  @id "postfix"
- *  @group "mail"
- *  @label "PostFix"
+ *  @id "postfix",
+ *  @group "mail",
+ *  @label "PostFix",
  * }
  */
 module.exports = class PostfixService extends Service {

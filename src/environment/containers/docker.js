@@ -78,7 +78,7 @@ class DockerContainer extends ContainerBase {
    * @inheritDoc
    */
   getNetworkName() {
-    return this.env.config.env_name + "_default";
+    return this.env.getId() + "_default";
   }
 
   /**

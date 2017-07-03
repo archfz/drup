@@ -12,7 +12,7 @@ class MysqlDumpOperation extends AttachedCommand {
     this.arguments.push(
       "-u " + dbService.config.user,
       "-p" + dbService.config.password,
-      environment.config.env_name
+      environment.getId()
    );
   }
 

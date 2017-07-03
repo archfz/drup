@@ -86,7 +86,7 @@ class ServiceBase {
    *    The container name.
    */
   getContainerName() {
-    return this.env.config.env_name + "_" + this.ann("id") + "_1";
+    return this.env.getId() + "_" + this.ann("id") + "_1";
   }
 
   /**
