@@ -35,7 +35,7 @@ module.exports = class PhpService extends Service {
       },
       ini_settings: {
         label: "Custom INI settings",
-        default: [],
+        default: {},
       },
     };
   }
