@@ -8,7 +8,7 @@ class ComposerOperation extends ComposerCommand {
   constructor(environment, args, hostWorkDir) {
     super(args);
 
-    this.mountEnvironment(environment);
+    this.mountEnvironment(environment, ComposerCommand.COMPOSER_WORK_DIR);
     this.setRelativeWorkingDirectory(environment, "", hostWorkDir);
   }
 

@@ -33,10 +33,10 @@ class DetachedCommand extends SystemCommand {
     }
   }
 
-  mountEnvironment(environment) {
+  mountEnvironment(environment, mountPath = null) {
     this.mountVolume(
       path.join(environment.root, Environment.DIRECTORIES.PROJECT),
-      environment.getProjectMountDirectory()
+      mountPath || environment.getProjectMountDirectory()
     );
   }
 
