@@ -111,7 +111,11 @@ class ProjectBase {
    */
   setup() {
     this._config.setup = true;
-    return this.save();
+    return this.getEnvironment()
+      .then((env) => env.getContainer("docker"))
+      // Set the files group owner to the primary one.
+      .then((docker) => docker.setFilesGroupOwner())
+      .then(() => this.save);
   }
 
   /**

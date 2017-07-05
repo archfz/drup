@@ -257,7 +257,7 @@ class Environment {
   getProjectMountDirectory() {
     const web = this.services.firstOfGroup("web");
     if (web) {
-      return web.getProjectMountDirectory();
+      return web.getProjectMountPath();
     }
 
     return false;

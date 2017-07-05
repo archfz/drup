@@ -87,13 +87,6 @@ class WebService extends ServiceBase {
   }
 
   /**
-   * {@inheritDoc}
-   */
-  getProjectMountDirectory() {
-    return DOCKER_WWW_ROOT;
-  }
-
-  /**
    * Add additional index files.
    *
    * @param {string|string[]} index

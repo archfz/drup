@@ -12,6 +12,7 @@ const versions = ["7.1", "7.0" , "5.6" ];
  *  @id "php",
  *  @group "engine",
  *  @label "PHP",
+ *  @gidName "www-data"
  * }
  */
 module.exports = class PhpService extends Service {

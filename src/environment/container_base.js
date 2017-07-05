@@ -94,6 +94,18 @@ class ContainerBase {
   }
 
   /**
+   * Sets the project files group owner.
+   *
+   * The group owner will be determined from the annotation
+   * of the services.
+   *
+   * @return {Promise}
+   */
+  setFilesGroupOwner() {
+    utils.mustImplement(this, "setFilesGroupOwner");
+  }
+
+  /**
    * Compose services.
    *
    * @return {Object}

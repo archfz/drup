@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const os = require("os");
 
 const SystemCommand = require("../system/system_command");
 
@@ -14,7 +15,13 @@ class AttachedCommand extends SystemCommand {
     super("docker-compose", args);
 
     this.environment = environment;
-    this.dockerArgs = ["exec", serviceId, executable];
+    this.dockerArgs = ["exec"];
+
+    if (os.platform() === "linux") {
+      this.dockerArgs.push("--user", "$(id -u)");
+    }
+
+    this.dockerArgs.push(serviceId, executable);
   }
 
   /**

@@ -8,6 +8,7 @@ const os = require("os");
 const aliasManager = require("../../hosts_manager");
 
 const Command = require('../../system/system_command');
+const AttachedCommand = require('../attached_command');
 const ContainerBase = require('../container_base');
 const Template = require('../../template');
 
@@ -288,6 +289,39 @@ class DockerContainer extends ContainerBase {
       .catch((error) => {
       throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
+  }
+
+  /**
+   * @inheritDoc
+   */
+  setFilesGroupOwner() {
+    // On windows doesn't make sens.
+    // At the moment should only apply to linux.
+    if (os.platform() !== "linux") {
+      return Promise.resolve();
+    }
+
+    // Get the first service that declares group owning.
+    let groupService = false;
+    this.env.services.each(function (service) {
+      if (service.ann("gidName")) {
+        groupService = service;
+        return false;
+      }
+    });
+
+    if (!groupService) {
+      return Promise.resolve();
+    }
+
+    // Set the group owner of all files to the specified group name.
+    // We have to do this from the container so that the right GID
+    // is used. The user with that name can have different GID.
+    return new AttachedCommand(this.env, groupService.ann("id"), "chown", [
+      ":" + groupService.ann("gidName"),
+      groupService.getProjectMountPath(),
+      "-R"
+    ]).execute();
   }
 
 }

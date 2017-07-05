@@ -104,7 +104,9 @@ class ServiceCollection {
    */
   each(fn) {
     for (let [id, service] of Object.entries(this.servicesById)) {
-      fn(service, id);
+      if (fn(service, id) === false) {
+        break;
+      }
     }
   }
 

@@ -90,13 +90,44 @@ class ServiceBase {
   }
 
   /**
-   * Gets the primary mount of the service.
+   * Gets the mount for a certain local path.
    *
-   * @returns {string|boolean}\
-   *   Path to primary directory mount location or false if none.
+   * @param {string} hostPath
+   *   The local path.
+   * @param {boolean} relative
+   *   (Optional) If set to true then the hostPath will be appended
+   *   with './'.
+   *
+   * @return {string|boolean}
+   *   The mount path or false if not mounted.
    */
-  getProjectMountDirectory() {
-    return false;
+  getMountPath(hostPath, relative = false) {
+    let mountPath = false;
+
+    if (relative) {
+      hostPath = "./" + hostPath;
+    }
+
+    hostPath = path.normalize(hostPath);
+
+    this.getVolumes().forEach((mount) => {
+      if (path.normalize(mount.host) === hostPath) {
+        mountPath = mount.container;
+        return false;
+      }
+    });
+
+    return mountPath;
+  }
+
+  /**
+   * Gets the project mount path.
+   *
+   * @returns {string|boolean}
+   *   The path or false if not mounted.
+   */
+  getProjectMountPath() {
+    return this.getMountPath(this._dir("PROJECT"), true);
   }
 
   /**

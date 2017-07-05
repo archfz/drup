@@ -1,5 +1,6 @@
 "use strict";
 
+const os = require("os");
 const path = require("path");
 
 const SystemCommand = require("../system/system_command");
@@ -12,6 +13,10 @@ class DetachedCommand extends SystemCommand {
 
     this.dockerImage = image;
     this.dockerArgs = ["run", "-i", "--rm"];
+
+    if (os.platform() === "linux") {
+      this.dockerArgs.push("--user", "$(id -u)");
+    }
 
     this.setWorkingDirectory(workDir);
   }
