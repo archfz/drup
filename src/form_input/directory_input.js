@@ -116,7 +116,7 @@ class DirectoryInput extends InputBase {
       return "The path must be absolute.";
     }
 
-    if (directory.match(/\\+/)) {
+    if (directory.match(/^\\+/)) {
       return "Invalid directory path.";
     }
 
