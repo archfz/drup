@@ -36,7 +36,7 @@ class DetachedCommand extends SystemCommand {
   }
 
   mountVolume(hostDir, containerDir) {
-    this.dockerArgs.push("-v", path.normalize(hostDir) + ":" + path.normalize(containerDir));
+    this.dockerArgs.push("-v", path.normalize(hostDir) + ":" + containerDir);
   }
 
   setWorkingDirectory(dir) {
