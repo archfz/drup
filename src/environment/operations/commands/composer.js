@@ -5,6 +5,9 @@ const ComposerCommand = require("../../commands/composer");
 
 class ComposerOperation extends ComposerCommand {
 
+  /**
+   * @inheritDoc
+   */
   constructor(environment, args, hostWorkDir) {
     super(args);
 

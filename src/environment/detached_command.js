@@ -2,12 +2,27 @@
 
 const os = require("os");
 const path = require("path");
+const upath = require("upath");
 
 const SystemCommand = require("../system/system_command");
 const Environment = require("./environment");
+const EError = require("../eerror");
 
+/**
+ * Provides detached docker command in means of standalone image.
+ */
 class DetachedCommand extends SystemCommand {
 
+  /**
+   * Detached command constructor.
+   *
+   * @param {string} image
+   *    The container image.
+   * @param {string} workDir
+   *    The working directory in the container.
+   * @param {Array} args
+   *    The arguments to send to the executable in the container.
+   */
   constructor(image, workDir, args) {
     super("docker", args);
 
@@ -21,6 +36,11 @@ class DetachedCommand extends SystemCommand {
     this.setWorkingDirectory(workDir);
   }
 
+  /**
+   * Connects environments network to this the commands container network.
+   *
+   * @param {Environment} environment
+   */
   connectNetwork(environment) {
     const netIndex = this.dockerArgs.indexOf("--network");
     const network = environment.getContainer("docker").getNetworkName();
@@ -33,6 +53,13 @@ class DetachedCommand extends SystemCommand {
     }
   }
 
+  /**
+   * Mounts environments directories to the command container.
+   *
+   * @param {Environment} environment
+   * @param {string} mountPath
+   *   (Optional) Overrides primary mount directory inside path.
+   */
   mountEnvironment(environment, mountPath = null) {
     this.mountVolume(
       path.join(environment.root, Environment.DIRECTORIES.PROJECT),
@@ -40,11 +67,33 @@ class DetachedCommand extends SystemCommand {
     );
   }
 
+  /**
+   * Mounts directory to the command container.
+   *
+   * @param {string} hostDir
+   * @param {string} containerDir
+   */
   mountVolume(hostDir, containerDir) {
-    this.dockerArgs.push("-v", path.normalize(hostDir) + ":" + containerDir);
+    this.dockerArgs.push("-v", path.normalize(hostDir) + ":" + path.posix.normalize(containerDir));
   }
 
+  /**
+   * Sets the working directory in container.
+   *
+   * @param {string} dir
+   */
   setWorkingDirectory(dir) {
+    if (typeof dir !== "string") {
+      throw new EError(`Working directory paths must be string, provided: "${dir}"`);
+    }
+
+    // The working directory should always be in posix format as we are only
+    // operating on linux in containers.
+    dir = upath.normalize(dir);
+
+    // Working directories should always be absolute.
+    dir = dir[0] === "/" ? dir : "/" + dir;
+
     this.workingDirectory = dir;
     let wIndex = this.dockerArgs.indexOf("-w");
 
@@ -56,6 +105,15 @@ class DetachedCommand extends SystemCommand {
     }
   }
 
+  /**
+   * Sets relative working directory in container.
+   *
+   * @param {Environment} environment
+   * @param {string} minWorkDir
+   *    The minimum relative working directory inside path.
+   * @param {string} hostWorkDir
+   *    The directory of the host for which to calculate relative path.
+   */
   setRelativeWorkingDirectory(environment, minWorkDir = "", hostWorkDir = process.cwd()) {
     let hostRoot = path.join(environment.root, Environment.DIRECTORIES.PROJECT, minWorkDir);
     let contRoot = path.join(this.workingDirectory, minWorkDir);

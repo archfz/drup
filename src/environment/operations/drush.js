@@ -14,6 +14,9 @@
  */
 class DrushOperation {
 
+  /**
+   * @inheritDoc
+   */
   execute(environment, args, workDir) {
     const cmd = new (require("./commands/drush"))(environment, args, workDir);
     return cmd.inheritStdio().execute();

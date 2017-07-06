@@ -5,8 +5,23 @@ const os = require("os");
 
 const SystemCommand = require("../system/system_command");
 
+/**
+ * Provides command for environment containers.
+ * These are good for running executables inside the containers of environments.
+ */
 class AttachedCommand extends SystemCommand {
 
+  /**
+   * Attached command constructor.
+   *
+   * @param {Environment} environment
+   * @param {string} serviceId
+   *    The service ID to run executable in.
+   * @param {string} executable
+   *    The executable name.
+   * @param {Array} args
+   *    The arguments to pass to executable.
+   */
   constructor(environment, serviceId, executable, args) {
     if (!environment.services.has(serviceId)) {
       throw new Error(`Failed to build attached command. Environment does not have service with ID '${serviceId}'.`);

@@ -17,6 +17,9 @@
  */
 class ShellOperation {
 
+  /**
+   * @inheritDoc
+   */
   execute(environment, args, workDir) {
     if (args.length < 1) {
       throw new Error("You must provide the service ID for which to create the shell terminal.");

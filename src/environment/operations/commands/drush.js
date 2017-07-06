@@ -5,6 +5,9 @@ const DetachedCommand = require("../../detached_command");
 
 class DrushOperation extends DetachedCommand {
 
+  /**
+   * @inheritDoc
+   */
   constructor(environment, args, hostWorkDir) {
     super("drush/drush", "", args);
 
