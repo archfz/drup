@@ -7,6 +7,8 @@ const consoleLog = console.log;
 const consoleWarn = console.warn;
 const consoleError = console.error;
 
+const EError = require("../eerror");
+
 function padd(str, length = process.stdout.columns) {
   return str + " ".repeat(length - str.length % length);
 }
@@ -96,6 +98,26 @@ const Formatter = module.exports = {
    */
   error(error) {
     consoleLog();
+
+    // Handling extended errors which provided in better format error data.
+    if (error instanceof EError) {
+      consoleLog();
+      consoleLog("!! ERROR ".red + "& STACK".yellow);
+      consoleLog("  ¨¨¨¨¨¨ ".red + "¨".yellow.repeat(process.stdout.columns - "  ¨¨¨¨¨¨ ".length) + "\n");
+
+      let messageNum = 0;
+      error.getStackedErrors().forEach((error) => {
+          error.messages.forEach((message, i) => {
+            console.log((i === 0 ? (" #" + (++messageNum)).red : "   ") + " " + message)
+          });
+          error.stacks.forEach((stack) => console.log("  • ".yellow + stack.gray));
+          console.log();
+      });
+
+      return;
+    }
+
+    // Handling for default errors.
     Formatter.heading("ERROR", "!!".red, "red");
 
     if (!(error instanceof Error)) {

@@ -132,7 +132,7 @@ class ServiceCollection {
    */
   get(id) {
     if (!this.has(id)) {
-      throw new Error("Tried to get un-existent service by ID: " + id);
+      throw new Error(`Tried to get un-existent service by ID: "${id}"`);
     }
 
     return this.servicesById[id];

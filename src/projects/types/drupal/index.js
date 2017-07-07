@@ -81,7 +81,7 @@ class Drupal extends WebProject {
         cmd = new ComposerCommand(params, dir);
         break;
       default:
-        throw new Error("Unhandled creation method: " + method);
+        throw new Error(`Unhandled creation method: "${method}"`);
     }
 
     return cmd;

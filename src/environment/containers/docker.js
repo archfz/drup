@@ -11,6 +11,7 @@ const Command = require('../../system/system_command');
 const AttachedCommand = require('../attached_command');
 const ContainerBase = require('../container_base');
 const Template = require('../../template');
+const EError = require('../../eerror');
 
 const DOCKER_FILES_DIRNAME = ".docker-files";
 
@@ -39,7 +40,7 @@ class DockerContainer extends ContainerBase {
         let group = this.env.services.ofGroup(serviceOrGroupName);
 
         if (group === false) {
-          throw new Error("No services found in the group: " + serviceOrGroupName);
+          throw new EError("No services found in the group: " + serviceOrGroupName);
         }
 
         serviceOrGroupName = group[Object.keys(group)[0]].ann("id");
@@ -56,13 +57,13 @@ class DockerContainer extends ContainerBase {
 
     return cmd.execute().then((output) => {
       if (output.length < 5) {
-        throw new Error("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
+        throw new EError("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
       }
 
       let ips = output.split("\n");
       ips.pop();
 
-      if (ips.length == 1) {
+      if (ips.length === 1) {
         return ips[0];
       }
 
@@ -91,8 +92,8 @@ class DockerContainer extends ContainerBase {
     return new Command("docker-compose", [
       ["-p", this.env.getId()],
       ["up", "-d"],
-    ]).execute().catch((error) => {
-      throw new Error("Failed to start environment container:\n" + error);
+    ]).execute().catch((err) => {
+      throw new EError("Failed to start environment container.").inherit(err);
     }).then(() => {
       // This provides workaround for windows. By default on linux.sh container
       // IPs get exposed to hosts. On windows tough docker creates a Hyper-V
@@ -119,7 +120,7 @@ class DockerContainer extends ContainerBase {
               "bin/sh", "-c", "\"iptables -A FORWARD -j ACCEPT\""
             ]).execute()
           ).catch((err) => {
-            throw Error("Failed to expose container IPs to hosts on windows.\n" + err);
+            throw new EError("Failed to expose container IPs to hosts on windows.").inherit(err);
           });
       }
     }).then(() => {
@@ -167,8 +168,8 @@ class DockerContainer extends ContainerBase {
       "stop"
     ]).execute()
       .then(() => {return this;})
-      .catch((error) => {
-        throw new Error("Failed to stop environment container:\n" + error);
+      .catch((err) => {
+        throw new EError("Failed to stop environment container.").inherit(err);
       });
   }
 
@@ -178,7 +179,7 @@ class DockerContainer extends ContainerBase {
   command(command, execOptions = ["exec"], execInService = "web") {
     this.directoryToPath();
 
-    if (execInService == "web") {
+    if (execInService === "web") {
       execInService = this.services.ofGroup("web")[0];
     }
 
@@ -192,7 +193,7 @@ class DockerContainer extends ContainerBase {
     ]).inheritStdio();
 
     return cmd.execute().then(() => this).catch((error) => {
-      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
+      throw new EError(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
   }
 
@@ -209,7 +210,7 @@ class DockerContainer extends ContainerBase {
       composition.services[id] = Service.compose(this.ann("id"));
 
       if (composition.services[id].volumes) {
-        throw new Error(`Services must provide volumes from 'getVolumes()' method. Service '${Service.ann("id")}' added from composition.`);
+        throw new EError(`Services must provide volumes from 'getVolumes()' method. Service '${Service.ann("id")}' added from composition.`);
       }
 
       composition.services[id].volumes = Service.getVolumes().map((volume) => {
@@ -268,7 +269,7 @@ class DockerContainer extends ContainerBase {
         return Template.from(templatePath).compile(args, destPath);
       })
       .catch((err) => {
-        throw new Error(`Failed writing Dockerfile for '${serviceId}' service:\n` + err);
+        throw new EError(`Failed writing Dockerfile for '${serviceId}' service.`).inherit(err);
       });
   }
 
@@ -286,8 +287,8 @@ class DockerContainer extends ContainerBase {
         return cmd.execute();
       })
       .then(() => {return this;})
-      .catch((error) => {
-      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
+      .catch((err) => {
+      throw new EError(`Failed to run docker command:\n ${cmd.toString()}.`).inherit(err);
     });
   }
 

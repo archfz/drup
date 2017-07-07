@@ -10,6 +10,8 @@ const path = require("path");
 const ServiceCollection = require("./service_collection");
 const OperationCollection = require("../operation_collection");
 
+const EError = require("../eerror");
+
 // Required configuration keys with validation function.
 const requiredConfig = {
 
@@ -85,7 +87,7 @@ class Environment {
    * @param {string} root
    *    The root directory for the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {Environment}
    */
   static create(id, envConfigurator, config, root) {
@@ -111,10 +113,12 @@ class Environment {
    *
    * @param {string} id
    *    ID of the environment.
+   * @param {Object} config
+   *    The environment config.
    * @param {string} root
    *    Root directory of the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {Environment}
    */
   static load(id, config, root) {
@@ -125,6 +129,11 @@ class Environment {
     // If failed to read from root try to read from root/project as the user
     // may choose to save in root or under the project to include in repo.
       .catch((err) => {
+        // Other errors can happen, but we are only handling the not found.
+        if (err.code !== "ENOENT") {
+          throw err;
+        }
+
         configPath = path.join(root, Environment.DIRECTORIES.PROJECT);
         return this.readConfig(configPath);
       })
@@ -139,7 +148,7 @@ class Environment {
         return env;
       })
       .catch((err) => {
-        throw new Error(`Failed instantiating environment from config.\n` + err);
+        throw new EError(`Failed instantiating environment from config.`).inherit(err);
       });
   }
 
@@ -149,7 +158,7 @@ class Environment {
    * @param root
    *    Root directory of the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Object>}
    * @resolve {Object}
    *    Environment configuration object.
    */
@@ -158,7 +167,7 @@ class Environment {
 
     return yaml.read(root)
       .catch((err) => {
-        throw new Error(`Failed reading environment config:\nPATH: ${root}\n` + err);
+        throw new EError(`Failed reading environment config:\nPATH: ${root}`).inherit(err);
       });
   }
 
@@ -269,7 +278,7 @@ class Environment {
    * @param includeInProject
    *    Whether to include the configuration in the project directory.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {self}
    */
   save(includeInProject = true) {
@@ -293,7 +302,7 @@ class Environment {
     if (this.configFile && this.configFile !== saveTo) {
       promise = fs.unlink(this.configFile)
         .catch((err) => {
-          throw new Error("Failed removing old environment config file:\n" + err);
+          throw new EError("Failed removing old environment config file.").inherit(err);
         });
     }
     // If this is a new environment first create the directory structure.
@@ -303,7 +312,7 @@ class Environment {
 
     return promise.then(() => yaml.write(saveTo, environment))
       .catch((err) => {
-        throw new Error("Failed to save environment configuration.\n" + err);
+        throw new EError("Failed to save environment configuration.").inherit(err);
       })
       .then(() => this);
   }
@@ -314,12 +323,12 @@ class Environment {
    * @param {string} containerType
    *    Container handler ID. "*" will compose all containers.
    *
-   * @returns {Promise}
+   * @returns {Promise.<ContainerBase|ContainerBase[]>}
    * @resolve {ContainerBase|ContainerBase[]}
    *    Container handler.
    */
   composeContainer(containerType) {
-    if (containerType == "*") {
+    if (containerType === "*") {
       let promises = [];
 
       for (let [, Container] of Object.entries(getContainerTypes())) {
@@ -336,7 +345,7 @@ class Environment {
     return promise.then(() => {
         return container;
       }).catch((err) => {
-        throw new Error(`Failed writing ${container.ann("id")} container composition: ` + err);
+        throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
       });
   }
 
@@ -352,7 +361,7 @@ class Environment {
     let containers = getContainerTypes();
 
     if (!containers[containerType]) {
-      throw new Error("Unknown container type: " + containerType);
+      throw new Error(`Unknown container type: "${containerType}"`);
     }
 
     return new containers[containerType](this);
@@ -372,7 +381,7 @@ class Environment {
 
     return Promise.all(promises)
       .catch((err) => {
-        throw new Error(`Failed creating configuration files for services.\n` + err);
+        throw new EError(`Failed creating configuration files for services.`).inherit(err);
       });
   }
 
@@ -403,7 +412,7 @@ class Environment {
    *    Event identifier.
    * @param {Array} args
    *
-   * @returns {self}
+   * @returns {Environment}
    * @private
    */
   _fireEvent(eventType, ...args) {
@@ -422,7 +431,7 @@ class Environment {
    * @param {Function} callback
    *    Callback function.
    *
-   * @returns {self}
+   * @returns {Environment}
    */
   on(eventType, callback) {
     if (typeof callback !== "function") {

@@ -10,6 +10,8 @@ const Environment = require("../environment/environment");
 const ServiceCollection = require("../environment/service_collection");
 const OperationCollection = require("../operation_collection");
 
+const EError = require("../eerror");
+
 /**
  * Project base class.
  */
@@ -267,7 +269,7 @@ class ProjectBase {
           return env;
         })
         .catch((err) => {
-          throw new Error(`Could not load environment for ${this.name} project.\n` + err);
+          throw new EError(`Could not load environment for ${this.name} project.`).inherit(err);
         });
     }
 

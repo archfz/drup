@@ -438,13 +438,9 @@ class Task {
             return stack.actions.start(this._data);
           }
         }
-        // The simple stack action handling.
-        else {
-          return Promise.all(this._processActions(stack.actions));
-        }
 
-        // TODO: what?
-        return Promise.resolve();
+        // The simple stack action handling.
+        return Promise.all(this._processActions(stack.actions));
       });
     });
 

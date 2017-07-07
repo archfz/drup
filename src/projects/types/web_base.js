@@ -5,8 +5,9 @@ const path = require("path");
 const inquirer = require("inquirer");
 
 const ProjectBase = require("../base");
-
 const AliasInput = require("../inputs/alias_input");
+
+const EError = require("../../eerror");
 
 /**
  * Base class for web projects.
@@ -68,7 +69,7 @@ class WebProject extends ProjectBase {
           stream.destroy();
         });
     }).catch((err) => {
-      throw new Error(`Could not find document root for ${this.constructor.name} web project.\n${err}`)
+      throw new EError(`Could not find document root for ${this.constructor.name} web project.`).inherit(err);
     });
   }
 

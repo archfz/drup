@@ -3,19 +3,6 @@
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
-/*
-
- arguments: [
- {
- name: "key",
- description: "The key of the project.",
- default: "Current directory project.",
- optional: true,
- }
- ],
-
- */
-
 /**
  * @Operation {
  *  @id "stop",
@@ -25,8 +12,8 @@ const Loader = require("../terminal-utils/async_loader");
  *  @weight 101,
  *  @arguments {
  *    "key": {
- *      "description": "Root directory of the project to register.",
- *      "default": "Current working directory."
+ *      "description": "The key of the project.",
+ *      "default": "Current working directory project."
  *    }
  *  }
  * }

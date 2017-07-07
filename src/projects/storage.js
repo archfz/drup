@@ -5,6 +5,7 @@ const path = require("path");
 const pathIsInside = require("path-is-inside");
 const fs = require("fs-promise");
 
+const EError = require("../eerror");
 const globals = require("../globals");
 
 let _storage;
@@ -31,7 +32,7 @@ function getStorage() {
         return {};
       }
 
-      throw new Error(`Failed loading in project storage file:\nFILE: ${ProjectStorage.FULLPATH}\n` + err);
+      throw new new EError(`Failed loading in project storage file:\nFILE: ${ProjectStorage.FULLPATH}`).inherit(err);
     })
     .then((data) => {
       _storage = data;
@@ -97,7 +98,7 @@ class ProjectStorage {
         return yaml.write(ProjectStorage.FULLPATH, storage);
       })
       .catch((err) => {
-        throw new Error(`Failed saving project storage when setting '${key}'.` + err);
+        throw new EError(`Failed saving project storage when setting '${key}'.`).inherit(err);
       });
   }
 
@@ -120,7 +121,7 @@ class ProjectStorage {
         return null;
       })
       .catch((err) => {
-        throw new Error(`Failed saving project storage when removing '${key}'.` + err);
+        throw new EError(`Failed saving project storage when removing '${key}'.`).inherit(err);
       });
   }
 

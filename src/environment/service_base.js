@@ -6,6 +6,8 @@ const fs = require("fs-promise");
 
 const Template = require("../template");
 
+const EError = require("../eerror");
+
 /**
  * Service base class.
  */
@@ -248,7 +250,7 @@ class ServiceBase {
         promises.push(
           fs.copy(path.join(configPath, configInfo), destPath)
             .catch((err) => {
-              throw new Error(`Failed copying configuration file '${configInfo}' to '${destPath}'\n${err}`);
+              throw new EError(`Failed copying configuration file "${configInfo}" to "${destPath}".`).inherit(err);
             })
         );
       }
