@@ -27,16 +27,18 @@ class AttachedCommand extends SystemCommand {
       throw new Error(`Failed to build attached command. Environment does not have service with ID '${serviceId}'.`);
     }
 
-    super("docker-compose", args);
+    // Cannot use docker-compose as on windows exec doesn't work.
+    super("docker", args);
 
     this.environment = environment;
-    this.dockerArgs = ["exec"];
+    this.dockerArgs = ["exec", "-it"];
 
     if (os.platform() === "linux") {
       this.dockerArgs.push("--user", "$(id -u)");
     }
 
-    this.dockerArgs.push(serviceId, executable);
+    const containerName = environment.services.get(serviceId).getContainerName();
+    this.dockerArgs.push(containerName, executable);
   }
 
   /**
