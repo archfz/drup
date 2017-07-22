@@ -299,7 +299,7 @@ class DockerContainer extends ContainerBase {
     // On windows doesn't make sens.
     // At the moment should only apply to linux.
     if (os.platform() !== "linux") {
-      return Promise.resolve();
+      return Promise.resolve(this);
     }
 
     // Get the first service that declares group owning.
@@ -312,17 +312,24 @@ class DockerContainer extends ContainerBase {
     });
 
     if (!groupService) {
-      return Promise.resolve();
+      return Promise.resolve(this);
     }
+
+    let promises = [];
+
+    // Add write permission for the group on project directory.
+    promises.push(new Command('chmod', [['775', this.env.getDirectoryPath()]]).execute());
 
     // Set the group owner of all files to the specified group name.
     // We have to do this from the container so that the right GID
     // is used. The user with that name can have different GID.
-    return new AttachedCommand(this.env, groupService.ann("id"), "chown", [
+    promises.push(new AttachedCommand(this.env, groupService.ann("id"), "chown", [
       ":" + groupService.ann("gidName"),
       groupService.getProjectMountPath(),
       "-R"
-    ]).execute();
+    ]).execute());
+
+    return Promise.all(promises).then(() => this);
   }
 
 }

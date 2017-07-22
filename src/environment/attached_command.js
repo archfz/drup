@@ -31,7 +31,7 @@ class AttachedCommand extends SystemCommand {
     super("docker", args);
 
     this.environment = environment;
-    this.dockerArgs = ["exec", "-it"];
+    this.dockerArgs = ["exec", "-i"];
 
     if (os.platform() === "linux") {
       this.dockerArgs.push("--user", "$(id -u)");

@@ -424,6 +424,19 @@ class Environment {
   }
 
   /**
+   * Gets host directory path of specified type.
+   *
+   * @param {string} type
+   *   The directory type.
+   *
+   * @return {string}
+   *   The host path.
+   */
+  getDirectoryPath(type = "PROJECT") {
+    return path.join(this.root, Environment.DIRECTORIES[type]);
+  }
+
+  /**
    * Register event listener.
    *
    * @param {string} eventType
