@@ -113,11 +113,7 @@ class ProjectBase {
    */
   setup() {
     this._config.setup = true;
-    return this.getEnvironment()
-      .then((env) => env.getContainer("docker"))
-      // Set the files group owner to the primary one.
-      .then((docker) => docker.setFilesGroupOwner())
-      .then(() => this.save);
+    return this.save();
   }
 
   /**
@@ -164,7 +160,15 @@ class ProjectBase {
    * @returns {Promise.<ContainerBase|ProjectBase>}
    */
   start(getContainer = false) {
+    // We must save the state here as the project setup and container
+    // build are parallel jobs, race condition would happen.
+    const isSetUp = this.isSetUp();
+
     return this.getEnvironment().then((env) => env.getContainer("docker").start())
+      .then((container) => {
+        // Set the files group owner to the primary one if just built.
+        return isSetUp ? container : container.setFilesGroupOwner();
+      })
       .then((container) => getContainer ? container : this);
   }
 
