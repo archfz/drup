@@ -77,7 +77,7 @@ class ServiceBase {
    *    being a directory.
    */
   getVolumes(volumes = []) {
-    this.env._fireEvent("getServiceVolumes", this, volumes);
+    this.env.emit("getServiceVolumes", this, volumes);
     return volumes;
   }
 
