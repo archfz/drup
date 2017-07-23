@@ -184,7 +184,11 @@ class SystemCommand {
     this._process.on("error", (err) => this._reject(err));
     this._process.on("exit", (code) => {
       if (code !== 0) {
-        this._reject(new Error(`${this.errorData}\nCommand: ${this.toString()}\nExit code: ${code}`));
+        const error = new Error(`${this.errorData}\nCommand: ${this.toString()}\nExit code: ${code}`);
+        // In certain situation it is needed to exit the with the executed
+        // commands exit code, so save the spawn exit code it in the error.
+        error.code = code;
+        this._reject(error);
       }
       
       this._resolve(this.data + this.errorData);
