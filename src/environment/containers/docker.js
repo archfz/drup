@@ -174,6 +174,22 @@ class DockerContainer extends ContainerBase {
   }
 
   /**
+   * Prints logs of the docker environment.
+   *
+   * @param {string|null} service
+   *   The service ID or none for all.
+   *
+   * @return {Promise}
+   */
+  printLogs(service = null) {
+    if (service && !this.env.services.has(service)) {
+      throw new Error(`Environment doesn't have service "${service}".`)
+    }
+
+    return this.command("", ["logs"], service ? service : "");
+  }
+
+  /**
    * @inheritdoc
    */
   command(command, execOptions = ["exec"], execInService = "web") {

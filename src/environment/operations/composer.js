@@ -6,7 +6,7 @@
  * @Operation {
  *  @id "composer",
  *  @label "Composer",
- *  @description "Run composer commands in environment.",
+ *  @description "Run composer command in environment.",
  *  @aliases "comp",
  * }
  */
