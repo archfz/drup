@@ -97,7 +97,7 @@ class OperationCollection {
 
       // Aliases value is allowed to be string. But for usability sake
       // we want it to be an array.
-      let aliases = operation.ann("aliases");
+      let aliases = operation.ann("aliases") || [];
       operation.annotations.aliases = typeof aliases === "string" ? [aliases] : aliases;
       // The ID of the operation is the primary alias.
       operation.annotations.aliases.push(operation.ann("id"));
