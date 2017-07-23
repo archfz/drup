@@ -9,6 +9,7 @@ const path = require("path");
 
 const ServiceCollection = require("./service_collection");
 const OperationCollection = require("../operation_collection");
+const PromiseEventEmitter = require("../promise-emmiter");
 
 const EError = require("../eerror");
 
@@ -39,7 +40,7 @@ function getContainerTypes() {
 /**
  * Environment handler class.
  */
-class Environment {
+class Environment extends PromiseEventEmitter {
 
   /**
    * Environment constructor.
@@ -55,6 +56,9 @@ class Environment {
    *    The root directory of the environment.
    */
   constructor(id, servicesConfig, config, root) {
+    // Init the event emitter.
+    super();
+
     if (!root) {
       throw new Error("Environment root parameter is required.");
     }
@@ -71,8 +75,6 @@ class Environment {
     this._id = id;
     this.config = config;
     this.root = root;
-
-    this._listeners = {};
   }
 
   /**
@@ -206,7 +208,7 @@ class Environment {
     // Bind this environment to the services.
     this._services.each((service) => service.bindEnvironment(this));
 
-    this._fireEvent("servicesInitialized", this._services);
+    this.emit("servicesInitialized", this._services);
     return this._services;
   }
 
@@ -331,9 +333,8 @@ class Environment {
     if (containerType === "*") {
       let promises = [];
 
-      for (let [, Container] of Object.entries(getContainerTypes())) {
-        let cont = new Container(this);
-        promises.push(cont.writeComposition());
+      for (let id of Object.keys(getContainerTypes())) {
+        promises.push(this.composeContainer(id));
       }
 
       return Promise.all(promises);
@@ -342,11 +343,9 @@ class Environment {
     let container = this.getContainer(containerType);
     let promise = container.writeComposition();
 
-    return promise.then(() => {
-        return container;
-      }).catch((err) => {
-        throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
-      });
+    return promise.then(() => container).catch((err) => {
+      throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
+    });
   }
 
   /**
@@ -379,12 +378,24 @@ class Environment {
       promises.push(service.writeConfigFiles(this.root));
     });
 
+    // Allow services to implement fully custom reaction to the
+    // generation of files.
+    promises.push(this.emitPromise("writingConfigFiles"));
+
     return Promise.all(promises)
       .catch((err) => {
         throw new EError(`Failed creating configuration files for services.`).inherit(err);
       });
   }
 
+  /**
+   * Removes the specified container.
+   *
+   * @param {string} containerType
+   *   The container type.
+   *
+   * @returns {Promise}
+   */
   remove(containerType) {
     return this.getContainer(containerType).remove();
   }
@@ -406,24 +417,6 @@ class Environment {
   }
 
   /**
-   * Fires an environment event.
-   *
-   * @param {string} eventType
-   *    Event identifier.
-   * @param {Array} args
-   *
-   * @returns {Environment}
-   * @private
-   */
-  _fireEvent(eventType, ...args) {
-    if (this._listeners[eventType]) {
-      this._listeners[eventType].forEach((callback) => callback(...args));
-    }
-
-    return this;
-  }
-
-  /**
    * Gets host directory path of specified type.
    *
    * @param {string} type
@@ -439,23 +432,18 @@ class Environment {
   /**
    * Register event listener.
    *
-   * @param {string} eventType
-   *    Event identifier.
-   * @param {Function} callback
-   *    Callback function.
+   * In addition to parent returns self and validates callback.
+   *
+   * @param {...} args
+   *   Arguments.
    *
    * @returns {Environment}
    */
-  on(eventType, callback) {
-    if (typeof callback !== "function") {
+  on(...args) {
+    if (typeof args[1] !== "function") {
       throw new Error("Callback must be a function.");
     }
-
-    if (!this._listeners[eventType]) {
-      this._listeners[eventType] = [];
-    }
-
-    this._listeners[eventType].push(callback);
+    super.on(...args);
     return this;
   }
 

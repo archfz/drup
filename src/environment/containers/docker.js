@@ -219,7 +219,7 @@ class DockerContainer extends ContainerBase {
     });
 
     // Allow services to post react to composition.
-    this.env._fireEvent("composedDocker", composition.services);
+    this.env.emit("composedDocker", composition.services);
 
     return composition;
   }

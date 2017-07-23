@@ -29,11 +29,32 @@ class DetachedCommand extends SystemCommand {
     this.dockerImage = image;
     this.dockerArgs = ["run", "-i", "--rm"];
 
-    if (os.platform() === "linux") {
-      this.dockerArgs.push("--user", "$(id -u)");
-    }
+    this.asHostUser(true);
 
     this.setWorkingDirectory(workDir);
+  }
+
+  /**
+   * Sets whether to execute the container as the hosts UID.
+   *
+   * @param {boolean} yes
+   *   Whether to execute as host UID or default.
+   *
+   * @return {DetachedCommand}
+   */
+  asHostUser(yes = true) {
+    if (os.platform() !== "linux") {
+      return this;
+    }
+
+    if (yes) {
+      this.dockerArgs.push("--user", "$(id -u)");
+    } else {
+      const index = this.dockerArgs.indexOf("--user");
+      this.dockerArgs.splice(index, 2);
+    }
+
+    return this;
   }
 
   /**

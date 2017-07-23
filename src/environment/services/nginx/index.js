@@ -9,6 +9,7 @@ const WebService = require("../web_base");
  *  @label "NGINX",
  *  @priority 20,
  *  @aliased true,
+ *  @gidName "nginx",
  * }
  */
 module.exports = class NginxService extends WebService {
@@ -39,15 +40,24 @@ module.exports = class NginxService extends WebService {
    * @inheritdoc
    */
   _getConfigFileInfo() {
-    return [{
+    let serverConfig = {
       template: "default.conf.dot",
       definitions: ["rules"],
       data: {
         DOC_ROOT: this.getDocumentRoot(),
         CONNECT_PHP: this.env.services.has("php"),
         INDEXES: this.config.index_files,
+        USE_SSL: false,
       }
-    }];
+    };
+
+    if (this.config.use_ssl) {
+      serverConfig.data.USE_SSL = true;
+      serverConfig.data.CERTIFICATE_PATH = this.getCertificateMountPath();
+      serverConfig.data.CERTIFICATE_KEY_PATH = this.getCertificateKeyMountPath();
+    }
+
+    return [serverConfig];
   }
 
 };

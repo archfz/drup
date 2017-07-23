@@ -33,12 +33,33 @@ class AttachedCommand extends SystemCommand {
     this.environment = environment;
     this.dockerArgs = ["exec", "-i"];
 
-    if (os.platform() === "linux") {
-      this.dockerArgs.push("--user", "$(id -u)");
-    }
+    this.asHostUser(true);
 
     const containerName = environment.services.get(serviceId).getContainerName();
     this.dockerArgs.push(containerName, executable);
+  }
+
+  /**
+   * Sets whether to execute the container as the hosts UID.
+   *
+   * @param {boolean} yes
+   *   Whether to execute as host UID or default.
+   *
+   * @return {AttachedCommand}
+   */
+  asHostUser(yes = true) {
+    if (os.platform() !== "linux") {
+      return this;
+    }
+
+    if (yes) {
+      this.dockerArgs.push("--user", "$(id -u)");
+    } else {
+      const index = this.dockerArgs.indexOf("--user");
+      this.dockerArgs.splice(index, 2);
+    }
+
+    return this;
   }
 
   /**
