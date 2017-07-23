@@ -179,7 +179,11 @@ const Formatter = module.exports = {
       }
 
       Formatter.error(str);
-      // Used for exit codes.
+      // Used for exit codes. Errors can specify error codes.
+      if (str instanceof Error && Number.isInteger(str.code)) {
+        return str.code;
+      }
+      // If not an error object then default to 1.
       return 1;
     };
 
