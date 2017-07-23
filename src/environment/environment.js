@@ -333,9 +333,8 @@ class Environment extends PromiseEventEmitter {
     if (containerType === "*") {
       let promises = [];
 
-      for (let [, Container] of Object.entries(getContainerTypes())) {
-        let cont = new Container(this);
-        promises.push(cont.writeComposition());
+      for (let id of Object.keys(getContainerTypes())) {
+        promises.push(this.composeContainer(id));
       }
 
       return Promise.all(promises);
@@ -344,11 +343,9 @@ class Environment extends PromiseEventEmitter {
     let container = this.getContainer(containerType);
     let promise = container.writeComposition();
 
-    return promise.then(() => {
-        return container;
-      }).catch((err) => {
-        throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
-      });
+    return promise.then(() => container).catch((err) => {
+      throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
+    });
   }
 
   /**
@@ -381,12 +378,24 @@ class Environment extends PromiseEventEmitter {
       promises.push(service.writeConfigFiles(this.root));
     });
 
+    // Allow services to implement fully custom reaction to the
+    // generation of files.
+    promises.push(this.emitPromise("writingConfigFiles"));
+
     return Promise.all(promises)
       .catch((err) => {
         throw new EError(`Failed creating configuration files for services.`).inherit(err);
       });
   }
 
+  /**
+   * Removes the specified container.
+   *
+   * @param {string} containerType
+   *   The container type.
+   *
+   * @returns {Promise}
+   */
   remove(containerType) {
     return this.getContainer(containerType).remove();
   }

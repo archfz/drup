@@ -334,7 +334,7 @@ class OperationCollection {
    * @param {Array.<string>} args
    *    The arguments to send to execute.
    *
-   * @returns {OperationCollection}
+   * @returns {Promise}
    */
   execute(operation, args = []) {
     if (!operation) {
@@ -344,7 +344,8 @@ class OperationCollection {
     operation = new (this.get(operation, true))();
 
     if (!operation.ann("prevent_help") && OperationCollection.HELP_REGEX.test(args[0])) {
-      return this.printHelp(operation);
+      this.printHelp(operation);
+      return Promise.resolve();
     }
 
     return operation.execute(...this._predefinedArgs, args, process.cwd());
