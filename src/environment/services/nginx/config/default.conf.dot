@@ -33,6 +33,11 @@ server {
         fastcgi_index  index.php;
         fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
         include        fastcgi_params;
+
+        {{? it.XDEBUG_ENABLED }}
+        # Needed for XDEBUG, to allow long debug session.
+        fastcgi_read_timeout 1200;
+        {{?}}
     }
 {{?}}
 
