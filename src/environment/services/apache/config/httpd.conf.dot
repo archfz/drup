@@ -68,9 +68,16 @@ Listen 80
 LoadModule proxy_module modules/mod_proxy.so
 LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so
 
+{{? it.XDEBUG_ENABLED }}
+<Proxy "fcgi://php:9000">
+    # Needed for XDEBUG, to allow long debug session.
+    ProxySet timeout=1200
+</Proxy>
+{{?}}
 <FilesMatch \.php$>
     SetHandler "proxy:fcgi://php:9000"
 </FilesMatch>
+
 {{?}}
 
 LoadModule authn_file_module modules/mod_authn_file.so

@@ -37,11 +37,14 @@ module.exports = class ApacheService extends WebService {
    * @inheritdoc
    */
   _getConfigFileInfo() {
+    const hasPhp = this.env.services.has("php");
+
     let serverConfig = {
       template: "httpd.conf.dot",
       data: {
         DOC_ROOT: this.getDocumentRoot(),
-        CONNECT_PHP: this.env.services.has("php"),
+        CONNECT_PHP: hasPhp,
+        XDEBUG_ENABLED: hasPhp ? this.env.services.get("php").config.xdebug : false,
         INDEXES: this.config.index_files,
         USE_SSL: false,
       }
