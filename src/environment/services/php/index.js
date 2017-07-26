@@ -58,14 +58,15 @@ module.exports = class PhpService extends Service {
       name: "version",
       message: "PHP version:",
       choices: choices,
+      default: this.config.version
     }, {
       type: "confirm",
       name: "xdebug",
       message: "Enabled xDebug?",
-      default: true,
+      default: !!this.config.xdebug,
     }]).then((values) => {
       this.config.version = values.version;
-      this.config.xdebug = values.xdebug ? 1 : 0;
+      this.config.xdebug = values.xdebug;
     });
   }
 

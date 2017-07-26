@@ -47,7 +47,7 @@ class Environment extends PromiseEventEmitter {
    *
    * @param {string} id
    *    The environment unique ID.
-   * @param {Object} servicesConfig
+   * @param {Object|ServiceCollection} servicesConfig
    *    Available services with their configurations.
    * @param {Object} config
    *    Configuration like 'host_alias' and other that will
@@ -111,6 +111,31 @@ class Environment extends PromiseEventEmitter {
   }
 
   /**
+   * Reconfigures the environment.
+   *
+   * This allows modifying service settings or adding/removing services.
+   *
+   * @param {EnvironmentConfigurator} envConfigurator
+   *   The environment configurator.
+   * @param {string} containerType
+   *   The container type to compile.
+   *
+   * @returns {Promise.<Environment>}
+   */
+  reConfigure(envConfigurator, containerType = "*") {
+    return envConfigurator.setDefaults(this.services.getConfigurations())
+      .configure().then((services) => {
+        // Prevent old service objects from interacting with the environment.
+        this._services.each((service) => this.unbindObserver(service));
+
+        this._servicesInitialized = false;
+        this._services = services;
+      })
+      .then(() => this.compile(containerType))
+      .then(() => this.save(this._configInProject));
+  }
+
+  /**
    * Load environment from configuration.
    *
    * @param {string} id
@@ -125,6 +150,7 @@ class Environment extends PromiseEventEmitter {
    */
   static load(id, config, root) {
     let configPath = root;
+    let configInProject = false;
 
     // Try to read from root.
     return this.readConfig(configPath)
@@ -136,6 +162,7 @@ class Environment extends PromiseEventEmitter {
           throw err;
         }
 
+        configInProject = true;
         configPath = path.join(root, Environment.DIRECTORIES.PROJECT);
         return this.readConfig(configPath);
       })
@@ -146,6 +173,7 @@ class Environment extends PromiseEventEmitter {
         // default configurations. To do so save the default config and
         // when saving check for these.
         env.configDefault = envConfig.config;
+        env._configInProject = configInProject;
 
         return env;
       })
@@ -186,9 +214,8 @@ class Environment extends PromiseEventEmitter {
     if (this._servicesInitialized) {
       return this._services;
     }
-    else {
-      this._servicesInitialized = true;
-    }
+
+    this._servicesInitialized = true;
 
     // Services might be instantiated if we just got them from the configurator.
     // In that case prevent re-instantiation.
@@ -307,16 +334,64 @@ class Environment extends PromiseEventEmitter {
           throw new EError("Failed removing old environment config file.").inherit(err);
         });
     }
-    // If this is a new environment first create the directory structure.
-    else if(!this.configFile) {
-      promise = this._createStructure();
-    }
 
     return promise.then(() => yaml.write(saveTo, environment))
       .catch((err) => {
         throw new EError("Failed to save environment configuration.").inherit(err);
       })
       .then(() => this);
+  }
+
+  /**
+   * Compiles the environment as the provided container.
+   *
+   * @param {string} containerType
+   *   The container type ID.
+   *
+   * @returns {Promise.<Environment>}
+   */
+  compile(containerType = "*") {
+    return this.emitPromise("compileStarted")
+      .then(() => {
+        // If this is a new environment first create the directory structure.
+        if (!this.configFile) {
+          return this._createStructure();
+        }
+
+        // If this is an existing environment before re-compiling we should
+        // remove all other config created before as certain services might be
+        // removed.
+        return this.emitPromise("reCompileStarted")
+          .then(() => this.cleanDirectories());
+      })
+      .then(() => this.composeContainer(containerType))
+      .then(() => this.writeServiceConfigFiles())
+      .then(() => this.emit("compileFinished"))
+      .then(() => this);
+  }
+
+  /**
+   * Remove files from the env directories.
+   *
+   * @returns {Promise}
+   */
+  cleanDirectories() {
+    let cleaning = [];
+
+    Object.keys(Environment.DIRECTORIES).map((dirKey) => {
+      // We keep the data because it contains sensitive files that might be
+      // needed even after a re-compilation.
+      if (!["DATA", "PROJECT"].includes(dirKey)) {
+        cleaning.push(
+          fs.emptyDir(path.join(this.root, Environment.DIRECTORIES[dirKey]))
+          // Won't be able to remove all files as some of them are created
+          // as root or different user then current UID.
+            .catch(() => {})
+        );
+      }
+    });
+
+    return Promise.all(cleaning);
   }
 
   /**
@@ -341,10 +416,16 @@ class Environment extends PromiseEventEmitter {
     }
 
     let container = this.getContainer(containerType);
-    let promise = container.writeComposition();
+    let promise = Promise.resolve();
 
-    return promise.then(() => container).catch((err) => {
-      throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
+    // If the environment is new stop container before composing.
+    if (this.configFile) {
+      promise = promise.then(() => container.remove());
+    }
+
+    return promise.then(() => container.writeComposition())
+      .then(() => container).catch((err) => {
+        throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
     });
   }
 

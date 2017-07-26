@@ -243,26 +243,13 @@ module.exports = {
   /**
    * Action to compose the environment.
    */
-  ComposeEnvironment: class extends Action {
+  CompileEnvironment: class extends Action {
     complete(data) {
-      this.loader = new Loader("Composing environment");
-      return data.get("project").getEnvironment().then((env) => env.composeContainer("*"))
-        .then(() => {
-          this.loader.finish("Environment composed");
-        });
-    }
-  },
+      this.loader = new Loader("Compiling environment");
 
-  /**
-   * Action to create environment service configuration files.
-   */
-  CreateServiceConfigFiles: class extends Action {
-    complete(data) {
-      this.loader = new Loader("Creating service configurations");
-      return data.get("project").getEnvironment().then((env) => env.writeServiceConfigFiles())
-        .then(() => {
-          this.loader.finish("Service configurations created");
-        });
+      return data.get("project").getEnvironment()
+        .then((env) => env.compile())
+        .then(() => this.loader.finish("Environment compiled"));
     }
   },
 

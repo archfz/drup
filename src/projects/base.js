@@ -139,6 +139,18 @@ class ProjectBase {
   }
 
   /**
+   * Reconfigures the project and the environment.
+   *
+   * @returns {Promise.<ProjectBase>}
+   */
+  reConfigure() {
+    console.log("-- Reconfiguring " + this.name.red);
+
+    return this.getEnvironment().then((env) =>
+      env.reConfigure(this.constructor.getEnvConfigurator()))
+  }
+
+  /**
    * Removes the project from files and storage.
    *
    * @returns {Promise.<ProjectBase>}
@@ -205,7 +217,7 @@ class ProjectBase {
    */
   printInformation() {
     console.log("-- Project information");
-    console.log("- Key : " + this._config.key);
+    console.log("- Key : " + this._key);
     console.log("- Name : " + this._config.name);
     console.log("- Type : " + this._config.type);
     console.log("- Creation method : " + this._config.creation);

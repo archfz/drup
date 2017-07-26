@@ -1,34 +1,44 @@
 "use strict";
 
 const Projects = require("../projects");
+const Loader = require("../terminal-utils/async_loader");
 
 /**
  * @Operation {
- *  @id "create",
- *  @label "Create project.",
- *  @description "Create new project of selected type.",
- *  @weight 1,
- *  @aliases "cr",
+ *  @id "configure",
+ *  @label "Re-configure project.",
+ *  @description "Re-configures a project and it's services.",
+ *  @weight 35,
+ *  @aliases "conf",
  *  @arguments {
- *    "type": {
- *      "description": "Type ID of the project to create.",
- *      "default": "By default you'll be asked to select the type."
+ *    "key": {
+ *      "description": "Type ID of the project to re-configure.",
+ *      "default": "By default the current working directory project if exists."
  *    }
  *  }
  * }
  */
-class CreateOperation {
+class ConfigureOperation {
 
-  execute(args) {
-    return Projects.create(args.shift())
-      .then((project) => {
-        console.log("\n\"" + project.name.cyan + "\" project environment created.");
-        console.log(`Start it by: ` + `drup start ${project.key}`.yellow);
-        console.log("NOTE:".yellow + "You have to run this command with admin privileges.");
-      })
+  execute(args, workDir) {
+    const key = args.shift();
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
+    let project;
+    let loader;
+
+    return projectLoad.then((p) => (project = p) && p.getEnvironment())
+      .then((env) => {
+      console.warn("Reconfiguring a project can lead to data loss. All configuration and docker related files will be removed. If you have made any modification in the configuration files you should back them up. Also note that changing database will not keep your data, create backup.");
+
+      env.on("reCompileStarted", () => loader = new Loader("Re-compiling " + project.name + " environment"));
+      env.on("compileFinished", () => loader.finish("Re-compiled"));
+
+      return project.reConfigure();
+    })
+      .then(() => console.log("\n\nOld containers have been removed. Restart your environment."))
       .catch(console.error);
   }
 
 }
 
-module.exports = CreateOperation;
+module.exports = ConfigureOperation;

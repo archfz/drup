@@ -129,7 +129,7 @@ class ContainerBase {
    *
    * @return {Promise}
    */
-  remove() {
+  remove(silent = true) {
     utils.mustImplement(this, "remove");
   }
 

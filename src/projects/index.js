@@ -108,10 +108,10 @@ class Projects {
         .after(["projectFilesReady", "gotRoot"], (task) => {
           return task.then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
-            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+            .then({envComposed: act.CompileEnvironment})
         })
         .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
-        .after(["envComposed", "envConfigured"], act.SaveProject)
+        .after(["envComposed"], act.SaveProject)
         .start({
           project_type: projectType,
           config: {
@@ -165,7 +165,7 @@ class Projects {
               task.then(act.GetProjectKey)
                 .then({projectCreated: act.CreateProject})
                 .then(act.SaveEnvironment)
-                .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+                .then({envComposed: act.CompileEnvironment})
                 .after(["envComposed", "envConfigured"], act.SaveProject);
             })
             .start(params)
@@ -183,7 +183,7 @@ class Projects {
             .then({projectInPlace: act.MoveProject})
             .then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
-            .then({envComposed: act.ComposeEnvironment, envConfigured: act.CreateServiceConfigFiles})
+            .then({envComposed: act.CompileEnvironment})
             .after(["envComposed", "envConfigured"], act.SaveProject)
             .start(params)
             .then((data) => data.get("project"));

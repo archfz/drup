@@ -292,12 +292,16 @@ class DockerContainer extends ContainerBase {
   /**
    * @inheritdoc
    */
-  remove() {
+  remove(silent = true) {
     this.directoryToPath();
 
     let cmd = new Command("docker-compose", [
       "rm", "-vf",
-    ]).inheritStdio();
+    ]);
+
+    if (!silent) {
+      cmd.inheritStdio();
+    }
 
     return this.stop().then(() => {
         return cmd.execute();
