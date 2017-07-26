@@ -38,7 +38,6 @@ module.exports = class NodeService extends Service {
     for (const [key] of Object.entries(images)) {
       choices.push({
         name: key,
-        checked: key == this.config.version,
       });
     }
 
@@ -47,6 +46,7 @@ module.exports = class NodeService extends Service {
       name: "version",
       message: "Node version:",
       choices: choices,
+      default: this.config.version,
     }).then((values) => {
       this.config.version = values.version;
     });

@@ -41,7 +41,7 @@ class WebService extends ServiceBase {
       type: "confirm",
       name: "use_ssl",
       message: this.constructor.defineConfiguration().use_ssl.label + "?",
-      default: this.config.use_ssl,
+      default: !!this.config.use_ssl,
     }]).then((values) => {
       this.config.use_ssl = values.use_ssl;
     })
@@ -53,14 +53,14 @@ class WebService extends ServiceBase {
   bindEnvironment(env) {
     super.bindEnvironment(env);
 
-    env.on("composedDocker", (servicesComposition) => {
+    env.onAssoc("composedDocker", (servicesComposition) => {
       // Make sure the php
       if (this.env.services.has("php")) {
         servicesComposition[this.ann("id")].depends_on = ["php"];
       }
-    });
+    }, this);
 
-    env.on("getServiceVolumes", (service, volumes) => {
+    env.onAssoc("getServiceVolumes", (service, volumes) => {
       if (service.ann("id") === "php") {
         // If the environment has PHP than add the project volume to it
         // as-well so PHP-FPM can access the files.
@@ -69,11 +69,11 @@ class WebService extends ServiceBase {
           container: WebService.DOCKER_WWW_ROOT,
         });
       }
-    });
+    }, this);
 
     // In case of SSL enabled generate self signed certificate.
     if (this.config.use_ssl) {
-      env.on("writingConfigFiles", () => {
+      env.onAssoc("writingConfigFiles", () => {
         const certDir = this.getCertificateDirectory();
         const envId = this.env.getId();
 
@@ -85,7 +85,7 @@ class WebService extends ServiceBase {
           PUBLIC_CN: "*." + this.getDomainAlias(),
           DAYS: 100000, // This is development, last forever.
         }, certDir).execute();
-      });
+      }, this);
     }
   }
 

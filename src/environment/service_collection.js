@@ -139,6 +139,18 @@ class ServiceCollection {
   }
 
   /**
+   * Gets this service collection and their configurations.
+   *
+   * @returns {Object}
+   *   Object keyed by service ID and as value it's config object.
+   */
+  getConfigurations() {
+    let config = {};
+    this.each((service, id) => config[id] = service.config);
+    return config;
+  }
+
+  /**
    * Gets all services from a group.
    *
    * @param {string} group

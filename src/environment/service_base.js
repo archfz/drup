@@ -20,8 +20,14 @@ class ServiceBase {
    *    The configuration of the service.
    */
   constructor(config) {
-    // If no configuration provided use defaults.
-    this.config = config || this.constructor.getDefaultConfig();
+    let defaults = this.constructor.getDefaultConfig();
+    this.config = defaults;
+
+    // If configuration provided merge with defaults.
+    if (config) {
+      this.config = Object.assign(defaults, config);
+    }
+
     this._config_extensions = {};
   }
 
