@@ -5,8 +5,9 @@ const path = require("path");
 const inquirer = require("inquirer");
 
 const ProjectBase = require("../base");
-
 const AliasInput = require("../inputs/alias_input");
+
+const EError = require("../../eerror");
 
 /**
  * Base class for web projects.
@@ -32,13 +33,31 @@ class WebProject extends ProjectBase {
   /**
    * @inheritdoc
    */
-  _onEnvironmentCreated(env, tempDirectory) {
-    return this.findDocumentRoot(tempDirectory)
+  _onEnvironmentSet(env) {
+    env.on("compileStarted", this._setWebDocumentRoot.bind(this));
+  }
+
+  /**
+   * Finds and sets the document root of the website.
+   *
+   * @returns {Promise}
+   * @private
+   */
+  _setWebDocumentRoot() {
+    let environment;
+    let projectRoot;
+
+    return this.getEnvironment()
+      .then((env) => {
+        environment = env;
+        projectRoot = path.join(env.root, env.constructor.DIRECTORIES["PROJECT"]);
+        return this.findDocumentRoot(projectRoot);
+      })
       .then((root) => {
         root = path.normalize(root);
-        let docRoot = root.substr(tempDirectory.length);
+        let docRoot = root.substr(projectRoot.length);
 
-        for (let [,webService] of Object.entries(env.services.ofGroup("web"))) {
+        for (let [,webService] of Object.entries(environment.services.ofGroup("web"))) {
           webService.setRelativeRoot(docRoot);
           webService.addIndexFiles(this.ann("index_file"));
         }
@@ -68,7 +87,7 @@ class WebProject extends ProjectBase {
           stream.destroy();
         });
     }).catch((err) => {
-      throw new Error(`Could not find document root for ${this.constructor.name} web project.\n${err}`)
+      throw new EError(`Could not find document root for ${this.constructor.name} web project.`).inherit(err);
     });
   }
 

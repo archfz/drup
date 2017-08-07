@@ -3,11 +3,14 @@
 const WebService = require("../web_base");
 
 /**
- * @id apache
- * @group web
- * @label Apache
- * @aliased
- * @priority 5
+ * @Service {
+ *  @id "apache",
+ *  @group "web",
+ *  @label "Apache",
+ *  @aliased true,
+ *  @priority 5,
+ *  @gidName "apache",
+ * }
  */
 module.exports = class ApacheService extends WebService {
 
@@ -15,26 +18,45 @@ module.exports = class ApacheService extends WebService {
    * @inheritdoc
    */
   _composeDocker() {
-    return super._composeDocker({
+    return {
       image: "httpd:alpine",
-      volumes: [
-        `./${this._dir("CONFIG")}/${this.ann("id")}/httpd.conf:/usr/local/apache2/conf/httpd.conf`
-      ]
-    });
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./${this._dir("CONFIG")}/${this.ann("id")}/httpd.conf`,
+      container: "/usr/local/apache2/conf/httpd.conf",
+    }]);
   }
 
   /**
    * @inheritdoc
    */
   _getConfigFileInfo() {
-    return [{
+    const hasPhp = this.env.services.has("php");
+
+    let serverConfig = {
       template: "httpd.conf.dot",
       data: {
         DOC_ROOT: this.getDocumentRoot(),
-        CONNECT_PHP: this.env.services.has("php"),
+        CONNECT_PHP: hasPhp,
+        XDEBUG_ENABLED: hasPhp ? this.env.services.get("php").config.xdebug : false,
         INDEXES: this.config.index_files,
+        USE_SSL: false,
       }
-    }];
+    };
+
+    if (this.config.use_ssl) {
+      serverConfig.data.USE_SSL = true;
+      serverConfig.data.CERTIFICATE_PATH = this.getCertificateMountPath();
+      serverConfig.data.CERTIFICATE_KEY_PATH = this.getCertificateKeyMountPath();
+    }
+
+    return [serverConfig];
   }
 
 };

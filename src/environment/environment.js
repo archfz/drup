@@ -8,6 +8,10 @@ const fs = require("fs-promise");
 const path = require("path");
 
 const ServiceCollection = require("./service_collection");
+const OperationCollection = require("../operation_collection");
+const PromiseEventEmitter = require("../promise-emmiter");
+
+const EError = require("../eerror");
 
 // Required configuration keys with validation function.
 const requiredConfig = {
@@ -27,7 +31,7 @@ let containers;
  */
 function getContainerTypes() {
   if (!containers) {
-    containers = annotatedLoader.collectClasses(__dirname + "/containers", "id");
+    containers = annotatedLoader.collectClasses(__dirname + "/containers", "Container","id");
   }
 
   return containers;
@@ -36,14 +40,14 @@ function getContainerTypes() {
 /**
  * Environment handler class.
  */
-class Environment {
+class Environment extends PromiseEventEmitter {
 
   /**
    * Environment constructor.
    *
    * @param {string} id
    *    The environment unique ID.
-   * @param {Object} servicesConfig
+   * @param {Object|ServiceCollection} servicesConfig
    *    Available services with their configurations.
    * @param {Object} config
    *    Configuration like 'host_alias' and other that will
@@ -52,6 +56,9 @@ class Environment {
    *    The root directory of the environment.
    */
   constructor(id, servicesConfig, config, root) {
+    // Init the event emitter.
+    super();
+
     if (!root) {
       throw new Error("Environment root parameter is required.");
     }
@@ -68,8 +75,6 @@ class Environment {
     this._id = id;
     this.config = config;
     this.root = root;
-
-    this._listeners = {};
   }
 
   /**
@@ -84,7 +89,7 @@ class Environment {
    * @param {string} root
    *    The root directory for the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {Environment}
    */
   static create(id, envConfigurator, config, root) {
@@ -106,24 +111,58 @@ class Environment {
   }
 
   /**
+   * Reconfigures the environment.
+   *
+   * This allows modifying service settings or adding/removing services.
+   *
+   * @param {EnvironmentConfigurator} envConfigurator
+   *   The environment configurator.
+   * @param {string} containerType
+   *   The container type to compile.
+   *
+   * @returns {Promise.<Environment>}
+   */
+  reConfigure(envConfigurator, containerType = "*") {
+    return envConfigurator.setDefaults(this.services.getConfigurations())
+      .configure().then((services) => {
+        // Prevent old service objects from interacting with the environment.
+        this._services.each((service) => this.unbindObserver(service));
+
+        this._servicesInitialized = false;
+        this._services = services;
+      })
+      .then(() => this.compile(containerType))
+      .then(() => this.save(this._configInProject));
+  }
+
+  /**
    * Load environment from configuration.
    *
    * @param {string} id
    *    ID of the environment.
+   * @param {Object} config
+   *    The environment config.
    * @param {string} root
    *    Root directory of the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {Environment}
    */
   static load(id, config, root) {
     let configPath = root;
+    let configInProject = false;
 
     // Try to read from root.
     return this.readConfig(configPath)
     // If failed to read from root try to read from root/project as the user
     // may choose to save in root or under the project to include in repo.
       .catch((err) => {
+        // Other errors can happen, but we are only handling the not found.
+        if (err.code !== "ENOENT") {
+          throw err;
+        }
+
+        configInProject = true;
         configPath = path.join(root, Environment.DIRECTORIES.PROJECT);
         return this.readConfig(configPath);
       })
@@ -134,11 +173,12 @@ class Environment {
         // default configurations. To do so save the default config and
         // when saving check for these.
         env.configDefault = envConfig.config;
+        env._configInProject = configInProject;
 
         return env;
       })
       .catch((err) => {
-        throw new Error(`Failed instantiating environment from config.\n` + err);
+        throw new EError(`Failed instantiating environment from config.`).inherit(err);
       });
   }
 
@@ -148,7 +188,7 @@ class Environment {
    * @param root
    *    Root directory of the environment.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Object>}
    * @resolve {Object}
    *    Environment configuration object.
    */
@@ -157,7 +197,7 @@ class Environment {
 
     return yaml.read(root)
       .catch((err) => {
-        throw new Error(`Failed reading environment config:\nPATH: ${root}\n` + err);
+        throw new EError(`Failed reading environment config:\nPATH: ${root}`).inherit(err);
       });
   }
 
@@ -174,9 +214,8 @@ class Environment {
     if (this._servicesInitialized) {
       return this._services;
     }
-    else {
-      this._servicesInitialized = true;
-    }
+
+    this._servicesInitialized = true;
 
     // Services might be instantiated if we just got them from the configurator.
     // In that case prevent re-instantiation.
@@ -185,6 +224,11 @@ class Environment {
       const services = new ServiceCollection();
 
       for (let [id, serviceConfig] of Object.entries(this._services)) {
+        // Services might become deprecated and removed. This prevents breaking.
+        if (!availableServices.has(id)) {
+          continue;
+        }
+
         const Service = availableServices.get(id);
         const service = new Service(serviceConfig);
 
@@ -196,7 +240,7 @@ class Environment {
     // Bind this environment to the services.
     this._services.each((service) => service.bindEnvironment(this));
 
-    this._fireEvent("servicesInitialized", this._services);
+    this.emit("servicesInitialized", this._services);
     return this._services;
   }
 
@@ -220,47 +264,46 @@ class Environment {
   }
 
   /**
-   * Gets the provided operations from the configured services.
+   * Gets service operations and detached operations.
    *
-   * @returns {Array}
-   *    Array of objects representing operations. See ServiceBase::getOperations.
+   * @param {string} projectType
+   *    The type of project for which to get the operations.
+   *
+   * @return {OperationCollection}
    */
-  getServiceOperations() {
-    let opNames = {};
-    let operations = [];
+  getOperations(projectType) {
+    // Get detached environment operations.
+    const operations = new OperationCollection("Environment specific operations", __dirname + "/operations")
+      .addPredefinedArgument(this);
 
-    this.services.each((service) => {
-      const serviceOps = service.getOperations();
+    // Add all service operations.
+    this.services.each((service, id) => {
+      let dir = __dirname + "/services/" + id + "/operations";
 
-      if (!Array.isArray(serviceOps)) {
-        throw new Error(`Service getOperations() must return array. Service '${service.ann("id")}' did not.`);
+      if (fs.existsSync(dir)) {
+        operations.addFrom(dir);
       }
-
-      serviceOps.forEach((operation) => {
-        // Prevent duplicate service operation names.
-        if (opNames.hasOwnProperty(operation.name)) {
-          throw new Error(`Duplicate service operation name detected: '${operation.name}'.\nDefined by: '${service.ann("id")}' and '${opNames[operation.name]}'.`);
-        }
-
-        opNames[operation.name] = service.ann("id");
-        operation.service = service.ann("id");
-        operations.push(operation);
-      });
     });
 
-    return operations;
+    // Filter out project specific operations.
+    return operations.filter((operation) => {
+      return !operation.ann("types") || operation.ann("types").split(/[,.;\s]+/).includes(projectType);
+    });
   }
 
   /**
-   * Run a service operation.
+   * Gets the primary mount directory of the project.
    *
-   * @param {Object} op
-   *    Object representing service operation.
-   * @param args
-   *    Arguments to pass to the operation.
+   * @return {string|boolean}
+   *   The path to the primary mount in containers otherwise false if none.
    */
-  runServiceOperation(op, args = []) {
-    return this.services.get(op.service).runOperation(op.baseName, args);
+  getProjectMountDirectory() {
+    const web = this.services.firstOfGroup("web");
+    if (web) {
+      return web.getProjectMountPath();
+    }
+
+    return false;
   }
 
   /**
@@ -269,7 +312,7 @@ class Environment {
    * @param includeInProject
    *    Whether to include the configuration in the project directory.
    *
-   * @returns {Promise}
+   * @returns {Promise.<Environment>}
    * @resolve {self}
    */
   save(includeInProject = true) {
@@ -293,19 +336,67 @@ class Environment {
     if (this.configFile && this.configFile !== saveTo) {
       promise = fs.unlink(this.configFile)
         .catch((err) => {
-          throw new Error("Failed removing old environment config file:\n" + err);
+          throw new EError("Failed removing old environment config file.").inherit(err);
         });
-    }
-    // If this is a new environment first create the directory structure.
-    else if(!this.configFile) {
-      promise = this._createStructure();
     }
 
     return promise.then(() => yaml.write(saveTo, environment))
       .catch((err) => {
-        throw new Error("Failed to save environment configuration.\n" + err);
+        throw new EError("Failed to save environment configuration.").inherit(err);
       })
       .then(() => this);
+  }
+
+  /**
+   * Compiles the environment as the provided container.
+   *
+   * @param {string} containerType
+   *   The container type ID.
+   *
+   * @returns {Promise.<Environment>}
+   */
+  compile(containerType = "*") {
+    return this.emitPromise("compileStarted")
+      .then(() => {
+        // If this is a new environment first create the directory structure.
+        if (!this.configFile) {
+          return this._createStructure();
+        }
+
+        // If this is an existing environment before re-compiling we should
+        // remove all other config created before as certain services might be
+        // removed.
+        return this.emitPromise("reCompileStarted")
+          .then(() => this.cleanDirectories());
+      })
+      .then(() => this.composeContainer(containerType))
+      .then(() => this.writeServiceConfigFiles())
+      .then(() => this.emit("compileFinished"))
+      .then(() => this);
+  }
+
+  /**
+   * Remove files from the env directories.
+   *
+   * @returns {Promise}
+   */
+  cleanDirectories() {
+    let cleaning = [];
+
+    Object.keys(Environment.DIRECTORIES).map((dirKey) => {
+      // We keep the data because it contains sensitive files that might be
+      // needed even after a re-compilation.
+      if (!["DATA", "PROJECT"].includes(dirKey)) {
+        cleaning.push(
+          fs.emptyDir(path.join(this.root, Environment.DIRECTORIES[dirKey]))
+          // Won't be able to remove all files as some of them are created
+          // as root or different user then current UID.
+            .catch(() => {})
+        );
+      }
+    });
+
+    return Promise.all(cleaning);
   }
 
   /**
@@ -314,30 +405,33 @@ class Environment {
    * @param {string} containerType
    *    Container handler ID. "*" will compose all containers.
    *
-   * @returns {Promise}
+   * @returns {Promise.<ContainerBase|ContainerBase[]>}
    * @resolve {ContainerBase|ContainerBase[]}
    *    Container handler.
    */
   composeContainer(containerType) {
-    if (containerType == "*") {
+    if (containerType === "*") {
       let promises = [];
 
-      for (let [, Container] of Object.entries(getContainerTypes())) {
-        let cont = new Container(this);
-        promises.push(cont.writeComposition());
+      for (let id of Object.keys(getContainerTypes())) {
+        promises.push(this.composeContainer(id));
       }
 
       return Promise.all(promises);
     }
 
     let container = this.getContainer(containerType);
-    let promise = container.writeComposition();
+    let promise = Promise.resolve();
 
-    return promise.then(() => {
-        return container;
-      }).catch((err) => {
-        throw new Error(`Failed writing ${container.ann("id")} container composition: ` + err);
-      });
+    // If the environment is new stop container before composing.
+    if (this.configFile) {
+      promise = promise.then(() => container.remove());
+    }
+
+    return promise.then(() => container.writeComposition())
+      .then(() => container).catch((err) => {
+        throw new EError(`Failed writing "${container.ann("id")}" container composition.`).inherit(err);
+    });
   }
 
   /**
@@ -352,7 +446,7 @@ class Environment {
     let containers = getContainerTypes();
 
     if (!containers[containerType]) {
-      throw new Error("Unknown container type: " + containerType);
+      throw new Error(`Unknown container type: "${containerType}"`);
     }
 
     return new containers[containerType](this);
@@ -370,12 +464,24 @@ class Environment {
       promises.push(service.writeConfigFiles(this.root));
     });
 
+    // Allow services to implement fully custom reaction to the
+    // generation of files.
+    promises.push(this.emitPromise("writingConfigFiles"));
+
     return Promise.all(promises)
       .catch((err) => {
-        throw new Error(`Failed creating configuration files for services.\n` + err);
+        throw new EError(`Failed creating configuration files for services.`).inherit(err);
       });
   }
 
+  /**
+   * Removes the specified container.
+   *
+   * @param {string} containerType
+   *   The container type.
+   *
+   * @returns {Promise}
+   */
   remove(containerType) {
     return this.getContainer(containerType).remove();
   }
@@ -397,43 +503,33 @@ class Environment {
   }
 
   /**
-   * Fires an environment event.
+   * Gets host directory path of specified type.
    *
-   * @param {string} eventType
-   *    Event identifier.
-   * @param {Array} args
+   * @param {string} type
+   *   The directory type.
    *
-   * @returns {self}
-   * @private
+   * @return {string}
+   *   The host path.
    */
-  _fireEvent(eventType, ...args) {
-    if (this._listeners[eventType]) {
-      this._listeners[eventType].forEach((callback) => callback(...args));
-    }
-
-    return this;
+  getDirectoryPath(type = "PROJECT") {
+    return path.join(this.root, Environment.DIRECTORIES[type]);
   }
 
   /**
    * Register event listener.
    *
-   * @param {string} eventType
-   *    Event identifier.
-   * @param {Function} callback
-   *    Callback function.
+   * In addition to parent returns self and validates callback.
    *
-   * @returns {self}
+   * @param {...} args
+   *   Arguments.
+   *
+   * @returns {Environment}
    */
-  on(eventType, callback) {
-    if (typeof callback !== "function") {
+  on(...args) {
+    if (typeof args[1] !== "function") {
       throw new Error("Callback must be a function.");
     }
-
-    if (!this._listeners[eventType]) {
-      this._listeners[eventType] = [];
-    }
-
-    this._listeners[eventType].push(callback);
+    super.on(...args);
     return this;
   }
 

@@ -8,16 +8,20 @@ const os = require("os");
 const aliasManager = require("../../hosts_manager");
 
 const Command = require('../../system/system_command');
+const AttachedCommand = require('../attached_command');
 const ContainerBase = require('../container_base');
 const Template = require('../../template');
+const EError = require('../../eerror');
 
 const DOCKER_FILES_DIRNAME = ".docker-files";
 
 /**
  * Container handler for Docker.
  *
- * @id docker
- * @filename docker-compose.yml
+ * @Container {
+ *  @id "docker",
+ *  @filename "docker-compose.yml",
+ * }
  */
 class DockerContainer extends ContainerBase {
 
@@ -36,7 +40,7 @@ class DockerContainer extends ContainerBase {
         let group = this.env.services.ofGroup(serviceOrGroupName);
 
         if (group === false) {
-          throw new Error("No services found in the group: " + serviceOrGroupName);
+          throw new EError("No services found in the group: " + serviceOrGroupName);
         }
 
         serviceOrGroupName = group[Object.keys(group)[0]].ann("id");
@@ -53,13 +57,13 @@ class DockerContainer extends ContainerBase {
 
     return cmd.execute().then((output) => {
       if (output.length < 5) {
-        throw new Error("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
+        throw new EError("IPs could not be determined. Does the service exist and is the container started?\nCommand: " + cmd);
       }
 
       let ips = output.split("\n");
       ips.pop();
 
-      if (ips.length == 1) {
+      if (ips.length === 1) {
         return ips[0];
       }
 
@@ -73,6 +77,13 @@ class DockerContainer extends ContainerBase {
   }
 
   /**
+   * @inheritDoc
+   */
+  getNetworkName() {
+    return this.env.getId() + "_default";
+  }
+
+  /**
    * @inheritdoc
    */
   start() {
@@ -81,10 +92,10 @@ class DockerContainer extends ContainerBase {
     return new Command("docker-compose", [
       ["-p", this.env.getId()],
       ["up", "-d"],
-    ]).execute().catch((error) => {
-      throw new Error("Failed to start environment container:\n" + error);
+    ]).execute().catch((err) => {
+      throw new EError("Failed to start environment container.").inherit(err);
     }).then(() => {
-      // This provides workaround for windows. By default on linux container
+      // This provides workaround for windows. By default on linux.sh container
       // IPs get exposed to hosts. On windows tough docker creates a Hyper-V
       // VM in which it puts the containers, and this VM is private. This is
       // the way to route those IPs to host.
@@ -109,7 +120,7 @@ class DockerContainer extends ContainerBase {
               "bin/sh", "-c", "\"iptables -A FORWARD -j ACCEPT\""
             ]).execute()
           ).catch((err) => {
-            throw Error("Failed to expose container IPs to hosts on windows.\n" + err);
+            throw new EError("Failed to expose container IPs to hosts on windows.").inherit(err);
           });
       }
     }).then(() => {
@@ -157,9 +168,25 @@ class DockerContainer extends ContainerBase {
       "stop"
     ]).execute()
       .then(() => {return this;})
-      .catch((error) => {
-        throw new Error("Failed to stop environment container:\n" + error);
+      .catch((err) => {
+        throw new EError("Failed to stop environment container.").inherit(err);
       });
+  }
+
+  /**
+   * Prints logs of the docker environment.
+   *
+   * @param {string|null} service
+   *   The service ID or none for all.
+   *
+   * @return {Promise}
+   */
+  printLogs(service = null) {
+    if (service && !this.env.services.has(service)) {
+      throw new Error(`Environment doesn't have service "${service}".`)
+    }
+
+    return this.command("", ["logs"], service ? service : "");
   }
 
   /**
@@ -168,7 +195,7 @@ class DockerContainer extends ContainerBase {
   command(command, execOptions = ["exec"], execInService = "web") {
     this.directoryToPath();
 
-    if (execInService == "web") {
+    if (execInService === "web") {
       execInService = this.services.ofGroup("web")[0];
     }
 
@@ -182,7 +209,7 @@ class DockerContainer extends ContainerBase {
     ]).inheritStdio();
 
     return cmd.execute().then(() => this).catch((error) => {
-      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
+      throw new EError(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
   }
 
@@ -197,10 +224,18 @@ class DockerContainer extends ContainerBase {
 
     this.env.services.each((Service, id) => {
       composition.services[id] = Service.compose(this.ann("id"));
+
+      if (composition.services[id].volumes) {
+        throw new EError(`Services must provide volumes from 'getVolumes()' method. Service '${Service.ann("id")}' added from composition.`);
+      }
+
+      composition.services[id].volumes = Service.getVolumes().map((volume) => {
+        return (volume.host ? volume.host + ":" : "") + volume.container;
+      });
     });
 
     // Allow services to post react to composition.
-    this.env._fireEvent("composedDocker", composition.services);
+    this.env.emit("composedDocker", composition.services);
 
     return composition;
   }
@@ -250,27 +285,71 @@ class DockerContainer extends ContainerBase {
         return Template.from(templatePath).compile(args, destPath);
       })
       .catch((err) => {
-        throw new Error(`Failed writing Dockerfile for '${serviceId}' service:\n` + err);
+        throw new EError(`Failed writing Dockerfile for '${serviceId}' service.`).inherit(err);
       });
   }
 
   /**
    * @inheritdoc
    */
-  remove() {
+  remove(silent = true) {
     this.directoryToPath();
 
     let cmd = new Command("docker-compose", [
       "rm", "-vf",
-    ]).inheritStdio();
+    ]);
+
+    if (!silent) {
+      cmd.inheritStdio();
+    }
 
     return this.stop().then(() => {
         return cmd.execute();
       })
       .then(() => {return this;})
-      .catch((error) => {
-      throw new Error(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
+      .catch((err) => {
+      throw new EError(`Failed to run docker command:\n ${cmd.toString()}.`).inherit(err);
     });
+  }
+
+  /**
+   * @inheritDoc
+   */
+  setFilesGroupOwner() {
+    // On windows doesn't make sens.
+    // At the moment should only apply to linux.
+    if (os.platform() !== "linux") {
+      return Promise.resolve(this);
+    }
+
+    // Get the first service that declares group owning.
+    let groupService = false;
+    this.env.services.each(function (service) {
+      if (service.ann("gidName")) {
+        groupService = service;
+        return false;
+      }
+    });
+
+    if (!groupService) {
+      return Promise.resolve(this);
+    }
+
+    let promises = [];
+
+    // Add write permission for the group on project directory.
+    promises.push(new Command('chmod', [['775', this.env.getDirectoryPath()]]).execute());
+
+    // Set the group owner of all files to the specified group name.
+    // We have to do this from the container so that the right GID
+    // is used. The user with that name can have different GID.
+    promises.push(new AttachedCommand(this.env, groupService.ann("id"), "chown", [
+      ":" + groupService.ann("gidName"),
+      groupService.getProjectMountPath(),
+      "-R"
+    ]).execute());
+
+    return Promise.all(promises).then(() => this);
   }
 
 }

@@ -80,11 +80,26 @@ class DirectoryInput extends InputBase {
   }
 
   /**
+   * Adds a directory restriction.
+   *
+   * @param {string|RegExp} pathOrRegex
+   *   Can be either a path or a RegExp.
+   *
+   * @return {DirectoryInput}
+   */
+  addRestriction(pathOrRegex) {
+    this._restrictions || (this._restrictions = []);
+    this._restrictions.push(pathOrRegex);
+    return this;
+  }
+
+  /**
    * @inheritDoc
    */
   _acquire(_default) {
     return inquirer.prompt(this.getSettings(_default, "directory"))
       .then((values) => this._doTransformRelative(values.directory))
+      .then(this._doPreventRestricted.bind(this))
       .then(this._doWarnLength.bind(this))
       .then(this._doRequireExisting.bind(this))
       .then(this._doWarnNonEmpty.bind(this))
@@ -116,7 +131,41 @@ class DirectoryInput extends InputBase {
       return "The path must be absolute.";
     }
 
+    if (directory.match(/^\\+/)) {
+      return "Invalid directory path.";
+    }
+
     return true;
+  }
+
+  /**
+   * Validates directory against restrictions.
+   *
+   * @param {string} directory
+   *    The directory path.
+   *
+   * @returns {string}
+   *    Directory.
+   * @private
+   */
+  _doPreventRestricted(directory) {
+    // Prevent restricted directory selection.
+    if (this._restrictions) {
+      for (let i = 0; i < this._restrictions.length; ++i) {
+        let rest = this._restrictions[i];
+
+        if (typeof rest === "string" && directory === rest) {
+          console.warn(`Restricted directory path (${rest}).`);
+          throw {dir: directory};
+        }
+        else if (rest instanceof RegExp && rest.exec(directory)) {
+          console.warn(`Restricted directory path (regexp: ${rest.toString()}).`);
+          throw {dir: directory};
+        }
+      }
+    }
+
+    return directory;
   }
 
   /**
@@ -258,6 +307,9 @@ class DirectoryInput extends InputBase {
   _doTransformRelative(directory) {
     if(["./", ".\\"].includes(directory.substr(0, 2))) {
       return path.normalize(process.cwd() + directory.substr(1));
+    }
+    else if (directory.substr(0, 2) === "~/") {
+      return path.normalize(os.homedir() + directory.substr(1));
     }
 
     return directory;

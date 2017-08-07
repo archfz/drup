@@ -2,26 +2,33 @@
 
 const Projects = require("../projects");
 
-module.exports = {
-  description : "Register existing project from local drive.",
-  aliases: ["register", "reg"],
-  weight: 20,
-  arguments: [
-    {
-      name: "directory",
-      description: "Directory where the project resides.",
-      default: "Current directory.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "register",
+ *  @label "Register project",
+ *  @description "Register existing project from local drive.",
+ *  @weight 20,
+ *  @aliases "reg",
+ *  @arguments {
+ *    "key": {
+ *      "description": "Root directory of the project to register.",
+ *      "default": "Current working directory."
+ *    }
+ *  }
+ * }
+ */
+class RegisterOperation {
 
-  execute : (directory = process.cwd()) => {
+  execute(args, workDir) {
+    let directory = args.shift() || workDir;
 
-    Projects.register(directory)
+    return Projects.register(directory)
       .then((project) => {
-        console.log("\n" + project.name + " is ready.");
+        console.log("\n" + project.name.red + " is ready.");
       })
       .catch(console.error);
-
   }
-};
+
+}
+
+module.exports = RegisterOperation;

@@ -3,11 +3,14 @@
 const WebService = require("../web_base");
 
 /**
- * @id nginx
- * @group web
- * @label NGINX
- * @priority 20
- * @aliased
+ * @Service {
+ *  @id "nginx",
+ *  @group "web",
+ *  @label "NGINX",
+ *  @priority 20,
+ *  @aliased true,
+ *  @gidName "nginx",
+ * }
  */
 module.exports = class NginxService extends WebService {
 
@@ -15,28 +18,49 @@ module.exports = class NginxService extends WebService {
    * @inheritdoc
    */
   _composeDocker() {
-    return super._composeDocker({
+    return {
       image: "nginx:stable-alpine",
-      volumes: [
-        `./${this._dir("LOG")}/${this.ann("id")}:/var/log/nginx`,
-        `./${this._dir("CONFIG")}/${this.ann("id")}:/etc/nginx/conf.d`,
-      ]
-    });
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  getVolumes() {
+    return super.getVolumes([{
+      host: `./${this._dir("LOG")}/${this.ann("id")}`,
+      container: "/var/log/nginx",
+    }, {
+      host: `./${this._dir("CONFIG")}/${this.ann("id")}`,
+      container: `/etc/nginx/conf.d`,
+    }]);
   }
 
   /**
    * @inheritdoc
    */
   _getConfigFileInfo() {
-    return [{
+    const hasPhp = this.env.services.has("php");
+
+    let serverConfig = {
       template: "default.conf.dot",
       definitions: ["rules"],
       data: {
         DOC_ROOT: this.getDocumentRoot(),
-        CONNECT_PHP: this.env.services.has("php"),
+        CONNECT_PHP: hasPhp,
+        XDEBUG_ENABLED: hasPhp ? this.env.services.get("php").config.xdebug : false,
         INDEXES: this.config.index_files,
+        USE_SSL: false,
       }
-    }];
+    };
+
+    if (this.config.use_ssl) {
+      serverConfig.data.USE_SSL = true;
+      serverConfig.data.CERTIFICATE_PATH = this.getCertificateMountPath();
+      serverConfig.data.CERTIFICATE_KEY_PATH = this.getCertificateKeyMountPath();
+    }
+
+    return [serverConfig];
   }
 
 };

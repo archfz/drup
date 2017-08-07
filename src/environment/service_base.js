@@ -6,6 +6,8 @@ const fs = require("fs-promise");
 
 const Template = require("../template");
 
+const EError = require("../eerror");
+
 /**
  * Service base class.
  */
@@ -18,8 +20,14 @@ class ServiceBase {
    *    The configuration of the service.
    */
   constructor(config) {
-    // If no configuration provided use defaults.
-    this.config = config || this.constructor.getDefaultConfig();
+    let defaults = this.constructor.getDefaultConfig();
+    this.config = defaults;
+
+    // If configuration provided merge with defaults.
+    if (config) {
+      this.config = Object.assign(defaults, config);
+    }
+
     this._config_extensions = {};
   }
 
@@ -65,16 +73,69 @@ class ServiceBase {
   }
 
   /**
-   * Gets the operations that this service provides.
+   * Gets the mount volumes for this service.
    *
-   * @returns {Array}
-   *    Array of objects that contain:
-   *      - baseName: The unique identifier for the operation.
-   *      - description: Description of the operation.
-   *      - aliases: Aliases that can be used to trigger the operation.
+   * @param {Array.<Object>} volumes
+   *    Volumes to start with.
+   *
+   * @returns {Array.<Object>}
+   *    Objects that have the keys 'container' and optionally 'host', each
+   *    being a directory.
    */
-  getOperations() {
-    return [];
+  getVolumes(volumes = []) {
+    this.env.emit("getServiceVolumes", this, volumes);
+    return volumes;
+  }
+
+  /**
+   * Gets the service container name.
+   *
+   * @return {string}
+   *    The container name.
+   */
+  getContainerName() {
+    return this.env.getId() + "_" + this.ann("id") + "_1";
+  }
+
+  /**
+   * Gets the mount for a certain local path.
+   *
+   * @param {string} hostPath
+   *   The local path.
+   * @param {boolean} relative
+   *   (Optional) If set to true then the hostPath will be appended
+   *   with './'.
+   *
+   * @return {string|boolean}
+   *   The mount path or false if not mounted.
+   */
+  getMountPath(hostPath, relative = false) {
+    let mountPath = false;
+
+    if (relative) {
+      hostPath = "./" + hostPath;
+    }
+
+    hostPath = path.normalize(hostPath);
+
+    this.getVolumes().forEach((mount) => {
+      if (path.normalize(mount.host) === hostPath) {
+        mountPath = mount.container;
+        return false;
+      }
+    });
+
+    return mountPath;
+  }
+
+  /**
+   * Gets the project mount path.
+   *
+   * @returns {string|boolean}
+   *   The path or false if not mounted.
+   */
+  getProjectMountPath() {
+    return this.getMountPath(this._dir("PROJECT"), true);
   }
 
   /**
@@ -89,20 +150,6 @@ class ServiceBase {
     }
 
     return this.env.config.host_alias + "." + this.ann("id");
-  }
-
-  /**
-   * Runs operation on this service.
-   *
-   * @param name
-   *    The base name of the operation.
-   * @param args
-   *    Arguments for the operation.
-   *
-   * @return {Promise}
-   */
-  runOperation(name, args) {
-    throw new Error(`Service '${this.ann("id")}' does not provide '${name}' operation.`);
   }
 
   /**
@@ -209,7 +256,7 @@ class ServiceBase {
         promises.push(
           fs.copy(path.join(configPath, configInfo), destPath)
             .catch((err) => {
-              throw new Error(`Failed copying configuration file '${configInfo}' to '${destPath}'\n${err}`);
+              throw new EError(`Failed copying configuration file "${configInfo}" to "${destPath}".`).inherit(err);
             })
         );
       }

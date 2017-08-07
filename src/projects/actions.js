@@ -5,6 +5,7 @@ const fsu = require($SRC + "fs_utils.js");
 const path = require("path");
 const inquirer = require("inquirer");
 const yaml = require($SRC + "yaml");
+const escapeRegex = require("escape-string-regexp");
 const globals = require("../globals");
 
 const Action = require("../task/action");
@@ -131,6 +132,9 @@ module.exports = {
         .then((path) => {
           return DirectoryInput.create("Project directory:", "Choose the final root directory for the project files. Use \"./\" to add current working directory relative path.".green)
             .setDefault(path)
+            // Prevent selection for the project under the global storage directory.
+            // This happened to someone and kinda had a bad outcome.
+            .addRestriction(new RegExp(escapeRegex(globals.GLOBAL_STORE_ROOT) + '.*', 'i'))
             .warnNonEmpty()
             .warnPathLengthLimitations(40)
             .acquire();
@@ -239,26 +243,13 @@ module.exports = {
   /**
    * Action to compose the environment.
    */
-  ComposeEnvironment: class extends Action {
+  CompileEnvironment: class extends Action {
     complete(data) {
-      this.loader = new Loader("Composing environment");
-      return data.get("project").getEnvironment().then((env) => env.composeContainer("*"))
-        .then(() => {
-          this.loader.finish("Environment composed");
-        });
-    }
-  },
+      this.loader = new Loader("Compiling environment");
 
-  /**
-   * Action to create environment service configuration files.
-   */
-  CreateServiceConfigFiles: class extends Action {
-    complete(data) {
-      this.loader = new Loader("Creating service configurations");
-      return data.get("project").getEnvironment().then((env) => env.writeServiceConfigFiles())
-        .then(() => {
-          this.loader.finish("Service configurations created");
-        });
+      return data.get("project").getEnvironment()
+        .then((env) => env.compile())
+        .then(() => this.loader.finish("Environment compiled"));
     }
   },
 

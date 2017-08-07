@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs-promise");
 
 const annotatedLoader = require("../ann_loader");
 
@@ -50,7 +51,14 @@ class ServiceCollection {
       serviceDiscovery.frozen = true;
 
       servicePaths.forEach((pth) => {
-        annotatedLoader.collectDirectoryClasses(path.join(pth, "services")).forEach((service) => {
+        const servicePath = path.join(pth, "services");
+
+        // Only try to load services from existing directories.
+        if (!fs.existsSync(servicePath)) {
+          return;
+        }
+
+        annotatedLoader.collectDirectoryClasses(servicePath, "Service").forEach((service) => {
           ["id", "label", "group"].forEach((key) => {
             if (!service.annotations[key]) {
               throw new Error(`A service must define the '${key}' annotation.`);
@@ -96,7 +104,9 @@ class ServiceCollection {
    */
   each(fn) {
     for (let [id, service] of Object.entries(this.servicesById)) {
-      fn(service, id);
+      if (fn(service, id) === false) {
+        break;
+      }
     }
   }
 
@@ -122,10 +132,22 @@ class ServiceCollection {
    */
   get(id) {
     if (!this.has(id)) {
-      throw new Error("Tried to get un-existent service by ID: " + id);
+      throw new Error(`Tried to get un-existent service by ID: "${id}"`);
     }
 
     return this.servicesById[id];
+  }
+
+  /**
+   * Gets this service collection and their configurations.
+   *
+   * @returns {Object}
+   *   Object keyed by service ID and as value it's config object.
+   */
+  getConfigurations() {
+    let config = {};
+    this.each((service, id) => config[id] = service.config);
+    return config;
   }
 
   /**

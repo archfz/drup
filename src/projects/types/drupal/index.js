@@ -7,11 +7,13 @@ const path = require("path");
 const WebProject = require("../web_base");
 const EnvConfigurator = require("../../../environment/environment_configurator");
 const Environment = require("../../../environment/environment");
-const ComposerCommand = require("../../../system/commands/composer");
+const ComposerCommand = require("../../../environment/commands/composer");
 
 /**
- * @id drupal
- * @index_file index.php
+ * @ProjectType {
+ *  @id "drupal",
+ *  @index_file "index.php",
+ * }
  */
 class Drupal extends WebProject {
 
@@ -25,7 +27,7 @@ class Drupal extends WebProject {
         single: ["web", "database"]
       },
       service: {
-        required: ["php", "drush"],
+        required: ["php"],
         restricted: ["mongodb", "lighttpd"]
       }
     });
@@ -79,7 +81,7 @@ class Drupal extends WebProject {
         cmd = new ComposerCommand(params, dir);
         break;
       default:
-        throw new Error("Unhandled creation method: " + method);
+        throw new Error(`Unhandled creation method: "${method}"`);
     }
 
     return cmd;
@@ -92,9 +94,20 @@ class Drupal extends WebProject {
     super._onEnvironmentSet(env);
 
     env.services.get("php").addExtensions("gd");
+    env.on("servicesInitialized", this._alterServices.bind(this));
+  }
 
-    if (env.services.has("nginx")) {
-      env.services.get("nginx").registerConfigExtension({
+  /**
+   * Reacts to services initialization.
+   *
+   * @param {Object} services
+   *   The service collection.
+   *
+   * @private
+   */
+  _alterServices(services) {
+    if (services.has("nginx")) {
+      services.get("nginx").registerConfigExtension({
         template: path.join(__dirname, "config/nginx/default.conf.dot")
       });
     }

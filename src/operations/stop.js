@@ -3,31 +3,30 @@
 const Projects = require("../projects");
 const Loader = require("../terminal-utils/async_loader");
 
-module.exports = {
-  description : "Stop project environment.",
-  aliases: ["stop", "sto"],
-  weight: 101,
-  arguments: [
-    {
-      name: "key",
-      description: "The key of the project.",
-      default: "Current directory project.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "stop",
+ *  @label "Stop project",
+ *  @description "Stop project environment.",
+ *  @aliases "sto",
+ *  @weight 101,
+ *  @arguments {
+ *    "key": {
+ *      "description": "The key of the project.",
+ *      "default": "Current working directory project."
+ *    }
+ *  }
+ * }
+ */
+class StopOperation {
 
-  execute : (key = null) => {
-    let projectLoad;
+  execute(args, workDir) {
     let loader;
+    const key = args.shift();
 
-    if (key === null) {
-      projectLoad = Projects.loadDir(process.cwd());
-    }
-    else {
-      projectLoad = Projects.load(key);
-    }
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
 
-    projectLoad.then((project) => {
+    return projectLoad.then((project) => {
       loader = new Loader("Stopping " + project.name + " ...");
 
       return project.stop().then(() => project);
@@ -40,4 +39,6 @@ module.exports = {
         }
       });
   }
-};
+}
+
+module.exports = StopOperation;

@@ -8,6 +8,9 @@ const utils = require("../utils");
 const ProjectStorage = require("./storage");
 const Environment = require("../environment/environment");
 const ServiceCollection = require("../environment/service_collection");
+const OperationCollection = require("../operation_collection");
+
+const EError = require("../eerror");
 
 /**
  * Project base class.
@@ -136,6 +139,18 @@ class ProjectBase {
   }
 
   /**
+   * Reconfigures the project and the environment.
+   *
+   * @returns {Promise.<ProjectBase>}
+   */
+  reConfigure() {
+    console.log("-- Reconfiguring " + this.name.red);
+
+    return this.getEnvironment().then((env) =>
+      env.reConfigure(this.constructor.getEnvConfigurator()))
+  }
+
+  /**
    * Removes the project from files and storage.
    *
    * @returns {Promise.<ProjectBase>}
@@ -157,7 +172,15 @@ class ProjectBase {
    * @returns {Promise.<ContainerBase|ProjectBase>}
    */
   start(getContainer = false) {
+    // We must save the state here as the project setup and container
+    // build are parallel jobs, race condition would happen.
+    const isSetUp = this.isSetUp();
+
     return this.getEnvironment().then((env) => env.getContainer("docker").start())
+      .then((container) => {
+        // Set the files group owner to the primary one if just built.
+        return isSetUp ? container : container.setFilesGroupOwner();
+      })
       .then((container) => getContainer ? container : this);
   }
 
@@ -175,13 +198,26 @@ class ProjectBase {
   }
 
   /**
+   * Get environment operations for this specific project.
+   *
+   * @returns {Promise.<OperationCollection>}
+   */
+  getOperations() {
+    return this.getEnvironment()
+      .then((env) => {
+        return env.getOperations(this._config.type)
+          .setUsageFormat(OperationCollection.formatOptionalStr("project-key", "red") + " {OP_ID}");
+      });
+  }
+
+  /**
    * Prints information about the project.
    *
    * @returns {Promise.<ProjectBase>}
    */
   printInformation() {
     console.log("-- Project information");
-    console.log("- Key : " + this._config.key);
+    console.log("- Key : " + this._key);
     console.log("- Name : " + this._config.name);
     console.log("- Type : " + this._config.type);
     console.log("- Creation method : " + this._config.creation);
@@ -249,7 +285,7 @@ class ProjectBase {
           return env;
         })
         .catch((err) => {
-          throw new Error(`Could not load environment for ${this.name} project.\n` + err);
+          throw new EError(`Could not load environment for ${this.name} project.`).inherit(err);
         });
     }
 

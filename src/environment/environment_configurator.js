@@ -54,6 +54,19 @@ class EnvironmentConfigurator {
   }
 
   /**
+   * Sets default selected services and their configuration.
+   *
+   * @param {Object} defaultConfig
+   *    Object with keys as service IDs and value as default configuration.
+   *
+   * @return {EnvironmentConfigurator}
+   */
+  setDefaults(defaultConfig) {
+    this._defaults = defaultConfig;
+    return this;
+  }
+
+  /**
    * Set whether from a group can be multiple services.
    *
    * @param {string|Array.<string>} groups
@@ -140,6 +153,45 @@ class EnvironmentConfigurator {
   }
 
   /**
+   * Gets default selected services from the provided ones.
+   *
+   * @param {Array} serviceChoices
+   *   Provided service choices.
+   *
+   * @returns {Array}
+   *   Service IDs by default selected.
+   * @private
+   */
+  _getDefaultSelectedServices(serviceChoices) {
+    if (!this._defaults) {
+      return [];
+    }
+
+    let selected = [];
+    serviceChoices.forEach((service) =>
+      this._defaults[service.value] && selected.push(service.value));
+
+    return selected;
+  }
+
+  /**
+   * Gets default service configuration if exists.
+   *
+   * @param {string} serviceId
+   *   The service ID.
+   * @returns {Object|null}
+   *   The configuration object.
+   * @private
+   */
+  _getDefaultServiceConfig(serviceId) {
+    if (!this._defaults || !this._defaults[serviceId]) {
+      return null;
+    }
+
+    return this._defaults[serviceId];
+  }
+
+  /**
    * Builds service choices per group for inquirer.
    *
    * @returns {Object}
@@ -164,11 +216,13 @@ class EnvironmentConfigurator {
         return;
       }
 
+      let poolChoices = servicePool.groupToChoices(group);
       choices[group] = {
         type: "checkbox",
         message: "Select " + group.toUpperCase(),
         name: group,
-        choices: servicePool.groupToChoices(group),
+        choices: poolChoices,
+        default: this._getDefaultSelectedServices(poolChoices)[0],
         validate: (answer) => {
           return (answer.length >= 1) || "You must choose at least one service from this group.";
         }
@@ -190,9 +244,11 @@ class EnvironmentConfigurator {
         delete choices[group].validate;
       }
       else {
+        let poolChoices = servicePool.groupToChoices(group);
         choices[group] = {
-          choices: servicePool.groupToChoices(group),
+          choices: poolChoices,
           name: group,
+          default: this._getDefaultSelectedServices(poolChoices)[0],
         };
 
         servicePool.removeGroup(group);
@@ -216,7 +272,8 @@ class EnvironmentConfigurator {
         type: "checkbox",
         name: "additional",
         message: "Select optional services",
-        choices: additional
+        choices: additional,
+        default: this._getDefaultSelectedServices(additional),
       });
     }
 
@@ -259,19 +316,16 @@ class EnvironmentConfigurator {
    * @private
    */
   _configureServices(serviceIds) {
-    let promise;
+    let promise = Promise.resolve();
     let services = new ServiceCollection();
 
     serviceIds.forEach((serviceId) => {
-      let service = new (allServices.get(serviceId))();
-      services.addService(service);
+      let service = new (allServices.get(serviceId))(
+        this._getDefaultServiceConfig(serviceId)
+      );
 
-      if (!promise) {
-        promise = service.configure();
-      }
-      else {
-        promise = promise.then(() => service.configure());
-      }
+      services.addService(service);
+      promise = promise.then(() => service.configure());
     });
 
     return promise.then(() => services);

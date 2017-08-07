@@ -2,30 +2,31 @@
 
 const Projects = require("../projects");
 
-module.exports = {
-  description : "Print information about a project.",
-  aliases: ["info", "i"],
-  weight: 120,
-  arguments: [
-    {
-      name: "key",
-      description: "The project key.",
-      optional: true,
-    }
-  ],
+/**
+ * @Operation {
+ *  @id "info",
+ *  @label "Information",
+ *  @description "Print information about project and it's environment.",
+ *  @weight 120,
+ *  @aliases "i",
+ *  @arguments {
+ *    "key": {
+ *      "description": "The project key.",
+ *      "default": "Current working directory projects key, if exists."
+ *    }
+ *  }
+ * }
+ */
+class InfoOperation {
 
-  execute : (key = null) => {
-    let projectLoad;
+  execute(args, workDir) {
+    const key = args.shift();
+    let projectLoad = key ? Projects.load(key) : Projects.loadDir(workDir);
 
-    if (key === null) {
-      projectLoad = Projects.loadDir(process.cwd());
-    }
-    else {
-      projectLoad = Projects.load(key);
-    }
-
-    projectLoad.then((project) => project.printInformation())
+    return projectLoad.then((project) => project.printInformation())
       .catch(console.error);
-
   }
-};
+
+}
+
+module.exports = InfoOperation;
