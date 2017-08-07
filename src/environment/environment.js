@@ -224,6 +224,11 @@ class Environment extends PromiseEventEmitter {
       const services = new ServiceCollection();
 
       for (let [id, serviceConfig] of Object.entries(this._services)) {
+        // Services might become deprecated and removed. This prevents breaking.
+        if (!availableServices.has(id)) {
+          continue;
+        }
+
         const Service = availableServices.get(id);
         const service = new Service(serviceConfig);
 
