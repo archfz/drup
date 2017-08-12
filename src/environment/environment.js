@@ -425,7 +425,7 @@ class Environment extends PromiseEventEmitter {
 
     // If the environment is new stop container before composing.
     if (this.configFile) {
-      promise = promise.then(() => container.remove());
+      promise = promise.then(() => container.remove()).catch(() => {});
     }
 
     return promise.then(() => container.writeComposition())

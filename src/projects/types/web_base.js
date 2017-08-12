@@ -22,10 +22,21 @@ class WebProject extends ProjectBase {
       .then((values) => {
         console.log();
 
+        let defaultAliases;
+        if (suggestions.config.host_alias) {
+          defaultAliases = suggestions.config.host_alias;
+        }
+        else if (suggestions.config.host_aliases) {
+          defaultAliases = suggestions.config.host_aliases.join(", ");
+        }
+        else {
+          defaultAliases = values.name.toLowerCase().replace(/\s+/g, "-");
+        }
+
         return AliasInput.create()
-          .acquire(values.name.toLowerCase().replace(/\s+/g, "-"))
-          .then((alias) => {
-            return Object.assign(values, {host_alias: alias});
+          .acquire(defaultAliases)
+          .then((aliases) => {
+            return Object.assign(values, {host_aliases: aliases});
           });
       });
   }

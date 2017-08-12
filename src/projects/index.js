@@ -184,7 +184,7 @@ class Projects {
             .then({projectCreated: act.CreateProject})
             .then(act.SaveEnvironment)
             .then({envComposed: act.CompileEnvironment})
-            .after(["envComposed", "envConfigured"], act.SaveProject)
+            .then(act.SaveProject)
             .start(params)
             .then((data) => data.get("project"));
         }
