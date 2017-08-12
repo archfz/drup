@@ -31,6 +31,11 @@ class ProjectBase {
     this._root = root;
     this._key = id;
     this._config = config;
+
+    // Backwards support for single host aliases.
+    if (typeof this._config.host_alias === "string") {
+      this._config.host_aliases = [this._config.host_alias];
+    }
   }
 
   /**

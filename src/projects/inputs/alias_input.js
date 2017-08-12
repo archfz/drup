@@ -15,8 +15,8 @@ class AliasInput extends InputBase {
   static create() {
     return super.create(
       "input",
-      "Project domain alias:",
-      "Insert a domain alias base name. This should not contain an extension, as extensions will be the service ID name. So if you enter for example \"example\" one of your generated aliases might be \"example.nginx\".".green
+      "Project domain aliases:",
+      "Insert a domain alias base name. This should not contain an extension, as extensions will be the service ID name. So if you enter for example \"example\" one of your generated aliases might be \"example.nginx\".\nFor multiple aliases separate each one with a comma.".green
     );
   }
 
@@ -33,13 +33,14 @@ class AliasInput extends InputBase {
    * @inheritDoc
    */
   _acquire(_default) {
-    return inquirer.prompt(this.getSettings(_default, "alias"))
-      .then((values) => this._ensureUnique(values.alias))
+    return inquirer.prompt(this.getSettings(_default, "aliases"))
+      .then((values) => this._transformInput(values.aliases))
+      .then(this._ensureUnique.bind(this))
       .catch((err) => {
         // This is the method used to restart the chain of promises without
         // causing duplicate task execution.
-        if (err.alias) {
-          return this._acquire(err.alias);
+        if (err.aliases) {
+          return this._acquire(err.aliases.join(", "));
         }
 
         throw err;
@@ -47,20 +48,42 @@ class AliasInput extends InputBase {
   }
 
   /**
+   * Transforms aliases string to an array.
+   *
+   * @param {string} aliases
+   *   The aliases.
+   *
+   * @return {Array.<string>}
+   *   Aliases in array format.
+   * @private
+   */
+  _transformInput(aliases) {
+    aliases = aliases.split(",");
+
+    for (let i = 0; i < aliases.length; ++i) {
+      aliases[i] = aliases[i].trim();
+    }
+
+    return aliases;
+  }
+
+  /**
    * Validates the project key.
    *
-   * @param {string} alias
+   * @param {Array.string} aliases
    * @returns {boolean|string}
    *    TRUE or error message.
    * @private
    */
-  _validateInput(alias) {
-    if (!alias) {
-      return "Project alias is required.";
+  _validateInput(aliases) {
+    if (!aliases) {
+      return "You must input at least one alias.";
     }
 
-    if (!alias.match(/^[a-z\-0-9]+$/)) {
-      return "Should only contain a domain name, without extension.";
+    for (let i = 0; i < aliases.length; ++i) {
+      if (!aliases[i].match(/^[a-z\-0-9, ]+$/)) {
+        return "Should only contain a domain name, without extensions (no dots): " + aliases[i];
+      }
     }
 
     return true;
@@ -83,44 +106,57 @@ class AliasInput extends InputBase {
    * @param {string} suggestion
    *    String from which to generate.
    *
-   * @return {string}
+   * @return {Promise.<string>}
    *    Unique key.
    */
   _generateUniqueAlias(suggestion) {
-    suggestion = suggestion.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+    let promises = [];
 
-    const generateKey = (count = "") => {
-      return this._isKeyUnique(suggestion + count)
+    const generateKey = (alias, count = "") => {
+      return this._isKeyUnique(alias + count)
         .then((unique) => {
           if (unique) {
-            return suggestion + count;
+            return alias + count;
           }
 
-          return generateKey(count === "" ? 2 : count + 1);
+          return generateKey(alias, count === "" ? 2 : count + 1);
         });
     };
 
-    return generateKey();
+    this._transformInput(suggestion).forEach((alias) => {
+      alias = alias.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+      promises.push(generateKey(alias));
+    });
+
+    return Promise.all(promises).then((aliases) => aliases.join(", "));
   }
 
   /**
    * Ensures that given project alias is unique.
    *
-   * @param {string} alias
-   * @returns {Promise.<string>}
-   *    Returns the key if unique. Otherwise throws.
+   * @param {Array.<string>} aliases
+   * @returns {Promise.<Array>}
+   *    Returns the aliases if unique. Otherwise throws.
    * @private
    */
-  _ensureUnique(alias) {
-    return this._isKeyUnique(alias)
-      .then((unique) => {
-        if (unique) {
-          return alias;
-        }
+  _ensureUnique(aliases) {
+    let promises = [];
 
-        console.warn("A project already has this alias. The domain alias must be unique.");
-        throw {alias: alias};
-      });
+    aliases.forEach((alias) => {
+      let promise = this._isKeyUnique(alias)
+        .then((unique) => {
+          if (unique) {
+            return;
+          }
+
+          console.warn(`A project already has the "${alias}" alias. The domain alias must be unique.`);
+          throw {aliases: aliases};
+        });
+
+      promises.push(promise);
+    });
+
+    return Promise.all(promises).then(() => aliases);
   }
 
   /**
@@ -135,7 +171,14 @@ class AliasInput extends InputBase {
     return ProjectStorage.getAll()
       .then((projects) => {
         for (const [key, project] of Object.entries(projects)) {
-          if (project.config.host_alias === alias) {
+          let aliases = project.config.host_aliases;
+
+          // @DEPRECATED support for single host alias.
+          if (project.config.host_alias) {
+            aliases = [project.config.host_alias];
+          }
+
+          if (aliases.indexOf(alias) !== -1) {
             return false;
           }
         }

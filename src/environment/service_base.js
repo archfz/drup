@@ -141,15 +141,23 @@ class ServiceBase {
   /**
    * Gets the domain alias for this service.
    *
-   * @returns {string}
-   *    Domain alias.
+   * @returns {Array.<string>}
+   *    Domain aliases.
    */
-  getDomainAlias() {
+  getDomainAliases() {
     if (!this.ann("aliased")) {
       return false;
     }
 
-    return this.env.config.host_alias + "." + this.ann("id");
+    const aliases = this.env.config.host_aliases;
+    let serviceAliases = [];
+    const id = this.ann("id");
+
+    for (let i = 0; i < aliases.length; ++i) {
+      serviceAliases.push(aliases[i] + "." + id);
+    }
+
+    return serviceAliases;
   }
 
   /**
@@ -163,7 +171,7 @@ class ServiceBase {
     console.log(`-- ${this.ann('label')} info`);
 
     if (this.ann("aliased")) {
-      console.log("Reachable on: " + this.getDomainAlias());
+      console.log("Reachable on: " + this.getDomainAliases().join(", "));
     }
 
     console.log("- CONTAINER HOSTS ALIAS: \"" + this.ann("id") + "\"");

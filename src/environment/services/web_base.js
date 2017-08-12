@@ -82,7 +82,7 @@ class WebService extends ServiceBase {
           PUBLIC_NAME: envId,
           ROOT_NAME: envId,
           ORGANISATION: this.env.config.name,
-          PUBLIC_CN: "*." + this.getDomainAlias(),
+          PUBLIC_CN: "*." + this.getDomainAliases().shift(),
           DAYS: 100000, // This is development, last forever.
         }, certDir).execute();
       }, this);

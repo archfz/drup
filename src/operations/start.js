@@ -47,7 +47,7 @@ class StartOperation {
       console.log("-- Aliased services");
       env.services.each((service) => {
         if (service.ann("aliased")) {
-          formatter.list([service.ann("id").green + " : " + service.getDomainAlias()]);
+          formatter.list([service.ann("id").green + " : " + service.getDomainAliases().join(", ")]);
         }
       });
     })

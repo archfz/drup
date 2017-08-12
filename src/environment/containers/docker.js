@@ -129,12 +129,16 @@ class DockerContainer extends ContainerBase {
       let aliases = [];
       // Get the aliases of the services that should be exposed.
       this.env.services.each((service, id) => {
-        if (service.ann("aliased")) {
+        if (!service.ann("aliased")) {
+          return;
+        }
+
+        service.getDomainAliases().forEach((alias) => {
           aliases.push({
             ip: serviceIps[id],
-            domain: service.getDomainAlias(),
+            domain: alias,
           });
-        }
+        });
       });
 
       // Add aliases to the hosts file.
