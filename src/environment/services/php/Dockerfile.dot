@@ -30,4 +30,17 @@ RUN apk upgrade --update \
 
 {{/* Add SSMTP for mail sending support */}}
     && apk fix \
-    && apk add ssmtp
+    && apk add ssmtp \
+
+{{/* Add additional executables */}}
+{{? it.EXECUTABLES.indexOf('drush') !== -1 }}
+    && curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer \
+    && composer global require drush/drush:8.* \
+
+    && apk add mysql-client \
+    && ln -s "$HOME/.composer/vendor/drush/drush/drush" "/usr/local/bin/drush" \
+    {{/* This allows for drush to be executed by local user as container user */}}
+    && chmod a+x /root \
+    && chmod a+w /usr/local/bin/ \
+{{?}}

@@ -74,11 +74,18 @@ module.exports = class PhpService extends Service {
    * @inheritdoc
    */
   _composeDocker() {
+    let executables = [];
+
+    if (this.env.config.type === 'drupal') {
+      executables = ['drush'];
+    }
+
     let compose = {
       build: {
         PHP_VERSION: this.config.version,
         PHP_XDEBUG: this.config.xdebug,
         PHP_EXTENSIONS: this.config.additional_extensions,
+        EXECUTABLES: executables,
       },
     };
 

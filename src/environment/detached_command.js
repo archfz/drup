@@ -4,14 +4,13 @@ const os = require("os");
 const path = require("path");
 const upath = require("upath");
 
-const SystemCommand = require("../system/system_command");
+const BaseCommand = require("./base_command");
 const Environment = require("./environment");
-const EError = require("../eerror");
 
 /**
  * Provides detached docker command in means of standalone image.
  */
-class DetachedCommand extends SystemCommand {
+class DetachedCommand extends BaseCommand {
 
   /**
    * Detached command constructor.
@@ -96,70 +95,6 @@ class DetachedCommand extends SystemCommand {
    */
   mountVolume(hostDir, containerDir) {
     this.dockerArgs.push("-v", path.normalize(hostDir) + ":" + path.posix.normalize(containerDir));
-  }
-
-  /**
-   * Sets the working directory in container.
-   *
-   * @param {string} dir
-   */
-  setWorkingDirectory(dir) {
-    if (typeof dir !== "string") {
-      throw new EError(`Working directory paths must be string, provided: "${dir}"`);
-    }
-
-    // The working directory should always be in posix format as we are only
-    // operating on linux in containers.
-    dir = upath.normalize(dir);
-
-    // Working directories should always be absolute.
-    dir = dir[0] === "/" ? dir : "/" + dir;
-
-    this.workingDirectory = dir;
-    let wIndex = this.dockerArgs.indexOf("-w");
-
-    if (wIndex !== -1) {
-      this.dockerArgs[wIndex + 1] = dir;
-    }
-    else {
-      this.dockerArgs.push("-w", dir);
-    }
-  }
-
-  /**
-   * Sets relative working directory in container.
-   *
-   * @param {Environment} environment
-   * @param {string} minWorkDir
-   *    The minimum relative working directory inside path.
-   * @param {string} hostWorkDir
-   *    The directory of the host for which to calculate relative path.
-   */
-  setRelativeWorkingDirectory(environment, minWorkDir = "", hostWorkDir = process.cwd()) {
-    let hostRoot = path.join(environment.root, Environment.DIRECTORIES.PROJECT, minWorkDir);
-    let contRoot = path.join(this.workingDirectory, minWorkDir);
-
-    // Determine if we are under the root of the project files on the host
-    // system, and only if yes append the missing levels to the container
-    // working directory.
-    if (hostWorkDir.indexOf(hostRoot) === 0) {
-      contRoot = path.join(contRoot, hostWorkDir.substr(hostRoot.length));
-    }
-
-    this.setWorkingDirectory(contRoot);
-  }
-
-  /**
-   * @inheritDoc
-   */
-  getArgumentArray() {
-    if (!this._argArray) {
-      let dockerArgs = this.dockerArgs;
-      dockerArgs.push(this.dockerImage);
-      this._argArray = dockerArgs.concat(super.getArgumentArray());
-    }
-
-    return this._argArray;
   }
 
   /**

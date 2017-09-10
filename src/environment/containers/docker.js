@@ -89,12 +89,21 @@ class DockerContainer extends ContainerBase {
   start() {
     this.directoryToPath();
 
-    return new Command("docker-compose", [
-      ["-p", this.env.getId()],
-      ["up", "-d"],
-    ]).execute().catch((err) => {
+    return this.isBuilt()
+    .then((isBuilt) => {
+      if (!isBuilt) {
+        console.log("Building container images..");
+      }
+
+      return new Command("docker-compose", [
+        ["-p", this.env.getId()],
+        ["up", "-d", isBuilt ? "" : "--build"],
+      ]).execute()
+    })
+    .catch((err) => {
       throw new EError("Failed to start environment container.").inherit(err);
-    }).then(() => {
+    })
+    .then(() => {
       // This provides workaround for windows. By default on linux.sh container
       // IPs get exposed to hosts. On windows tough docker creates a Hyper-V
       // VM in which it puts the containers, and this VM is private. This is
@@ -215,6 +224,15 @@ class DockerContainer extends ContainerBase {
     return cmd.execute().then(() => this).catch((error) => {
       throw new EError(`Failed to run docker command:\n${cmd.toString()}:\n${error}`);
     });
+  }
+
+  /**
+   * @inheritDoc
+   */
+  isBuilt() {
+    this.directoryToPath();
+    return new Command("docker-compose", [["-p", this.env.getId()], ["ps", "-q"]]).execute()
+      .then((data) => data.trim() !== "");
   }
 
   /**
