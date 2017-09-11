@@ -143,6 +143,7 @@ class WebService extends ServiceBase {
       index = [index];
     }
 
+    index = index.filter((ind) => this.config.index_files.indexOf(ind) === -1);
     this.config.index_files = this.config.index_files.concat(index);
   }
 

@@ -94,6 +94,15 @@ class ContainerBase {
   }
 
   /**
+   * Checks whether the container is built.
+   *
+   * @return Promise.<boolean>
+   */
+  isBuilt() {
+    utils.mustImplement(this, "isBuilt");
+  }
+
+  /**
    * Sets the project files group owner.
    *
    * The group owner will be determined from the annotation

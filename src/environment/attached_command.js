@@ -3,13 +3,13 @@
 const path = require("path");
 const os = require("os");
 
-const SystemCommand = require("../system/system_command");
+const BaseCommand = require("./base_command");
 
 /**
  * Provides command for environment containers.
  * These are good for running executables inside the containers of environments.
  */
-class AttachedCommand extends SystemCommand {
+class AttachedCommand extends BaseCommand {
 
   /**
    * Attached command constructor.
@@ -32,6 +32,7 @@ class AttachedCommand extends SystemCommand {
 
     this.environment = environment;
     this.dockerArgs = ["exec", "-i"];
+    this.executable = executable;
 
     this.asHostUser(true);
 
@@ -63,19 +64,6 @@ class AttachedCommand extends SystemCommand {
   }
 
   /**
-   * @inheritDoc
-   */
-  getArgumentArray() {
-    if (!this._argArray) {
-      let dockerArgs = this.dockerArgs;
-      dockerArgs.push(this.dockerImage);
-      this._argArray = dockerArgs.concat(super.getArgumentArray());
-    }
-
-    return this._argArray;
-  }
-
-  /**
    * @inheritdoc
    */
   execute(inDir = null) {
@@ -88,6 +76,49 @@ class AttachedCommand extends SystemCommand {
         return output;
       });
   }
+
+  /**
+   * Sets relative working directory in container.
+   *
+   * @param {string} minWorkDir
+   *    The minimum relative working directory inside path.
+   * @param {string} hostWorkDir
+   *    The directory of the host for which to calculate relative path.
+   */
+  setRelativeWorkingDirectory(minWorkDir = "", hostWorkDir = process.cwd()) {
+    super.setRelativeWorkingDirectory(this.environment, minWorkDir, hostWorkDir);
+  }
+
+  /**
+   * @inheritDoc
+   */
+  _addWorkingDirectoryArgument(dir) {
+    // Here is a workaround for not having on docker exec working directory
+    // option.
+    let shCIndex = this.dockerArgs.indexOf('sh -c "');
+
+    if (shCIndex !== -1) {
+      this.dockerArgs[shCIndex + 1] = 'cd ' + dir + ' &&';
+    } else {
+      shCIndex = this.dockerArgs.indexOf(this.executable);
+      this.dockerArgs.splice(shCIndex, 0, 'sh -c "', 'cd ' + dir + ' &&');
+    }
+  }
+
+  /**
+   * @inheritDoc
+   */
+  getArgumentArray() {
+    super.getArgumentArray();
+
+    // We must add the closing quote at the end.
+    if (!this._argArray && this.dockerArgs.indexOf('sh -c "') !== -1) {
+      this._argArray.push('"');
+    }
+
+    return this._argArray;
+  }
+
 
 }
 
