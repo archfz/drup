@@ -13,6 +13,9 @@ xdebug.idekey=PHPSTORM
 ; Use ssmtp as sendmail.
 sendmail_path=/usr/sbin/ssmtp -t
 
+{{# def.settings }}
+
+; Custom settings.
 {{ for (let [key, set] of Object.entries(it.INI_SETTINGS)) { }}
 {{=key}}={{=set}}
 {{ } }}

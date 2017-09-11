@@ -107,9 +107,13 @@ class Drupal extends WebProject {
    * @private
    */
   _alterServices(services) {
+    services.get("php").registerConfigExtension("custom.ini.dot", {
+      template: path.join(__dirname, "config/php.ini.dot")
+    });
+
     if (services.has("nginx")) {
-      services.get("nginx").registerConfigExtension({
-        template: path.join(__dirname, "config/nginx/default.conf.dot")
+      services.get("nginx").registerConfigExtension("default.conf.dot", {
+        template: path.join(__dirname, "config/nginx.conf.dot")
       });
     }
   }
