@@ -91,10 +91,10 @@ module.exports = {
     complete(data) {
       let defaultConfig = data.get("env_config_defaults");
       const dirName = path.basename(data.get("tmp_directory"));
-      let suggestions = {};
+      let suggestions = {config: {}};
 
       if (dirName.search("new_tmp") === -1) {
-        suggestions.name = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
+        suggestions.config.name = dirName.charAt(0).toUpperCase() + dirName.substr(1).toLowerCase();
       }
 
       // Add default configuration as suggestions for current registration

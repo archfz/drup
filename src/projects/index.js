@@ -107,10 +107,10 @@ class Projects {
         })
         .after(["projectFilesReady", "gotRoot"], (task) => {
           return task.then({projectCreated: act.CreateProject})
-            .then(act.SaveEnvironment)
-            .then({envComposed: act.CompileEnvironment})
+            .then({envSaved: act.SaveEnvironment})
         })
         .after(["projectFilesReady", "gotRoot"], {projectInPlace: act.MoveProject})
+        .after(["projectInPlace", "envSaved"], {envComposed: act.CompileEnvironment})
         .after(["envComposed"], act.SaveProject)
         .start({
           project_type: projectType,

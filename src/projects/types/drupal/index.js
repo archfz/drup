@@ -94,6 +94,7 @@ class Drupal extends WebProject {
     super._onEnvironmentSet(env);
 
     env.services.get("php").addExtensions("gd");
+    this._alterServices(env.services);
     env.on("servicesInitialized", this._alterServices.bind(this));
   }
 
