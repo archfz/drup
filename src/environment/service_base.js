@@ -226,13 +226,14 @@ class ServiceBase {
   /**
    * Registers configuration file template extension.
    *
+   * @param {string} filename
+   *    The config filename to extend. Must include extensions.
    * @param template
    *    The template file path.
    * @param data
    *    The data to send to template engine.
    */
-  registerConfigExtension({template, data}) {
-    const filename = path.basename(template);
+  registerConfigExtension(filename, {template, data}) {
     if (!this._config_extensions[filename]) {
       this._config_extensions[filename] = [];
     }
