@@ -141,7 +141,7 @@ module.exports = class PhpService extends Service {
 
     return [{
       template: "custom.ini.dot",
-      definitions: ["rules"],
+      definitions: ["settings"],
       data: {
         XDEBUG: this.config.xdebug,
         INI_SETTINGS: this.config.ini_settings

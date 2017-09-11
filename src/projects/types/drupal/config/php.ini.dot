@@ -1,0 +1,7 @@
+{{## def.settings:
+    ; Drupal settings.
+    session.cache_limiter = nocache
+    session.auto_start = 0
+    allow_url_fopen = off
+    memory_limit = 128M
+#}}
