@@ -3,6 +3,8 @@
 const path = require("path");
 const upath = require("upath");
 
+const cmdOptions = require("../cmd_options");
+
 const SystemCommand = require("../system/system_command");
 const EError = require("../eerror");
 const Environment = require("./environment");
@@ -91,7 +93,10 @@ class BaseCommand extends SystemCommand {
   inheritStdio() {
     // For docker commands we want a tty if the STD IO is inherited. This is
     // to allow for special chars and colors.
-    this.dockerArgs.splice(1, 0, '-t');
+    if (!cmdOptions.hasOption('--no-tty')) {
+      this.dockerArgs.splice(1, 0, '-t');
+    }
+
     return super.inheritStdio();
   }
 
