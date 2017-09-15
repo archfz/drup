@@ -21,6 +21,7 @@ function showHelp() {
     }
 
     projectOperations.printList();
+    showOptionsHelp();
     return;
   }
 
@@ -28,6 +29,7 @@ function showHelp() {
   if (!operation || OperationCollection.HELP_REGEX.exec(operation)) {
     primaryOperations.printList();
     projectOperations && projectOperations.printList();
+    showOptionsHelp();
   }
 
   // If the project was loaded from directory it means that
@@ -37,7 +39,22 @@ function showHelp() {
     console.log("UN-KNOWN: ".yellow + operation.red + " is neither a primary operation or one for the project '" + project.name.green + "'\n");
     primaryOperations.printList();
     projectOperations.printList();
+    showOptionsHelp();
   }
+}
+
+function showOptionsHelp() {
+  const options = require("./cmd_options").knownOptions;
+  const formatter = require("./terminal-utils/formatter");
+
+  formatter.heading("Options");
+
+  let opHelp = {};
+  for (let [option, info] of Object.entries(options)) {
+    opHelp[option] = info.description;
+  }
+
+  formatter.list(opHelp);
 }
 
 function pipeHelp(err) {
