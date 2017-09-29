@@ -1,0 +1,5 @@
+FROM {{= it.BASE_IMAGE }}
+MAINTAINER zoltan.fodor@pitechnologies.ro
+
+{{/* Required for timezone sync. */}}
+RUN apk add tzdata
