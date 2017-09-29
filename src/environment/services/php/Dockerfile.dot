@@ -2,6 +2,8 @@ FROM php:{{= it.PHP_VERSION }}-fpm-alpine
 MAINTAINER zoltan.fodor@pitechnologies.ro
 
 RUN apk upgrade --update \
+    {{/* Required for timezone sync. */}}
+    && apk add tzdata \
     && NPROC=$(getconf _NPROCESSORS_ONLN) \
 
 {{/* Install any additional php extensions. */}}

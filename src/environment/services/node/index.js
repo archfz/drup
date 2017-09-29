@@ -57,7 +57,9 @@ module.exports = class NodeService extends Service {
    */
   _composeDocker() {
     let compose = {
-      image: images[this.config.version],
+      build: {
+        BASE_IMAGE: images[this.config.version]
+      },
     };
 
     return compose;

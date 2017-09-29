@@ -259,6 +259,37 @@ class DockerContainer extends ContainerBase {
     // Allow services to post react to composition.
     this.env.emit("composedDocker", composition.services);
 
+    return this._applyContainerTimezones(composition);
+  }
+
+  /**
+   * Sets the timezone for the containers.
+   *
+   * @param {Object} composition
+   *   The docker compose composition object.
+   *
+   * @private
+   * @return {Object}
+   *   The modified composition.
+   */
+  _applyContainerTimezones(composition) {
+    let localTimezone = require("moment-timezone").tz.guess();
+    if (!localTimezone) {
+      return composition;
+    }
+
+    Object.keys(composition.services).forEach((id) => {
+      if (!composition.services[id].environment) {
+        composition.services[id].environment = {};
+      }
+
+      if (Array.isArray(composition.services[id].environment)) {
+        composition.services[id].environment.push("TZ=" + localTimezone);
+      } else {
+        composition.services[id].environment.TZ = localTimezone;
+      }
+    });
+
     return composition;
   }
 

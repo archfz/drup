@@ -18,7 +18,7 @@ module.exports = class PostfixService extends Service {
     return {
       image: "tozd/postfix",
       environment: [
-        `MAILNAME=${this.env.config.host_alias}`,
+        `MAILNAME=${this.env.config.host_aliases[0]}`,
         'MY_NETWORKS=192.168.0.0/16 172.0.0.0/8 127.0.0.0/8'
       ]
     };

@@ -19,7 +19,9 @@ module.exports = class NginxService extends WebService {
    */
   _composeDocker() {
     return {
-      image: "nginx:stable-alpine",
+      build: {
+        BASE_IMAGE: "nginx:stable-alpine"
+      },
     };
   }
 
