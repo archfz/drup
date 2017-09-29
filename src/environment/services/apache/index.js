@@ -19,7 +19,9 @@ module.exports = class ApacheService extends WebService {
    */
   _composeDocker() {
     return {
-      image: "httpd:alpine",
+      build: {
+        BASE_IMAGE: "httpd:alpine"
+      },
     };
   }
 
