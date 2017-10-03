@@ -26,6 +26,10 @@ class ShellOperation {
     }
 
     const cmd = new (require("./commands/shell"))(environment, args.shift(), workDir);
+
+    // Don't bind host user because we want super admin access.
+    cmd.asHostUser(false);
+
     return cmd.inheritStdio().execute();
   }
 
