@@ -125,7 +125,7 @@ class DockerContainer extends ContainerBase {
           .then(() => new Command("docker", [
               "run", "--rm", "-t", "--privileged",
               "--network=none", "--pid=host",
-              "justincormack/nsenter1",
+              "docker4w/nsenter-dockerd",
               "bin/sh", "-c", "\"iptables -A FORWARD -j ACCEPT\""
             ]).execute()
           ).catch((err) => {
