@@ -2,6 +2,7 @@
 
 const path = require("path");
 const os = require("os");
+const cmdOptions = require("../cmd_options");
 
 const BaseCommand = require("./base_command");
 
@@ -28,11 +29,20 @@ class AttachedCommand extends BaseCommand {
     }
 
     // Cannot use docker-compose as on windows exec doesn't work.
-    super("docker", args);
+    super("docker", "exec", args);
+
+    // Enable debugging if required.
+    if (cmdOptions.hasOption("--xdebug")) {
+      let alias = environment.services.firstOfGroup('web').getDomainAliases()[0];
+
+      this.setEnvironmentVariable("PHP_IDE_CONFIG", "serverName=" + alias);
+      this.setEnvironmentVariable("XDEBUG_CONFIG", "remote_enable=1 remote_mode=req remote_port=9000 remote_host=172.17.0.1");
+    }
 
     this.environment = environment;
-    this.dockerArgs = ["exec", "-i"];
     this.executable = executable;
+
+    this.dockerArgs.push("-i");
 
     this.asHostUser(true);
 

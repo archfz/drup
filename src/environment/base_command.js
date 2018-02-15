@@ -15,15 +15,37 @@ const Environment = require("./environment");
 class BaseCommand extends SystemCommand {
 
   /**
-   * @inheritDoc
+   * Base command handler for docker commands.
+   *
+   * @param {string} dockerExecutor
+   *   The base docker executable: docker or docker-compose.
+   * @param {string} command
+   *   Depending on the docker executable the primary command name.
+   * @param {Array} args
+   *   Arguments for the command.
    */
-  constructor(command, args = []) {
-    super(command, args);
+  constructor(dockerExecutor, command, args = []) {
+    super(dockerExecutor, args);
 
     this.workingDirectory = "/";
+    this.dockerCommand = command;
     this.dockerArgs = [];
+    this.envVariables = {};
   }
 
+  /**
+   * Sets an environment variable.
+   *
+   * @param {string} key
+   * @param {string} value
+   */
+  setEnvironmentVariable(key, value) {
+    if (key.indexOf(" ") !== -1) {
+      throw new Error(`Environment variable keys cannot contain spaces, found in "${key}"`);
+    }
+
+    this.envVariables[key] = value;
+  }
 
   /**
    * Sets the working directory in container.
@@ -105,8 +127,15 @@ class BaseCommand extends SystemCommand {
    */
   getArgumentArray() {
     if (!this._argArray) {
-      let dockerArgs = this.dockerArgs;
-      dockerArgs.push(this.dockerImage);
+      let args = [];
+      args.push(this.dockerCommand);
+
+      for (let [key, value] of Object.entries(this.envVariables)) {
+        args.push("-e", `${key}="${value.replace(/(['"])/g, "\\$1")}"`);
+      }
+
+      args = args.concat(this.dockerArgs);
+      args.push(this.dockerImage);
 
       // We need to escape all args so that they don't escape the custom quotes.
       let escapedArgs = super.getArgumentArray()
@@ -114,7 +143,7 @@ class BaseCommand extends SystemCommand {
         .filter((arg) => !!arg)
         .map((arg) => arg.replace(/(['"])/g, "\\$1"));
 
-      this._argArray = dockerArgs;
+      this._argArray = args;
 
       // To keep strings in commands we can put all of the args in between
       // quotes. This has to be done because by argv we will already have
