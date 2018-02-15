@@ -23,6 +23,14 @@ class ComposerCommand extends DetachedCommand {
   constructor(args, mountDirectory) {
     // Make sure we are getting the best speed;
     args.unshift("--prefer-dist");
+
+    // By default we ignore platform requirements for installs and requires as
+    // this is a separate container from the one in which the packages will be
+    // used.
+    if (args.includes("install") || args.includes("require")) {
+      args.push("--ignore-platform-reqs");
+    }
+
     super(ComposerCommand.COMPOSER_IMAGE, ComposerCommand.COMPOSER_WORK_DIR, args);
 
     // This volume should keep a host cache which speeds up further
