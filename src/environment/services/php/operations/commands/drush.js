@@ -2,7 +2,6 @@
 
 const AttachedCommand = require("../../../../attached_command");
 
-
 class DrushOperation extends AttachedCommand {
 
   /**

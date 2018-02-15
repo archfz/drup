@@ -9,6 +9,9 @@ module.exports = {
     '--no-tty': {
       description: 'In case of running commands in containers this prevents allocating a TTY.'
     },
+    '--xdebug': {
+      description: 'Enable CLI xDebug for commands that execute php.'
+    }
   },
 
   /**
@@ -26,7 +29,7 @@ module.exports = {
     for (let i = 0; i < argv.length; ++i) {
       if (argv[i].match(/--[^ ]+/)) {
         if (!this.knownOptions[argv[i]]) {
-          console.warn('Un-known option: ' + argv[i]);
+          console.warn('Unknown option: ' + argv[i]);
         }
 
         options.push(argv[i]);

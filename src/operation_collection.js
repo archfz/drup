@@ -210,7 +210,8 @@ class OperationCollection {
       operation = this.get(operation, true);
     }
 
-    let usage = this._usage_format;
+    let usage = OperationCollection.formatOptionalStr("options", "blue") + " " +
+      this._usage_format;
 
     if (operation) {
       usage = usage.replace("{OP_ID}", operation.ann("id").green)

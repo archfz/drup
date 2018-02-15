@@ -23,10 +23,10 @@ class DetachedCommand extends BaseCommand {
    *    The arguments to send to the executable in the container.
    */
   constructor(image, workDir, args) {
-    super("docker", args);
+    super("docker", "run", args);
 
     this.dockerImage = image;
-    this.dockerArgs = ["run", "-i", "--rm"];
+    this.dockerArgs = ["-i", "--rm"];
 
     this.asHostUser(true);
 

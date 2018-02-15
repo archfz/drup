@@ -54,7 +54,7 @@ function showOptionsHelp() {
     opHelp[option] = info.description;
   }
 
-  formatter.list(opHelp);
+  formatter.list(opHelp, null, "blue");
 }
 
 function pipeHelp(err) {
