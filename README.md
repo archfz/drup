@@ -1,5 +1,7 @@
 <img src="./misc/drup_logo.png" align="right" alt="Drup logo" width="200"/>
 
+> NOTE: This project is discontinued in favor of [Lando](https://github.com/lando/lando).
+
 # DRUP
 Drup is a command line utility that helps to kick-start development 
 on your projects. It allows you to configure an environment and by 
